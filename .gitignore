@@ -1,11 +1,5 @@
+.vscode
+
 *
 !*/
 !*.*
-
-src/*
-src/!*/
-src/!*.*
-
-include/*
-include/!*/
-include/!*.*

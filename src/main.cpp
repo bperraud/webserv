@@ -23,7 +23,11 @@ int main(int argc, char **argv)
 	ServerManager serverManager(config);
 
 	// Set up listen sockets
-	serverManager.listenAll();
+
+	serverManager.setupSocket();
+
+	return 0;
+	//serverManager.listenAll();
 
 	// Main event loop
 	while (true)
@@ -35,7 +39,7 @@ int main(int argc, char **argv)
 		serverManager.handleNewConnections();
 
 		// Process requests from existing connections
-		serverManager.handleRequests();
+		serverManager.handleRequests(0);
 	}
 
 	return 0;

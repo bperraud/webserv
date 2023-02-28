@@ -4,17 +4,17 @@
 #include "Config.hpp"
 //#include "Server.hpp"
 
+#include <errno.h>		// errno
 #include <cstring>
 #include <string>
-#include <stdio.h>
-#include <sys/socket.h>
+#include <stdio.h>		// perror
+#include <sys/socket.h>	// socket, bind, accept...
 #include <unistd.h>
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <poll.h>
 
 # define PORT 8080
-# define BACKLOG 10 // maximum number of pending connections that can be queued up before connections are refused
 
 class ServerManager {
 

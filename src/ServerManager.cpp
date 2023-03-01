@@ -29,10 +29,18 @@ void	ServerManager::setupSocket() {
 	// SOMAXCONN = maximum number of pending connections queued up before connections are refused
 	if (listen(_listen_fd, SOMAXCONN) < 0)
 	{
-		perror("in listen");
+		perror("listen failed");
 		exit(EXIT_FAILURE);
 	}
-	printf("server listening for connections\n");
+	printf("server listening for connections...\n");
+
+
+	char buffer[BUFFER_SIZE];
+
+	char resp[] = "HTTP/1.0 200 OK\r\n"
+                  "Server: webserver-c\r\n"
+                  "Content-type: text/html\r\n\r\n"
+                  "<html>hello, world</html>\r\n";
 
 	while (1) {
 		// Accept incoming connections
@@ -43,6 +51,21 @@ void	ServerManager::setupSocket() {
 			continue;
 		}
 		printf("connection accepted\n");
+
+		// Read from the socket
+        int valread = read(newsockfd, buffer, BUFFER_SIZE);
+        if (valread < 0) {
+            perror("webserver (read)");
+            continue;
+        }
+		buffer[valread] = '\0';
+		printf(buffer);
+		// Write to the socket
+        int valwrite = write(newsockfd, resp, strlen(resp));
+        if (valwrite < 0) {
+            perror("webserver (write)");
+            continue;
+        }
 
 		close(newsockfd);
 	}

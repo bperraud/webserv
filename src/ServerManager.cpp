@@ -40,13 +40,13 @@ void	ServerManager::handleNewConnections() {
 	char buffer[BUFFER_SIZE];
 
 	char resp[] = "HTTP/1.0 200 OK\r\n"
-                  "Server: webserver-c\r\n"
-                  "Content-type: text/html\r\n\r\n"
-                  "<html>hello, world</html>\r\n";
+				  "Server: webserver-c\r\n"
+				  "Content-type: text/html\r\n\r\n"
+				  "<html>hello, world</html>\r\n";
 
 	// Create client address
-    struct sockaddr_in client_addr;
-    int client_addrlen = sizeof(client_addr);
+	struct sockaddr_in client_addr;
+	int client_addrlen = sizeof(client_addr);
 
 	while (1) {
 		// Accept incoming connections
@@ -59,28 +59,28 @@ void	ServerManager::handleNewConnections() {
 		printf("connection accepted on socket %i\n", newsockfd);
 
 		// Read from the socket
-        int valread = read(newsockfd, buffer, BUFFER_SIZE);
-        if (valread < 0) {
-            perror("webserver (read)");
-            continue;
-        }
+		int valread = read(newsockfd, buffer, BUFFER_SIZE);
+		if (valread < 0) {
+			perror("webserver (read)");
+			continue;
+		}
 		buffer[valread] = '\0';
 		std::cout << buffer << std::endl;
 
 		// Get client address
-        int client_socket = getsockname(newsockfd, (struct sockaddr *)&client_addr, (socklen_t *)&client_addrlen);
-        if (client_socket < 0) {
-            perror("webserver (getsockname)");
-            continue;
-        }
+		int client_socket = getsockname(newsockfd, (struct sockaddr *)&client_addr, (socklen_t *)&client_addrlen);
+		if (client_socket < 0) {
+			perror("webserver (getsockname)");
+			continue;
+		}
 		printf("[%s:%u]\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
 
 		// Write to the socket
-        int valwrite = write(newsockfd, resp, strlen(resp));
-        if (valwrite < 0) {
-            perror("webserver (write)");
-            continue;
-        }
+		int valwrite = write(newsockfd, resp, strlen(resp));
+		if (valwrite < 0) {
+			perror("webserver (write)");
+			continue;
+		}
 
 		close(newsockfd);
 	}
@@ -121,15 +121,30 @@ void ServerManager::handleNewConnectionsEpoll() {
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
 			std::cout << "fd number : " << i << std::endl;
+
 			// If the listen socket is ready, accept a new connection and add it to the epoll interest list
 			if (fd == _listen_fd) {
 				struct sockaddr_in client_addr;
 				socklen_t client_addrlen = sizeof(client_addr);
 				int newsockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
-				if (newsockfd == -1) {
+				if (newsockfd < 0) {
 					perror("accept");
 					continue;
 				}
+
+				 // Set socket to non-blocking mode
+				int flags = fcntl(newsockfd, F_GETFL, 0);
+				if (flags < 0) {
+					std::cerr << "Failed to get socket flags" << std::endl;
+					close(newsockfd);
+					continue;
+				}
+				if (fcntl(newsockfd, F_SETFL, flags | O_NONBLOCK) < 0) {
+					std::cerr << "Failed to set socket to non-blocking mode" << std::endl;
+					close(newsockfd);
+					continue;
+				}
+
 				// Add the new socket to the epoll interest list
 				event.data.fd = newsockfd;
 				event.events = EPOLLIN;
@@ -143,27 +158,29 @@ void ServerManager::handleNewConnectionsEpoll() {
 			// If a socket is ready for reading, read the request and send the response
 			else {
 
-				int valread = read(fd, buffer, BUFFER_SIZE);
-				if (valread < 0) {
-					perror("read");
-					continue;
-				}
+				// check if socket is ready for reading
+				if (events[i].events & EPOLLIN) {
 
-				buffer[valread] = '\0';
-				std::cout << buffer << std::endl;
+					int valread =  recv(fd, buffer, sizeof(buffer), 0);
+					if (valread < 0) {
+						perror("read");
+						continue;
+					}
+
+					buffer[valread] = '\0';
+					std::cout << buffer << std::endl;
+				}
 
 				char resp[] = "HTTP/1.0 200 OK\r\n"
 							"Server: webserver-epoll\r\n"
 							"Content-type: text/html\r\n"
 							"Connection: keep-alive\r\n\r\n"
 							"<html>hello, epoll world</html>\r\n";
-
 				int valwrite = write(fd, resp, strlen(resp));
 				if (valwrite < 0) {
 					perror("write");
 					continue;
 				}
-
 				std::cout << "request processed for client on socket : " << fd << std::endl;
 
 				#if 0

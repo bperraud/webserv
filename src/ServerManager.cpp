@@ -86,6 +86,10 @@ void	ServerManager::handleNewConnections() {
 	}
 }
 
+void ServerManager::exitError() {
+	std::cout << strerror(errno) << std::endl;
+	exit(EXIT_FAILURE);
+}
 
 void ServerManager::handleNewConnectionsEpoll() {
 
@@ -158,27 +162,23 @@ void ServerManager::handleNewConnectionsEpoll() {
 			// If a socket is ready for reading, read the request and send the response
 			else {
 
-				// check if socket is ready for reading
-				if (events[i].events & EPOLLIN) {
-
-					int valread =  recv(fd, buffer, sizeof(buffer), 0);
-					if (valread < 0) {
-						perror("read");
-						continue;
-					}
-
-					buffer[valread] = '\0';
-					std::cout << buffer << std::endl;
+				int valread =  recv(fd, buffer, sizeof(buffer), 0);
+				if (valread < 0) {
+					perror("recv");
+					continue;
 				}
+
+				buffer[valread] = '\0';
+				std::cout << buffer << std::endl;
 
 				char resp[] = "HTTP/1.0 200 OK\r\n"
 							"Server: webserver-epoll\r\n"
 							"Content-type: text/html\r\n"
 							"Connection: keep-alive\r\n\r\n"
 							"<html>hello, epoll world</html>\r\n";
-				int valwrite = write(fd, resp, strlen(resp));
+				int valwrite = send(fd, resp, strlen(resp), 0);
 				if (valwrite < 0) {
-					perror("write");
+					perror("send");
 					continue;
 				}
 				std::cout << "request processed for client on socket : " << fd << std::endl;

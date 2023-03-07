@@ -36,6 +36,8 @@ public:
 
     void run();
 
+	void exitError();
+
 	void setupSocket();
 
     void initializeServer();

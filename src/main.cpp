@@ -16,8 +16,8 @@
 
 int main(int argc, char **argv)
 {
-	if (argc != 2)
-		return 1;
+	//if (argc != 2)
+		//return 1;
 
 	Config config(argv[1]);
 	ServerManager serverManager(config);
@@ -25,6 +25,8 @@ int main(int argc, char **argv)
 	// Set up listen sockets
 
 	serverManager.setupSocket();
+
+	serverManager.handleNewConnectionsEpoll();
 
 	return 0;
 	//serverManager.listenAll();

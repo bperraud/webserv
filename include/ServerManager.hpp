@@ -2,8 +2,8 @@
 #define SERVERMANAGER_HPP
 
 #include "Config.hpp"
-//#include "Server.hpp"
 
+#include <iostream>
 #include <errno.h>		// errno
 #include <cstring>
 #include <string>
@@ -13,16 +13,21 @@
 #include <stdlib.h>
 #include <netinet/in.h>
 #include <poll.h>
+#include <arpa/inet.h> 	// inet_ntoa
+#include <sys/epoll.h>  // epoll
 
 # define PORT 8080
 # define BUFFER_SIZE 1024
+# define MAX_EVENTS 20
 
 class ServerManager {
 
 private:
     //Server *server;
     int		_listen_fd;
-    pollfd	_poll_fds[1];
+	struct sockaddr_in _host_addr;
+	int	_host_addrlen;
+	pollfd	_poll_fds[1];
 
 public:
     ServerManager(Config config);
@@ -35,6 +40,8 @@ public:
     void initializeServer();
 	void pollSockets();
     void handleNewConnections();
+	void handleNewConnectionsEpoll();
+
     void handleRequests(int client_fd);
     void sendFile(int client_fd, const std::string &path);
     void sendDirectoryListing(int client_fd, const std::string &path);

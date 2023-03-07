@@ -109,16 +109,18 @@ void ServerManager::handleNewConnectionsEpoll() {
 
 	// Main epoll event loop
 	struct epoll_event events[MAX_EVENTS];
+
+	// events array is used to store events that occur on any of
+	// the file descriptors that have been registered with epoll_ctl()
 	while (1) {
 		int n_ready = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
 		if (n_ready == -1) {
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
 		}
-
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
-
+			std::cout << "fd number : " << i << std::endl;
 			// If the listen socket is ready, accept a new connection and add it to the epoll interest list
 			if (fd == _listen_fd) {
 				struct sockaddr_in client_addr;
@@ -128,7 +130,6 @@ void ServerManager::handleNewConnectionsEpoll() {
 					perror("accept");
 					continue;
 				}
-
 				// Add the new socket to the epoll interest list
 				event.data.fd = newsockfd;
 				event.events = EPOLLIN;
@@ -136,8 +137,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 					perror("epoll_ctl EPOLL_CTL_ADD");
 					exit(EXIT_FAILURE);
 				}
-
-				printf("new connection accepted\n");
+				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
 
 			// If a socket is ready for reading, read the request and send the response
@@ -154,7 +154,8 @@ void ServerManager::handleNewConnectionsEpoll() {
 
 				char resp[] = "HTTP/1.0 200 OK\r\n"
 							"Server: webserver-epoll\r\n"
-							"Content-type: text/html\r\n\r\n"
+							"Content-type: text/html\r\n"
+							"Connection: keep-alive\r\n\r\n"
 							"<html>hello, epoll world</html>\r\n";
 
 				int valwrite = write(fd, resp, strlen(resp));
@@ -163,13 +164,15 @@ void ServerManager::handleNewConnectionsEpoll() {
 					continue;
 				}
 
-				printf("request processed\n");
+				std::cout << "request processed for client on socket : " << fd << std::endl;
 
+				#if 0
 				// Remove the socket from the epoll interest list
 				if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL) == -1) {
 					perror("epoll_ctl EPOLL_CTL_DEL");
 					exit(EXIT_FAILURE);
 				}
+				#endif
 
 				close(fd);
 			}

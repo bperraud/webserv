@@ -13,8 +13,9 @@
 #include <iostream>
 #include "Config.hpp"
 #include "ServerManager.hpp"
+#include "CGIExecutor.hpp"
 
-int main(int argc, char **argv)
+int main(int argc, char **argv, char ** envp)
 {
 	//if (argc != 2)
 		//return 1;
@@ -22,11 +23,12 @@ int main(int argc, char **argv)
 	Config config(argv[1]);
 	ServerManager serverManager(config);
 
+	//CGIExecutor cgi(envp);
 	// Set up listen sockets
 
 	serverManager.setupSocket();
-
 	serverManager.handleNewConnectionsEpoll();
+
 
 	return 0;
 	//serverManager.listenAll();

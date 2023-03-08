@@ -36,7 +36,7 @@ public:
 
     void run();
 
-	void exitError();
+	void setNonBlockingMode(int socket);
 
 	void setupSocket();
 
@@ -52,3 +52,5 @@ public:
     void closeClientConnection(int client_fd);
 };
 #endif
+
+

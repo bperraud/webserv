@@ -54,57 +54,6 @@ void	ServerManager::setupSocket() {
 	printf("server listening for connections...\n");
 }
 
-
-void	ServerManager::handleNewConnections() {
-	char buffer[BUFFER_SIZE];
-
-	char resp[] = "HTTP/1.0 200 OK\r\n"
-				  "Server: webserver-c\r\n"
-				  "Content-type: text/html\r\n\r\n"
-				  "<html>hello, world</html>\r\n";
-
-	// Create client address
-	struct sockaddr_in client_addr;
-	int client_addrlen = sizeof(client_addr);
-
-	while (1) {
-		// Accept incoming connections
-		int newsockfd = accept(_listen_fd, (struct sockaddr *)&_host_addr, (socklen_t *)&_host_addrlen);
-		// host_addrlen is set to number of bytes of data actually stored by the kernel in socket address structure
-		if (newsockfd < 0) {
-			perror("webserver (accept)");
-			continue;
-		}
-		printf("connection accepted on socket %i\n", newsockfd);
-
-		// Read from the socket
-		int valread = read(newsockfd, buffer, BUFFER_SIZE);
-		if (valread < 0) {
-			perror("webserver (read)");
-			continue;
-		}
-		buffer[valread] = '\0';
-		std::cout << buffer << std::endl;
-
-		// Get client address
-		int client_socket = getsockname(newsockfd, (struct sockaddr *)&client_addr, (socklen_t *)&client_addrlen);
-		if (client_socket < 0) {
-			perror("webserver (getsockname)");
-			continue;
-		}
-		printf("[%s:%u]\n", inet_ntoa(client_addr.sin_addr), ntohs(client_addr.sin_port));
-
-		// Write to the socket
-		int valwrite = write(newsockfd, resp, strlen(resp));
-		if (valwrite < 0) {
-			perror("webserver (write)");
-			continue;
-		}
-
-		close(newsockfd);
-	}
-}
-
 void ServerManager::setNonBlockingMode(int socket) {
 	// Set socket to non-blocking mode
 	int flags = fcntl(socket, F_GETFL, 0);
@@ -132,8 +81,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 	// Add the listen socket to the epoll interest list
 	struct epoll_event event;
 	event.data.fd = _listen_fd;
-	event.events = EPOLLIN;
-	//event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+	event.events = EPOLLIN | EPOLLET;
 	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, _listen_fd, &event) < 0) {
 		perror("epoll_ctl EPOLL_CTL_ADD");
 		exit(EXIT_FAILURE);
@@ -165,7 +113,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 				//setNonBlockingMode(newsockfd);
 				// Add the new socket to the epoll interest list
 				event.data.fd = newsockfd;
-				event.events = EPOLLIN ;	// ready to read from client
+				event.events = EPOLLIN | EPOLLET;	// ready to read from client
 				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
 					perror("epoll_ctl EPOLL_CTL_ADD");
 					exit(EXIT_FAILURE);
@@ -174,8 +122,8 @@ void ServerManager::handleNewConnectionsEpoll() {
 			}
 
 			// Handle read event
-			else if (events[i].events & EPOLLIN) {
-
+			// read as much data as we can
+			else {
 				ssize_t bytes_read = recv(fd, buffer, BUFFER_SIZE, 0);
 				if (bytes_read == -1) {
 				if (errno == EWOULDBLOCK || errno == EAGAIN) {

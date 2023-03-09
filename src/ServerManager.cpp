@@ -123,21 +123,21 @@ void ServerManager::handleNewConnectionsEpoll() {
 	// Add the listen socket to the epoll interest list
 	struct epoll_event event;
 	event.data.fd = _listen_fd;
-	//event.events = EPOLLIN;
-
-	event.events = EPOLLIN | EPOLLOUT | EPOLLET;
+	event.events = EPOLLIN;
+	//event.events = EPOLLIN | EPOLLOUT | EPOLLET;
 	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, _listen_fd, &event) < 0) {
 		perror("epoll_ctl EPOLL_CTL_ADD");
 		exit(EXIT_FAILURE);
 	}
-
 	// Main epoll event loop
 	struct epoll_event events[MAX_EVENTS];
-
 	// events array is used to store events that occur on any of
 	// the file descriptors that have been registered with epoll_ctl()
 	while (1) {
 		int n_ready = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+		// if any of the file descriptors match the interest then epoll_wait can return without blocking.
+
+
 		if (n_ready == -1) {
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
@@ -145,7 +145,6 @@ void ServerManager::handleNewConnectionsEpoll() {
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
 			std::cout << "fd number : " << fd << std::endl;
-
 			// If the listen socket is ready, accept a new connection and add it to the epoll interest list
 			if (fd == _listen_fd) {
 				struct sockaddr_in client_addr;
@@ -155,9 +154,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 					perror("accept");
 					continue;
 				}
-
-				setNonBlockingMode(newsockfd);
-
+				//setNonBlockingMode(newsockfd);
 				// Add the new socket to the epoll interest list
 				event.data.fd = newsockfd;
 				event.events = EPOLLIN;	// ready to read from client
@@ -172,7 +169,6 @@ void ServerManager::handleNewConnectionsEpoll() {
 			else if (events[i].events & EPOLLIN) {
 
 				ssize_t bytes_read = recv(fd, buffer, BUFFER_SIZE, 0);
-
 				if (bytes_read == -1) {
 				if (errno == EWOULDBLOCK || errno == EAGAIN) {
 					continue;
@@ -186,27 +182,16 @@ void ServerManager::handleNewConnectionsEpoll() {
 					close(fd);
 					continue;
 				}
-
 				buffer[bytes_read] = '\0';
 				std::cout << buffer << std::endl;
-
 				// Process the request
 				//process_request(buffer, bytes_read);
-
-				// Modify event structure to listen for write events
-				event.events = EPOLLOUT | EPOLLET;
-				epoll_ctl(epoll_fd, EPOLL_CTL_MOD, fd, &event);
-			}
-
-			// Handle write event
-			else if (events[i].events & EPOLLOUT) {
 
 				char resp[] = "HTTP/1.0 200 OK\r\n"
 							"Server: webserver-epoll\r\n"
 							"Content-type: text/html\r\n"
 							"Connection: keep-alive\r\n\r\n"
 							"<html>hello, epoll world</html>\r\n";
-
 
 				int valwrite = send(fd, resp, strlen(resp), 0);
 				if (valwrite < 0) {
@@ -215,21 +200,15 @@ void ServerManager::handleNewConnectionsEpoll() {
 				}
 				std::cout << "request processed for client on socket : " << fd << std::endl;
 
-				// Modify event structure to listen for read events
-				event.events = EPOLLIN | EPOLLET;
-				epoll_ctl(epoll_fd, EPOLL_CTL_MOD, fd, &event);
-
-				#if 0
+				#if 1
 				// Remove the socket from the epoll interest list
 				if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL) == -1) {
 					perror("epoll_ctl EPOLL_CTL_DEL");
 					exit(EXIT_FAILURE);
 				}
-				#endif
-
 				close(fd);
+				#endif
 			}
-
 		}
 	}
 }
@@ -242,3 +221,19 @@ void ServerManager::handleRequests(int client_fd) {
 ServerManager::~ServerManager() {
 
 }
+
+// Modify event structure to listen for read events
+#if 0
+event.events = EPOLLIN | EPOLLET;
+epoll_ctl(epoll_fd, EPOLL_CTL_MOD, fd, &event);
+#endif
+
+
+				#if 0
+				// Remove the socket from the epoll interest list
+				if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL) == -1) {
+					perror("epoll_ctl EPOLL_CTL_DEL");
+					exit(EXIT_FAILURE);
+				}
+				close(fd);
+				#endif

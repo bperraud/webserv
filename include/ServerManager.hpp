@@ -21,7 +21,7 @@
 
 # define PORT 8080
 # define BUFFER_SIZE 1024
-# define MAX_EVENTS 20
+# define MAX_EVENTS 50
 
 class ServerManager {
 

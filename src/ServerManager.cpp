@@ -89,10 +89,8 @@ void ServerManager::handleNewConnectionsEpoll() {
 
 	char resp[] = "HTTP/1.0 200 OK\r\n"
 				"Server: webserver-epoll\r\n"
-				"Content-type: text/html\r\n"
-				"Connection: keep-alive\r\n\r\n"
+				"Content-type: text/html\r\n\r\n"
 				"<html>hello, epoll world</html>\r\n";
-
 
 	while (1) {
 		int n_ready = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
@@ -124,15 +122,11 @@ void ServerManager::handleNewConnectionsEpoll() {
 				}
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
-
-			// Handle read event
-			// read as much data as we can
-
-			#if 1
 			else {
-				readFromClient(fd);
-				writeToClient(fd, resp);
-
+				if (!readFromClient(fd)) {
+					std::cout << "give response" << std::endl;
+					writeToClient(fd, resp);
+				}
 				// Remove the socket from the epoll interest list
 				if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL) == -1) {
 					perror("epoll_ctl EPOLL_CTL_DEL");
@@ -140,67 +134,26 @@ void ServerManager::handleNewConnectionsEpoll() {
 				}
 				close(fd);
 			}
-
-			#else
-			else {
-				ssize_t bytes_read = recv(fd, buffer, BUFFER_SIZE, 0);
-				if (bytes_read == -1) {
-					if (errno == EWOULDBLOCK || errno == EAGAIN) {
-						continue;
-					} else {
-						perror("recv");
-						exit(EXIT_FAILURE);
-					}
-				}
-				else if (bytes_read == 0) {
-					// connection closed
-					std::cout << "no data" << std::endl;
-					close(fd);
-					continue;
-				}
-				buffer[bytes_read] = '\0';
-				std::cout << buffer << std::endl;
-
-				// Process the request
-				//process_request(buffer, bytes_read);
-				char resp[] = "HTTP/1.0 200 OK\r\n"
-							"Server: webserver-epoll\r\n"
-							"Content-type: text/html\r\n"
-							"Connection: keep-alive\r\n\r\n"
-							"<html>hello, epoll world</html>\r\n";
-
-				int valwrite = send(fd, resp, strlen(resp), 0);
-				if (valwrite < 0) {
-					perror("send");
-					continue;
-				}
-				std::cout << "request processed for client on socket : " << fd << std::endl;
-
-				#if 1
-				// Remove the socket from the epoll interest list
-				if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL) == -1) {
-					perror("epoll_ctl EPOLL_CTL_DEL");
-					exit(EXIT_FAILURE);
-				}
-				close(fd);
-				#endif
-			}
-
-			#endif
 		}
 	}
 }
 
 int	ServerManager::readFromClient(int socket) {
 	char buffer[BUFFER_SIZE];
+	memset(buffer, 0, BUFFER_SIZE); // Clear buffer before reading
+	ssize_t total_size = 0;
 	while (1) {
 		ssize_t nbytes = recv(socket, buffer, BUFFER_SIZE, 0);
+		total_size += nbytes;
 		if (nbytes == -1) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
-				printf("finished reading data from client\n");
-				buffer[nbytes] = '\0';
+				printf("finished reading data from client %d\n", socket);
+				buffer[total_size] = '\0';
 				std::cout << buffer << std::endl;
-				return 0;
+
+				if (total_size > 0)
+					return 0;		// data read, we can send response
+				return 1;
 			}
 			else {
 				perror("recv()");
@@ -208,31 +161,27 @@ int	ServerManager::readFromClient(int socket) {
 			}
 		}
 		else if (nbytes == 0) {
-			printf("finished recv with %d\n", socket);
-			return 0;
+			printf("connection closed, finished recv with %d\n", socket);
+			return 1;
 		}
 	}
 }
 
 int ServerManager::writeToClient(int socket, const char* data) {
-	ssize_t nbytes_total = 0;
-	while (nbytes_total < strlen(data)) {
-		ssize_t nbytes = send(socket, data + nbytes_total, strlen(data) - nbytes_total, 0);
-		if (nbytes == -1) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK) {
-				printf("finished writing data to client\n");
-				return 0;
-			}
-			else {
-				perror("send()");
-				return 1;
-			}
+	ssize_t nbytes = send(socket, data, strlen(data), 0);
+	if (nbytes == -1) {
+		if (errno == EAGAIN || errno == EWOULDBLOCK) {
+			printf("finished writing data to client %d\n", socket);
+			return 0;
 		}
 		else {
-			nbytes_total += nbytes;
+			perror("send()");
+			return 1;
 		}
 	}
-	printf("finished writing data to client\n");
+	else if (nbytes == 0) {
+		printf("finished writing %d\n", socket);
+	}
 	return 0;
 }
 

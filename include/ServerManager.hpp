@@ -42,6 +42,11 @@ public:
 
 	void setupSocket();
 
+
+	int	readFromClient(int socket);
+	int	writeToClient(int socket, const char* data);
+
+
     void initializeServer();
 	void pollSockets();
     void handleNewConnections();

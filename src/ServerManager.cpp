@@ -42,8 +42,7 @@ void	ServerManager::setupSocket() {
 		exit(EXIT_FAILURE);
 	}
 
-
-	setNonBlockingMode(_listen_fd);
+	//setNonBlockingMode(_listen_fd);
 
 	// SOMAXCONN = maximum number of pending connections queued up before connections are refused
 	if (listen(_listen_fd, SOMAXCONN) < 0)

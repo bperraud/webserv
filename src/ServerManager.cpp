@@ -109,7 +109,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 					perror("accept");
 					continue;
 				}
-				//setNonBlockingMode(newsockfd);
+				setNonBlockingMode(newsockfd);
 				// Add the new socket to the epoll interest list
 				event.data.fd = newsockfd;
 				event.events = EPOLLIN;	// ready to read from client

@@ -87,23 +87,23 @@ void ServerManager::handleNewConnectionsEpoll() {
 	// events array is used to store events that occur on any of
 	// the file descriptors that have been registered with epoll_ctl()
 
-	char resp[] = "HTTP/1.0 200 OK\r\n"
-                  "Server: webserver-c\r\n"
-                  "Content-type: text/html\r\n\r\n"
-                  "<html>hello, world</html>\r\n";
+	const char* response = "HTTP/1.1 200 OK\r\n"
+                       "Content-Type: text/html\r\n"
+                       "Content-Length: 22\r\n"
+                       "Connection: close\r\n"
+                       "\r\n"
+                       "<html><body>Hello World!</body></html>";
 
 	while (1) {
 		std::cout << "waiting..." << std::endl;
 		int n_ready = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
 		// if any of the file descriptors match the interest then epoll_wait can return without blocking.
-
 		if (n_ready == -1) {
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
 		}
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
-			std::cout << "n_ready : " << n_ready << std::endl;
 			std::cout << "fd number : " << fd << std::endl;
 			// If the listen socket is ready, accept a new connection and add it to the epoll interest list
 			if (fd == _listen_fd) {
@@ -135,7 +135,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 			}
 			else {
 				if (!readFromClient(epoll_fd, fd)) {	// if no error, read done -> write
-					writeToClient(fd, resp);
+					writeToClient(fd, response);
 				}
 			}
 		}

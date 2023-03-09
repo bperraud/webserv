@@ -12,8 +12,6 @@ void	ServerManager::setupSocket() {
 		perror("cannot create socket");
 		exit(EXIT_FAILURE);
 	}
-
-
 	memset((char *)&_host_addr, 0, sizeof(_host_addr));
 	int _host_addrlen = sizeof(_host_addr);
 	_host_addr.sin_family = AF_INET;  // AF_INET for IPv4 Internet protocols
@@ -21,27 +19,32 @@ void	ServerManager::setupSocket() {
 	// htons converts a short integer (e.g. port) to a network representation
 	_host_addr.sin_addr.s_addr = htonl(INADDR_ANY); // INADDR_ANY = any address = 0.0.0.0
 	_host_addr.sin_port = htons(PORT);
+
+	int enable_reuseaddr = 1;
+	if (setsockopt(_listen_fd, SOL_SOCKET, SO_REUSEADDR, &enable_reuseaddr, sizeof(int)) < 0) {
+		perror("setsockopt(SO_REUSEADDR) failed");
+		exit(EXIT_FAILURE);
+	}
+
+	#if 1
+	int enable_nodelay = 1;
+	if (setsockopt(_listen_fd, IPPROTO_TCP, TCP_NODELAY, &enable_nodelay, sizeof(int)) < 0) {
+		perror("setsockopt(TCP_NODELAY) failed");
+		exit(EXIT_FAILURE);
+	}
+	#endif
+
 	if (bind(_listen_fd, (struct sockaddr *) &_host_addr, _host_addrlen) < 0)
 	{
 		perror("bind failed");
 		exit(EXIT_FAILURE);
 	}
-
-	#if 1
 	// SOMAXCONN = maximum number of pending connections queued up before connections are refused
 	if (listen(_listen_fd, SOMAXCONN) < 0)
 	{
 		perror("listen failed");
 		exit(EXIT_FAILURE);
 	}
-	# else
-	int optval = 1;
-	if (setsockopt(_listen_fd, SOL_SOCKET, SO_REUSEPORT, &optval, sizeof(optval)) < 0) {
-		perror("setsockopt");
-		exit(EXIT_FAILURE);
-	}
-	#endif
-
 	printf("server listening for connections...\n");
 }
 
@@ -157,7 +160,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 				//setNonBlockingMode(newsockfd);
 				// Add the new socket to the epoll interest list
 				event.data.fd = newsockfd;
-				event.events = EPOLLIN;	// ready to read from client
+				event.events = EPOLLIN | EPOLLET;	// ready to read from client
 				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
 					perror("epoll_ctl EPOLL_CTL_ADD");
 					exit(EXIT_FAILURE);

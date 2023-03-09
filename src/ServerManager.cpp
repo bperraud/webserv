@@ -27,6 +27,8 @@ void	ServerManager::setupSocket() {
 	}
 
 	#if 1
+	// disables the Nagle algorithm, which can improve performance for small messages,
+	//but can degrade performance for large messages or bulk data transfer.
 	int enable_nodelay = 1;
 	if (setsockopt(_listen_fd, IPPROTO_TCP, TCP_NODELAY, &enable_nodelay, sizeof(int)) < 0) {
 		perror("setsockopt(TCP_NODELAY) failed");
@@ -39,6 +41,10 @@ void	ServerManager::setupSocket() {
 		perror("bind failed");
 		exit(EXIT_FAILURE);
 	}
+
+
+	setNonBlockingMode(_listen_fd);
+
 	// SOMAXCONN = maximum number of pending connections queued up before connections are refused
 	if (listen(_listen_fd, SOMAXCONN) < 0)
 	{
@@ -140,7 +146,6 @@ void ServerManager::handleNewConnectionsEpoll() {
 		int n_ready = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
 		// if any of the file descriptors match the interest then epoll_wait can return without blocking.
 
-
 		if (n_ready == -1) {
 			perror("epoll_wait");
 			exit(EXIT_FAILURE);
@@ -160,7 +165,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 				//setNonBlockingMode(newsockfd);
 				// Add the new socket to the epoll interest list
 				event.data.fd = newsockfd;
-				event.events = EPOLLIN | EPOLLET;	// ready to read from client
+				event.events = EPOLLIN ;	// ready to read from client
 				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
 					perror("epoll_ctl EPOLL_CTL_ADD");
 					exit(EXIT_FAILURE);
@@ -187,9 +192,9 @@ void ServerManager::handleNewConnectionsEpoll() {
 				}
 				buffer[bytes_read] = '\0';
 				std::cout << buffer << std::endl;
+
 				// Process the request
 				//process_request(buffer, bytes_read);
-
 				char resp[] = "HTTP/1.0 200 OK\r\n"
 							"Server: webserver-epoll\r\n"
 							"Content-type: text/html\r\n"
@@ -224,19 +229,3 @@ void ServerManager::handleRequests(int client_fd) {
 ServerManager::~ServerManager() {
 
 }
-
-// Modify event structure to listen for read events
-#if 0
-event.events = EPOLLIN | EPOLLET;
-epoll_ctl(epoll_fd, EPOLL_CTL_MOD, fd, &event);
-#endif
-
-
-				#if 0
-				// Remove the socket from the epoll interest list
-				if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL) == -1) {
-					perror("epoll_ctl EPOLL_CTL_DEL");
-					exit(EXIT_FAILURE);
-				}
-				close(fd);
-				#endif

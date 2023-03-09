@@ -18,10 +18,9 @@
 #include <fcntl.h>		// fcntl
 #include <netinet/tcp.h>	// TCP_NODELAY
 
-
 # define PORT 8080
 # define BUFFER_SIZE 1024
-# define MAX_EVENTS 20
+# define MAX_EVENTS 50
 
 class ServerManager {
 
@@ -41,6 +40,11 @@ public:
 	void setNonBlockingMode(int socket);
 
 	void setupSocket();
+
+
+	int	readFromClient(int epoll_fd, int socket);
+	int	writeToClient(int socket, const char* data);
+
 
     void initializeServer();
 	void pollSockets();

@@ -42,7 +42,6 @@ void	ServerManager::setupSocket() {
 		exit(EXIT_FAILURE);
 	}
 
-
 	setNonBlockingMode(_listen_fd);
 
 	// SOMAXCONN = maximum number of pending connections queued up before connections are refused
@@ -81,7 +80,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 	// Add the listen socket to the epoll interest list
 	struct epoll_event event;
 	event.data.fd = _listen_fd;
-	event.events = EPOLLIN | EPOLLET;
+	event.events = EPOLLIN;
 	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, _listen_fd, &event) < 0) {
 		perror("epoll_ctl EPOLL_CTL_ADD");
 		exit(EXIT_FAILURE);
@@ -113,7 +112,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 				//setNonBlockingMode(newsockfd);
 				// Add the new socket to the epoll interest list
 				event.data.fd = newsockfd;
-				event.events = EPOLLIN | EPOLLET;	// ready to read from client
+				event.events = EPOLLIN;	// ready to read from client
 				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
 					perror("epoll_ctl EPOLL_CTL_ADD");
 					exit(EXIT_FAILURE);

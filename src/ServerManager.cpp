@@ -82,17 +82,18 @@ void ServerManager::handleNewConnectionsEpoll() {
 		perror("epoll_ctl EPOLL_CTL_ADD");
 		exit(EXIT_FAILURE);
 	}
-	// Main epoll event loop
+
 	struct epoll_event events[MAX_EVENTS];
 	// events array is used to store events that occur on any of
 	// the file descriptors that have been registered with epoll_ctl()
 
 	char resp[] = "HTTP/1.0 200 OK\r\n"
-				"Server: webserver-epoll\r\n"
-				"Content-type: text/html\r\n\r\n"
-				"<html>hello, epoll world</html>\r\n";
+                  "Server: webserver-c\r\n"
+                  "Content-type: text/html\r\n\r\n"
+                  "<html>hello, world</html>\r\n";
 
 	while (1) {
+		std::cout << "waiting..." << std::endl;
 		int n_ready = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
 		// if any of the file descriptors match the interest then epoll_wait can return without blocking.
 
@@ -102,43 +103,46 @@ void ServerManager::handleNewConnectionsEpoll() {
 		}
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
+			std::cout << "n_ready : " << n_ready << std::endl;
 			std::cout << "fd number : " << fd << std::endl;
 			// If the listen socket is ready, accept a new connection and add it to the epoll interest list
 			if (fd == _listen_fd) {
-				struct sockaddr_in client_addr;
-				socklen_t client_addrlen = sizeof(client_addr);
-				int newsockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
-				if (newsockfd < 0) {
-					perror("accept");
-					continue;
+
+				for (;;) {
+					struct sockaddr_in client_addr;
+					socklen_t client_addrlen = sizeof(client_addr);
+					int newsockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
+					if (newsockfd < 0) {
+						if (errno == EAGAIN || errno == EWOULDBLOCK) {
+							// we processed all of the connections
+							break;
+						}
+						else {
+							perror("accept()");
+							exit(EXIT_FAILURE);
+						}
+					}
+					setNonBlockingMode(newsockfd);
+					// Add the new socket to the epoll interest list
+					event.data.fd = newsockfd;
+					event.events = EPOLLIN | EPOLLET; // ready to read from client
+					if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
+						perror("epoll_ctl EPOLL_CTL_ADD");
+						exit(EXIT_FAILURE);
+					}
+					std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 				}
-				setNonBlockingMode(newsockfd);
-				// Add the new socket to the epoll interest list
-				event.data.fd = newsockfd;
-				event.events = EPOLLIN | EPOLLET; // ready to read from client
-				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
-					perror("epoll_ctl EPOLL_CTL_ADD");
-					exit(EXIT_FAILURE);
-				}
-				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
 			else {
-				if (!readFromClient(fd)) {
-					std::cout << "give response" << std::endl;
+				if (!readFromClient(epoll_fd, fd)) {	// if no error, read done -> write
 					writeToClient(fd, resp);
 				}
-				// Remove the socket from the epoll interest list
-				if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, fd, NULL) == -1) {
-					perror("epoll_ctl EPOLL_CTL_DEL");
-					exit(EXIT_FAILURE);
-				}
-				close(fd);
 			}
 		}
 	}
 }
 
-int	ServerManager::readFromClient(int socket) {
+int	ServerManager::readFromClient(int epoll_fd, int socket) {
 	char buffer[BUFFER_SIZE];
 	memset(buffer, 0, BUFFER_SIZE); // Clear buffer before reading
 	ssize_t total_size = 0;
@@ -150,10 +154,7 @@ int	ServerManager::readFromClient(int socket) {
 				printf("finished reading data from client %d\n", socket);
 				buffer[total_size] = '\0';
 				std::cout << buffer << std::endl;
-
-				if (total_size > 0)
-					return 0;		// data read, we can send response
-				return 1;
+				return 0;
 			}
 			else {
 				perror("recv()");
@@ -161,6 +162,11 @@ int	ServerManager::readFromClient(int socket) {
 			}
 		}
 		else if (nbytes == 0) {
+			if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, socket, NULL) == -1) {
+				perror("epoll_ctl EPOLL_CTL_DEL");
+				exit(EXIT_FAILURE);
+			}
+			close(socket);
 			printf("connection closed, finished recv with %d\n", socket);
 			return 1;
 		}
@@ -170,16 +176,10 @@ int	ServerManager::readFromClient(int socket) {
 int ServerManager::writeToClient(int socket, const char* data) {
 	ssize_t nbytes = send(socket, data, strlen(data), 0);
 	if (nbytes == -1) {
-		if (errno == EAGAIN || errno == EWOULDBLOCK) {
-			printf("finished writing data to client %d\n", socket);
-			return 0;
-		}
-		else {
-			perror("send()");
-			return 1;
-		}
+		perror("send()");
+		return 1;
 	}
-	else if (nbytes == 0) {
+	else if (nbytes == strlen(data)) {
 		printf("finished writing %d\n", socket);
 	}
 	return 0;

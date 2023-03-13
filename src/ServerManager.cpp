@@ -73,7 +73,6 @@ void ServerManager::handleNewConnectionsEpoll() {
 		perror("epoll_create1");
 		exit(EXIT_FAILURE);
 	}
-
 	// Add the listen socket to the epoll interest list
 	struct epoll_event event;
 	event.data.fd = _listen_fd;
@@ -82,16 +81,15 @@ void ServerManager::handleNewConnectionsEpoll() {
 		perror("epoll_ctl EPOLL_CTL_ADD");
 		exit(EXIT_FAILURE);
 	}
-
 	struct epoll_event events[MAX_EVENTS];
 	// events array is used to store events that occur on any of
 	// the file descriptors that have been registered with epoll_ctl()
 
 	const char* response = "HTTP/1.1 200 OK\r\n"
-                       "Content-Type: text/html\r\n"
-                       "Content-Length: 30\r\n"
-                       "Connection: close\r\n\r\n"
-                       "<html><body>Hello my world!</body></html>";
+					   "Content-Type: text/html\r\n"
+					   "Content-Length: 30\r\n"
+					   "Connection: close\r\n\r\n"
+					   "<html><body>Hello my world!</body></html>";
 
 	while (1) {
 		std::cout << "waiting..." << std::endl;
@@ -105,30 +103,23 @@ void ServerManager::handleNewConnectionsEpoll() {
 			int fd = events[i].data.fd;
 			// If the listen socket is ready, accept a new connection and add it to the epoll interest list
 			if (fd == _listen_fd) {
-				for (;;) {
-					struct sockaddr_in client_addr;
-					socklen_t client_addrlen = sizeof(client_addr);
-					int newsockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
-					if (newsockfd < 0) {
-						if (errno == EAGAIN || errno == EWOULDBLOCK) {
-							// we processed all of the connections
-							break;
-						}
-						else {
-							perror("accept()");
-							exit(EXIT_FAILURE);
-						}
-					}
-					setNonBlockingMode(newsockfd);
-					// Add the new socket to the epoll interest list
-					event.data.fd = newsockfd;
-					event.events = EPOLLIN; // ready to read from client
-					if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
-						perror("epoll_ctl EPOLL_CTL_ADD");
-						exit(EXIT_FAILURE);
-					}
-					std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
+				struct sockaddr_in client_addr;
+				socklen_t client_addrlen = sizeof(client_addr);
+				int newsockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
+				if (newsockfd < 0) {
+					perror("accept()");
+					exit(EXIT_FAILURE);
 				}
+				setNonBlockingMode(newsockfd);
+				// Add the new socket to the epoll interest list
+				event.data.fd = newsockfd;
+				event.events = EPOLLIN; // ready to read from client
+				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
+					perror("epoll_ctl EPOLL_CTL_ADD");
+					exit(EXIT_FAILURE);
+				}
+				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
+
 			}
 			else {
 				if (!readFromClient(epoll_fd, fd)) {	// if no error, read done -> write

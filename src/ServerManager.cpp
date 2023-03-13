@@ -103,7 +103,6 @@ void ServerManager::handleNewConnectionsEpoll() {
 		}
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
-			std::cout << "fd number : " << fd << std::endl;
 			// If the listen socket is ready, accept a new connection and add it to the epoll interest list
 			if (fd == _listen_fd) {
 				for (;;) {
@@ -158,6 +157,7 @@ int	ServerManager::readFromClient(int epoll_fd, int socket) {
 		return 1;
 	}
 	else {
+		printf("finished reading data from client %d\n", socket);
 		buffer[nbytes] = '\0';
 		std::cout << buffer << std::endl;
 	}

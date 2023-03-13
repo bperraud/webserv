@@ -21,11 +21,13 @@
 # define PORT 8080
 # define BUFFER_SIZE 1024
 # define MAX_EVENTS 50
+# define MAX_CLIENT 10
+
 
 class ServerManager {
 
 private:
-    //Server *server;
+    //Client*	[MAX_CLIENT];
     int		_listen_fd;
 	struct sockaddr_in _host_addr;
 	int	_host_addrlen;
@@ -42,9 +44,11 @@ public:
 	void setupSocket();
 
 
-	int	readFromClient(int epoll_fd, int socket);
-	int	writeToClient(int socket, const char* data);
+	int	readFromClient(int client_fd, int epoll_fd);
+	int	writeToClient(int socket, const std::string &data);
 
+
+	bool isEOF(const std::string &str);
 
     void initializeServer();
 	void pollSockets();
@@ -55,7 +59,7 @@ public:
     void sendFile(int client_fd, const std::string &path);
     void sendDirectoryListing(int client_fd, const std::string &path);
     void sendErrorResponse(int client_fd, int status_code);
-    void closeClientConnection(int client_fd);
+    void closeClientConnection(int client_fd, int epoll_fd);
 };
 #endif
 

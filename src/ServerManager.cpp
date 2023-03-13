@@ -85,7 +85,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 	// events array is used to store events that occur on any of
 	// the file descriptors that have been registered with epoll_ctl()
 
-	const char* response = "HTTP/1.1 200 OK\r\n"
+	std::string response = "HTTP/1.1 200 OK\r\n"
 					   "Content-Type: text/html\r\n"
 					   "Content-Length: 30\r\n"
 					   "Connection: close\r\n\r\n"
@@ -119,10 +119,9 @@ void ServerManager::handleNewConnectionsEpoll() {
 					exit(EXIT_FAILURE);
 				}
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
-
 			}
 			else {
-				if (!readFromClient(epoll_fd, fd)) {	// if no error, read done -> write
+				if (!readFromClient(fd, epoll_fd)) {	// if no error, read done -> write
 					writeToClient(fd, response);
 				}
 			}
@@ -130,42 +129,60 @@ void ServerManager::handleNewConnectionsEpoll() {
 	}
 }
 
-int	ServerManager::readFromClient(int epoll_fd, int socket) {
+void ServerManager::closeClientConnection(int client_fd, int epoll_fd) {
+	if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) == -1) {
+			perror("epoll_ctl EPOLL_CTL_DEL");
+			exit(EXIT_FAILURE);
+		}
+	close(client_fd);
+}
+
+int	ServerManager::readFromClient(int client_fd, int epoll_fd) {
 	char buffer[BUFFER_SIZE];
 	memset(buffer, 0, BUFFER_SIZE); // Clear buffer before reading
-	ssize_t nbytes = recv(socket, buffer, BUFFER_SIZE, 0);
+	ssize_t nbytes = recv(client_fd, buffer, BUFFER_SIZE, 0);
 	if (nbytes == -1) {
 		perror("recv()");
 		return 1;
 	}
 	else if (nbytes == 0) {
-		if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, socket, NULL) == -1) {
-			perror("epoll_ctl EPOLL_CTL_DEL");
-			exit(EXIT_FAILURE);
-		}
-		close(socket);
-		printf("connection closed, finished recv with %d\n", socket);
+		closeClientConnection(client_fd, epoll_fd);
+		printf("connection closed, finished recv with %d\n", client_fd);
 		return 1;
 	}
 	else {
-		printf("finished reading data from client %d\n", socket);
+		printf("finished reading data from client %d\n", client_fd);
 		buffer[nbytes] = '\0';
 		std::cout << buffer << std::endl;
 	}
 	return 0;
 }
 
-int ServerManager::writeToClient(int socket, const char* data) {
-	ssize_t nbytes = send(socket, data, strlen(data), 0);
+int ServerManager::writeToClient(int client_fd, const std::string& data) {
+	ssize_t nbytes = send(client_fd, data.c_str(), data.length(), 0);
 	if (nbytes == -1) {
 		perror("send()");
 		return 1;
 	}
-	else if (nbytes == strlen(data)) {
-		printf("finished writing %d\n", socket);
+	else if (nbytes == data.length()) {
+		printf("finished writing %d\n", client_fd);
 	}
 	return 0;
 }
+
+bool ServerManager::isEOF(const std::string& buffer) {
+    // Find the last occurrence of a newline character
+    size_t last_newline_pos = buffer.rfind('\n');
+    if (last_newline_pos == std::string::npos) {
+        // No newline character found
+        return false;
+    } else {
+        // Check if the characters following the newline character are empty
+        std::string last_line = buffer.substr(last_newline_pos + 1);
+        return last_line.empty();
+    }
+}
+
 
 void ServerManager::handleRequests(int client_fd) {
 

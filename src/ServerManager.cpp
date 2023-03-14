@@ -118,10 +118,15 @@ void ServerManager::handleNewConnectionsEpoll() {
 					perror("epoll_ctl EPOLL_CTL_ADD");
 					exit(EXIT_FAILURE);
 				}
+				// add new Client
+				_client_map.insert(std::make_pair(newsockfd, ClientRequest()));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
 			else {
 				if (!readFromClient(fd, epoll_fd)) {	// if no error, read done -> write
+
+					std::cout << "end of read" << std::endl;
+					std::cout << _client_map[fd].getRequest() << std::endl;
 					writeToClient(fd, response);
 				}
 			}
@@ -131,31 +136,36 @@ void ServerManager::handleNewConnectionsEpoll() {
 
 void ServerManager::closeClientConnection(int client_fd, int epoll_fd) {
 	if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) == -1) {
-			perror("epoll_ctl EPOLL_CTL_DEL");
-			exit(EXIT_FAILURE);
-		}
+		perror("epoll_ctl EPOLL_CTL_DEL");
+		exit(EXIT_FAILURE);
+	}
+	_client_map.erase(client_fd);
 	close(client_fd);
 }
 
 int	ServerManager::readFromClient(int client_fd, int epoll_fd) {
 	char buffer[BUFFER_SIZE];
-	memset(buffer, 0, BUFFER_SIZE); // Clear buffer before reading
 	ssize_t nbytes = recv(client_fd, buffer, BUFFER_SIZE, 0);
+
 	if (nbytes == -1) {
 		perror("recv()");
 		return 1;
 	}
 	else if (nbytes == 0) {
 		closeClientConnection(client_fd, epoll_fd);
-		printf("connection closed, finished recv with %d\n", client_fd);
+		printf("connection closed on client %d\n", client_fd);
 		return 1;
 	}
 	else {
 		printf("finished reading data from client %d\n", client_fd);
-		buffer[nbytes] = '\0';
-		std::cout << buffer << std::endl;
+		addToClientRequest(client_fd, std::string(buffer, nbytes));
+		return (isEOF(buffer));
 	}
-	return 0;
+	return 1;
+}
+
+void ServerManager::addToClientRequest(int client_fd, const std::string &str) {
+	_client_map[client_fd].addToRequest(str);
 }
 
 int ServerManager::writeToClient(int client_fd, const std::string& data) {
@@ -164,7 +174,7 @@ int ServerManager::writeToClient(int client_fd, const std::string& data) {
 		perror("send()");
 		return 1;
 	}
-	else if (nbytes == data.length()) {
+	else if ((size_t) nbytes == data.length()) {
 		printf("finished writing %d\n", client_fd);
 	}
 	return 0;
@@ -172,20 +182,13 @@ int ServerManager::writeToClient(int client_fd, const std::string& data) {
 
 bool ServerManager::isEOF(const std::string& buffer) {
     // Find the last occurrence of a newline character
-    size_t last_newline_pos = buffer.rfind('\n');
-    if (last_newline_pos == std::string::npos) {
-        // No newline character found
-        return false;
-    } else {
-        // Check if the characters following the newline character are empty
-        std::string last_line = buffer.substr(last_newline_pos + 1);
-        return last_line.empty();
-    }
+    size_t last_newline_pos = buffer.rfind("\r\n\r\n");
+    return (last_newline_pos == std::string::npos);
 }
 
 
 void ServerManager::handleRequests(int client_fd) {
-
+	(void) client_fd;
 }
 
 ServerManager::~ServerManager() {

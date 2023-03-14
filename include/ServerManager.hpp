@@ -2,11 +2,14 @@
 #define SERVERMANAGER_HPP
 
 #include "Config.hpp"
+#include "ClientRequest.hpp"
 
 #include <iostream>
 #include <errno.h>		// errno
-#include <cstring>
+#include <map>
+#include <utility>		// pair
 #include <string>
+#include <cstring> 		//memset
 #include <stdio.h>		// perror
 #include <sys/socket.h>	// socket, bind, accept...
 #include <unistd.h>
@@ -19,7 +22,7 @@
 #include <netinet/tcp.h>	// TCP_NODELAY
 
 # define PORT 8080
-# define BUFFER_SIZE 1024
+# define BUFFER_SIZE 50
 # define MAX_EVENTS 50
 # define MAX_CLIENT 10
 
@@ -27,7 +30,8 @@
 class ServerManager {
 
 private:
-    //Client*	[MAX_CLIENT];
+	std::map<int, ClientRequest> _client_map;
+
     int		_listen_fd;
 	struct sockaddr_in _host_addr;
 	int	_host_addrlen;
@@ -39,6 +43,9 @@ public:
 
     void run();
 
+
+	void addToClientRequest(int client_fd, const std::string &str);
+
 	void setNonBlockingMode(int socket);
 
 	void setupSocket();
@@ -47,6 +54,7 @@ public:
 	int	readFromClient(int client_fd, int epoll_fd);
 	int	writeToClient(int socket, const std::string &data);
 
+	void connectionCloseMode(int client_fd);
 
 	bool isEOF(const std::string &str);
 

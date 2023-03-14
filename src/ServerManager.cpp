@@ -143,7 +143,6 @@ void ServerManager::closeClientConnection(int client_fd) {
 	close(client_fd);
 }
 
-
 // return 0 if read is complete, 1 otherwise
 int	ServerManager::readFromClient(int client_fd) {
 	char buffer[BUFFER_SIZE];
@@ -184,8 +183,7 @@ int ServerManager::writeToClient(int client_fd, const std::string& data) {
 
 bool ServerManager::isEOF(const std::string& buffer) {
     // Find the last occurrence of a newline character
-    size_t last_newline_pos = buffer.rfind("\r\n\r\n");
-    return (last_newline_pos == std::string::npos);
+    return (buffer.rfind("\r\n\r\n") == std::string::npos);
 }
 
 

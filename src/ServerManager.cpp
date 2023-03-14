@@ -68,8 +68,8 @@ void ServerManager::setNonBlockingMode(int socket) {
 
 void ServerManager::handleNewConnectionsEpoll() {
 	// Create the epoll file descriptor
-	int epoll_fd = epoll_create1(0);
-	if (epoll_fd < 0) {
+	_epoll_fd = epoll_create1(0);
+	if (_epoll_fd < 0) {
 		perror("epoll_create1");
 		exit(EXIT_FAILURE);
 	}
@@ -77,7 +77,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 	struct epoll_event event;
 	event.data.fd = _listen_fd;
 	event.events = EPOLLIN;
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, _listen_fd, &event) < 0) {
+	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, _listen_fd, &event) < 0) {
 		perror("epoll_ctl EPOLL_CTL_ADD");
 		exit(EXIT_FAILURE);
 	}
@@ -93,7 +93,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 
 	while (1) {
 		std::cout << "waiting..." << std::endl;
-		int n_ready = epoll_wait(epoll_fd, events, MAX_EVENTS, -1);
+		int n_ready = epoll_wait(_epoll_fd, events, MAX_EVENTS, -1);
 		// if any of the file descriptors match the interest then epoll_wait can return without blocking.
 		if (n_ready == -1) {
 			perror("epoll_wait");
@@ -114,7 +114,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 				// Add the new socket to the epoll interest list
 				event.data.fd = newsockfd;
 				event.events = EPOLLIN; // ready to read from client
-				if (epoll_ctl(epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
+				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
 					perror("epoll_ctl EPOLL_CTL_ADD");
 					exit(EXIT_FAILURE);
 				}
@@ -123,19 +123,26 @@ void ServerManager::handleNewConnectionsEpoll() {
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
 			else {
-				if (!readFromClient(fd, epoll_fd)) {	// if no error, read done -> write
+				if (!readFromClient(fd)) {	// if no error, read done -> write
 
 					std::cout << "end of read" << std::endl;
 					std::cout << _client_map[fd].getRequest() << std::endl;
 					writeToClient(fd, response);
+					connectionCloseMode(fd);
 				}
 			}
 		}
 	}
 }
 
-void ServerManager::closeClientConnection(int client_fd, int epoll_fd) {
-	if (epoll_ctl(epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) == -1) {
+void ServerManager::connectionCloseMode(int client_fd) {
+	ClientRequest request = _client_map[client_fd];
+	if (request.getConnectionMode())
+		closeClientConnection(client_fd);
+}
+
+void ServerManager::closeClientConnection(int client_fd) {
+	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) == -1) {
 		perror("epoll_ctl EPOLL_CTL_DEL");
 		exit(EXIT_FAILURE);
 	}
@@ -143,7 +150,7 @@ void ServerManager::closeClientConnection(int client_fd, int epoll_fd) {
 	close(client_fd);
 }
 
-int	ServerManager::readFromClient(int client_fd, int epoll_fd) {
+int	ServerManager::readFromClient(int client_fd) {
 	char buffer[BUFFER_SIZE];
 	ssize_t nbytes = recv(client_fd, buffer, BUFFER_SIZE, 0);
 	if (nbytes == -1) {
@@ -151,7 +158,7 @@ int	ServerManager::readFromClient(int client_fd, int epoll_fd) {
 		return 1;
 	}
 	else if (nbytes == 0) {
-		closeClientConnection(client_fd, epoll_fd);
+		closeClientConnection(client_fd);
 		printf("connection closed on client %d\n", client_fd);
 		return 1;
 	}

@@ -33,9 +33,9 @@ private:
 	std::map<int, ClientRequest> _client_map;
 
     int		_listen_fd;
+	int		_epoll_fd;
 	struct sockaddr_in _host_addr;
 	int	_host_addrlen;
-	pollfd	_poll_fds[1];
 
 public:
     ServerManager(Config config);
@@ -51,7 +51,7 @@ public:
 	void setupSocket();
 
 
-	int	readFromClient(int client_fd, int epoll_fd);
+	int	readFromClient(int client_fd);
 	int	writeToClient(int socket, const std::string &data);
 
 	void connectionCloseMode(int client_fd);
@@ -67,8 +67,7 @@ public:
     void sendFile(int client_fd, const std::string &path);
     void sendDirectoryListing(int client_fd, const std::string &path);
     void sendErrorResponse(int client_fd, int status_code);
-    void closeClientConnection(int client_fd, int epoll_fd);
+    void closeClientConnection(int client_fd);
 };
+
 #endif
-
-

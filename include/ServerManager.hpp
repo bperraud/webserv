@@ -22,7 +22,7 @@
 #include <netinet/tcp.h>	// TCP_NODELAY
 
 # define PORT 8080
-# define BUFFER_SIZE 50
+# define BUFFER_SIZE 1024
 # define MAX_EVENTS 50
 # define MAX_CLIENT 10
 
@@ -44,7 +44,7 @@ public:
     void run();
 
 
-	void addToClientRequest(int client_fd, const std::string &str);
+	std::string addToClientRequest(int client_fd, const std::string &str);
 
 	void setNonBlockingMode(int socket);
 

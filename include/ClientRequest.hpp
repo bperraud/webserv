@@ -2,6 +2,7 @@
 #define CLIENTREQUEST_HPP
 
 #include <string>
+#include <iostream>
 
 enum Type {
 	GET,
@@ -21,7 +22,7 @@ public:
 	ClientRequest();
 	~ClientRequest();
 
-	void addToRequest(const std::string &str);
+	std::string addToRequest(const std::string &str);
 
 	bool		hasBeenSend() const;
 	bool		getConnectionMode() const;

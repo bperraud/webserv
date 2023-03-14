@@ -146,7 +146,6 @@ void ServerManager::closeClientConnection(int client_fd, int epoll_fd) {
 int	ServerManager::readFromClient(int client_fd, int epoll_fd) {
 	char buffer[BUFFER_SIZE];
 	ssize_t nbytes = recv(client_fd, buffer, BUFFER_SIZE, 0);
-
 	if (nbytes == -1) {
 		perror("recv()");
 		return 1;
@@ -158,14 +157,14 @@ int	ServerManager::readFromClient(int client_fd, int epoll_fd) {
 	}
 	else {
 		printf("finished reading data from client %d\n", client_fd);
-		addToClientRequest(client_fd, std::string(buffer, nbytes));
-		return (isEOF(buffer));
+		std::string request = addToClientRequest(client_fd, std::string(buffer, nbytes));
+		return (isEOF(request));
 	}
 	return 1;
 }
 
-void ServerManager::addToClientRequest(int client_fd, const std::string &str) {
-	_client_map[client_fd].addToRequest(str);
+std::string ServerManager::addToClientRequest(int client_fd, const std::string &str) {
+	return _client_map[client_fd].addToRequest(str);
 }
 
 int ServerManager::writeToClient(int client_fd, const std::string& data) {

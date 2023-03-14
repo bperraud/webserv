@@ -9,8 +9,9 @@ ClientRequest::~ClientRequest() {
 
 }
 
-void ClientRequest::addToRequest(const std::string &str) {
+std::string ClientRequest::addToRequest(const std::string &str) {
 	_request += str;
+	return _request;
 }
 
 bool ClientRequest::hasBeenSend() const {

@@ -54,13 +54,7 @@ void	ServerManager::setupSocket() {
 }
 
 void ServerManager::setNonBlockingMode(int socket) {
-	// Set socket to non-blocking mode
-	int flags = fcntl(socket, F_GETFL, 0);
-	if (flags < 0) {
-		perror("Failed to get socket flags");
-		close(socket);
-	}
-	if (fcntl(socket, F_SETFL, flags | O_NONBLOCK) < 0) {
+	if (fcntl(socket, F_SETFL, O_NONBLOCK) < 0) {
 		perror("Failed to set socket to non-blocking mode");
 		close(socket);
 	}
@@ -123,8 +117,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
 			else {
-				if (!readFromClient(fd)) {	// if no error, read done -> write
-
+				if (!readFromClient(fd)) {	// if no error, read complete
 					std::cout << "end of read" << std::endl;
 					std::cout << _client_map[fd].getRequest() << std::endl;
 					writeToClient(fd, response);
@@ -150,11 +143,14 @@ void ServerManager::closeClientConnection(int client_fd) {
 	close(client_fd);
 }
 
+
+// return 0 if read is complete, 1 otherwise
 int	ServerManager::readFromClient(int client_fd) {
 	char buffer[BUFFER_SIZE];
 	ssize_t nbytes = recv(client_fd, buffer, BUFFER_SIZE, 0);
 	if (nbytes == -1) {
 		perror("recv()");
+		closeClientConnection(client_fd);
 		return 1;
 	}
 	else if (nbytes == 0) {

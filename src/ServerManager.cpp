@@ -113,7 +113,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 					exit(EXIT_FAILURE);
 				}
 				// add new Client
-				_client_map.insert(std::make_pair(newsockfd, ClientRequest()));
+				_client_map.insert(std::make_pair(newsockfd, HttpHandler()));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
 			else {
@@ -129,8 +129,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 }
 
 void ServerManager::connectionCloseMode(int client_fd) {
-	ClientRequest request = _client_map[client_fd];
-	if (request.getConnectionMode())
+	if (_client_map[client_fd].getConnectionMode())
 		closeClientConnection(client_fd);
 }
 

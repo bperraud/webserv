@@ -2,7 +2,7 @@
 #define SERVERMANAGER_HPP
 
 #include "Config.hpp"
-#include "ClientRequest.hpp"
+#include "HttpHandler.hpp"
 
 #include <iostream>
 #include <errno.h>		// errno
@@ -30,7 +30,7 @@
 class ServerManager {
 
 private:
-	std::map<int, ClientRequest> _client_map;
+	std::map<int, HttpHandler> _client_map;
 
     int		_listen_fd;
 	int		_epoll_fd;
@@ -47,9 +47,7 @@ public:
 	std::string addToClientRequest(int client_fd, const std::string &str);
 
 	void setNonBlockingMode(int socket);
-
 	void setupSocket();
-
 
 	int	readFromClient(int client_fd);
 	int	writeToClient(int socket, const std::string &data);

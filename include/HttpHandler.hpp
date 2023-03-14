@@ -1,8 +1,10 @@
-#ifndef CLIENTREQUEST_HPP
-#define CLIENTREQUEST_HPP
+#ifndef HTTPHANDLER_HPP
+#define HTTPHANDLER_HPP
 
 #include <string>
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 enum Type {
 	GET,
@@ -11,22 +13,26 @@ enum Type {
 	HEAD
 };
 
-class ClientRequest {
+class HttpHandler {
 
 private:
-	std::string	_request;
+	std::string	_requestClient;
+	std::string	_responseServer;
 	bool		_close_connection_mode;
-	bool		_sended;
+	int			_type;
 
 public:
-	ClientRequest();
-	~ClientRequest();
+	HttpHandler();
+	~HttpHandler();
 
 	std::string addToRequest(const std::string &str);
+	std::string addToResponse(const std::string &str);
 
-	bool		hasBeenSend() const;
+	//bool		hasBeenSend() const;
 	bool		getConnectionMode() const;
 	std::string	getRequest() const;
+
+	void addFileToResponse(const std::string &fileName);
 };
 
 #endif

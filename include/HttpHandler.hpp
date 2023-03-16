@@ -31,6 +31,7 @@ public:
 	//bool		hasBeenSend() const;
 	bool		getConnectionMode() const;
 	std::string	getRequest() const;
+	std::string	getResponse() const;
 
 	void addFileToResponse(const std::string &fileName);
 };

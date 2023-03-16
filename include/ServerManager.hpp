@@ -50,7 +50,7 @@ public:
 	void setupSocket();
 
 	int	readFromClient(int client_fd);
-	int	writeToClient(int socket, const std::string &data);
+	int	writeToClient(int client_fd);
 
 	void connectionCloseMode(int client_fd);
 

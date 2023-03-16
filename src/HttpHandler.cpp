@@ -31,6 +31,10 @@ std::string HttpHandler::getRequest() const {
 	return _requestClient;
 }
 
+std::string HttpHandler::getResponse() const {
+	return _responseServer;
+}
+
 void HttpHandler::addFileToResponse(const std::string &fileName) {
 	std::ifstream input_file(fileName.c_str());
     std::stringstream buffer;

@@ -41,9 +41,7 @@ void	ServerManager::setupSocket() {
 		perror("bind failed");
 		exit(EXIT_FAILURE);
 	}
-
 	setNonBlockingMode(_listen_fd);
-
 	// SOMAXCONN = maximum number of pending connections queued up before connections are refused
 	if (listen(_listen_fd, SOMAXCONN) < 0)
 	{
@@ -81,9 +79,8 @@ void ServerManager::handleNewConnectionsEpoll() {
 
 	std::string response = "HTTP/1.1 200 OK\r\n"
 					   "Content-Type: text/html\r\n"
-					   "Content-Length: 30\r\n"
-					   "Connection: close\r\n\r\n"
-					   "<html><body>Hello my world!</body></html>";
+					   "Content-Length: 200\r\n"
+					   "Connection: close\r\n\r\n";
 
 	while (1) {
 		std::cout << "waiting..." << std::endl;
@@ -120,7 +117,10 @@ void ServerManager::handleNewConnectionsEpoll() {
 				if (!readFromClient(fd)) {	// if no error, read complete
 					std::cout << "end of read" << std::endl;
 					std::cout << _client_map[fd].getRequest() << std::endl;
-					writeToClient(fd, response);
+
+					_client_map[fd].addToResponse(response);
+					_client_map[fd].addFileToResponse("./website/index.html");
+					writeToClient(fd);
 					connectionCloseMode(fd);
 				}
 			}
@@ -168,13 +168,16 @@ std::string ServerManager::addToClientRequest(int client_fd, const std::string &
 	return _client_map[client_fd].addToRequest(str);
 }
 
-int ServerManager::writeToClient(int client_fd, const std::string& data) {
-	ssize_t nbytes = send(client_fd, data.c_str(), data.length(), 0);
+int ServerManager::writeToClient(int client_fd) {
+	std::string response = _client_map[client_fd].getResponse();
+
+	std::cout << response << std::endl;
+	ssize_t nbytes = send(client_fd, response.c_str(), response.length(), 0);
 	if (nbytes == -1) {
 		perror("send()");
 		return 1;
 	}
-	else if ((size_t) nbytes == data.length()) {
+	else if ((size_t) nbytes == response.length()) {
 		printf("finished writing %d\n", client_fd);
 	}
 	return 0;

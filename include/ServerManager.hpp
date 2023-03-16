@@ -21,6 +21,7 @@
 #include <fcntl.h>		// fcntl
 #include <netinet/tcp.h>	// TCP_NODELAY
 
+
 # define PORT 8080
 # define BUFFER_SIZE 1024
 # define MAX_EVENTS 50
@@ -30,7 +31,7 @@
 class ServerManager {
 
 private:
-	std::map<int, HttpHandler> _client_map;
+	std::map<int, HttpHandler*> _client_map;
 
     int		_listen_fd;
 	int		_epoll_fd;

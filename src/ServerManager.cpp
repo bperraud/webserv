@@ -104,14 +104,13 @@ void ServerManager::handleNewConnectionsEpoll() {
 					perror("epoll_ctl EPOLL_CTL_ADD");
 					exit(EXIT_FAILURE);
 				}
-				// add new Client
-				_client_map.insert(std::make_pair(newsockfd, HttpHandler()));
+				_client_map.insert(std::make_pair(newsockfd, new HttpHandler()));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
 			else {
 				if (!readFromClient(fd)) {	// if no error, read complete
 					std::cout << "end of read" << std::endl;
-					std::cout << _client_map[fd].getRequest() << std::endl;
+					std::cout << _client_map[fd]->getRequest() << std::endl;
 
 					//_client_map[fd].addToResponse(response);
 					//_client_map[fd].addFileToResponse("./website/index.html");
@@ -124,7 +123,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 }
 
 void ServerManager::connectionCloseMode(int client_fd) {
-	if (_client_map[client_fd].getConnectionMode())
+	if (_client_map[client_fd]->getConnectionMode())
 		closeClientConnection(client_fd);
 }
 
@@ -133,6 +132,7 @@ void ServerManager::closeClientConnection(int client_fd) {
 		perror("epoll_ctl EPOLL_CTL_DEL");
 		exit(EXIT_FAILURE);
 	}
+	delete _client_map[client_fd];
 	_client_map.erase(client_fd);
 	close(client_fd);
 }
@@ -153,14 +153,22 @@ int	ServerManager::readFromClient(int client_fd) {
 	}
 	else {
 		printf("finished reading data from client %d\n", client_fd);
-		_client_map[client_fd].writeToStream(buffer, nbytes);
-		return (isEOF(_client_map[client_fd].getRequest()));
+		_client_map[client_fd]->writeToStream(buffer, nbytes);
+		if (nbytes > 4)
+			return (isEOF(buffer));
+		else
+			return (isEOF(_client_map[client_fd]->getRequest()));
 	}
 	return 1;
 }
 
 int ServerManager::writeToClient(int client_fd) {
-	std::string response = _client_map[client_fd].getResponse();
+	std::string response = "HTTP/1.1 200 OK\r\n"
+					"Content-Type: text/html\r\n"
+					"Content-Length: 30\r\n"
+					"Connection: close\r\n\r\n"
+					"<html><body>Hello my world!</body></html>";
+
 	ssize_t nbytes = send(client_fd, response.c_str(), response.length(), 0);
 	if (nbytes == -1) {
 		perror("send()");

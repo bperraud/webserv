@@ -27,14 +27,6 @@ bool HttpHandler::getConnectionMode() const {
 	return _close_connection_mode;
 }
 
-std::string HttpHandler::getRequest() const {
-	return _client.getRequest();
-}
-
-std::string HttpHandler::getResponse() const {
-	return _server.getResponse();
-}
-
 void HttpHandler::addFileToResponse(const std::string &fileName) {
 	std::ifstream input_file(fileName.c_str());
     std::stringstream buffer;

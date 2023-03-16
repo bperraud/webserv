@@ -1,23 +1,23 @@
 #include "HttpHandler.hpp"
 
 
-HttpHandler::HttpHandler() : _requestClient(), _close_connection_mode(false), _type(0){
+HttpHandler::HttpHandler() : _readStream(new std::stringstream()),  _close_connection_mode(false), _type(0){
 
 }
 
 HttpHandler::~HttpHandler() {
-
+	delete _readStream;
 }
 
-std::string HttpHandler::addToRequest(const std::string &str) {
-	_requestClient += str;
-	return _requestClient;
-}
+//std::string HttpHandler::addToRequest(const std::string &str) {
+//	_client._request += str;
+//	return _client._request;
+//}
 
-std::string HttpHandler::addToResponse(const std::string &str) {
-	_responseServer += str;
-	return _responseServer;
-}
+//std::string HttpHandler::addToResponse(const std::string &str) {
+//	_server._responseServer += str;
+//	return _server._response;
+//}
 
 //bool HttpHandler::hasBeenSend() const {
 //	return _sended;
@@ -28,16 +28,16 @@ bool HttpHandler::getConnectionMode() const {
 }
 
 std::string HttpHandler::getRequest() const {
-	return _requestClient;
+	return _client.getRequest();
 }
 
 std::string HttpHandler::getResponse() const {
-	return _responseServer;
+	return _server.getResponse();
 }
 
 void HttpHandler::addFileToResponse(const std::string &fileName) {
 	std::ifstream input_file(fileName.c_str());
     std::stringstream buffer;
     buffer << input_file.rdbuf();
-    _responseServer += buffer.str();
+    //_server._response += buffer.str();
 }

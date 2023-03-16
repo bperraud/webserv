@@ -43,9 +43,6 @@ public:
 
     void run();
 
-
-	std::string addToClientRequest(int client_fd, const std::string &str);
-
 	void setNonBlockingMode(int socket);
 	void setupSocket();
 

@@ -77,11 +77,6 @@ void ServerManager::handleNewConnectionsEpoll() {
 	// events array is used to store events that occur on any of
 	// the file descriptors that have been registered with epoll_ctl()
 
-	std::string response = "HTTP/1.1 200 OK\r\n"
-					   "Content-Type: text/html\r\n"
-					   "Content-Length: 200\r\n"
-					   "Connection: close\r\n\r\n";
-
 	while (1) {
 		std::cout << "waiting..." << std::endl;
 		int n_ready = epoll_wait(_epoll_fd, events, MAX_EVENTS, -1);
@@ -118,8 +113,8 @@ void ServerManager::handleNewConnectionsEpoll() {
 					std::cout << "end of read" << std::endl;
 					std::cout << _client_map[fd].getRequest() << std::endl;
 
-					_client_map[fd].addToResponse(response);
-					_client_map[fd].addFileToResponse("./website/index.html");
+					//_client_map[fd].addToResponse(response);
+					//_client_map[fd].addFileToResponse("./website/index.html");
 					writeToClient(fd);
 					connectionCloseMode(fd);
 				}
@@ -158,20 +153,14 @@ int	ServerManager::readFromClient(int client_fd) {
 	}
 	else {
 		printf("finished reading data from client %d\n", client_fd);
-		std::string request = addToClientRequest(client_fd, std::string(buffer, nbytes));
-		return (isEOF(request));
+		_client_map[client_fd].writeToStream(buffer, nbytes);
+		return (isEOF(_client_map[client_fd].getRequest()));
 	}
 	return 1;
 }
 
-std::string ServerManager::addToClientRequest(int client_fd, const std::string &str) {
-	return _client_map[client_fd].addToRequest(str);
-}
-
 int ServerManager::writeToClient(int client_fd) {
 	std::string response = _client_map[client_fd].getResponse();
-
-	std::cout << response << std::endl;
 	ssize_t nbytes = send(client_fd, response.c_str(), response.length(), 0);
 	if (nbytes == -1) {
 		perror("send()");
@@ -183,9 +172,9 @@ int ServerManager::writeToClient(int client_fd) {
 	return 0;
 }
 
-bool ServerManager::isEOF(const std::string& buffer) {
+bool ServerManager::isEOF(const std::string& str) {
     // Find the last occurrence of a newline character
-    return (buffer.rfind("\r\n\r\n") == std::string::npos);
+    return (str.rfind("\r\n\r\n") == std::string::npos);
 }
 
 

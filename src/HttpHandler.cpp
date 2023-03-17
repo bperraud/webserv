@@ -39,7 +39,6 @@ int HttpHandler::parseRequest(const std::string &http_message) {
 
 	// Parse the start-line
 	std::stringstream stream(http_message);
-
 	stream >> _client.method >> _client.path >> _client.version;
 
 	// Parse the headers into a hash table
@@ -53,21 +52,21 @@ int HttpHandler::parseRequest(const std::string &http_message) {
 	}
 
 	// Check if a message body is expected
-	int message_body_length = -1;
+	_client.body_length = 0;
 	std::string message_body;
 
 	std::map<std::string, std::string>::iterator content_length_header = headers.find("Content-Length");
 	if (content_length_header != headers.end()) {
 		// Parse the content length header to determine the message body length
 		std::stringstream ss(content_length_header->second);
-		ss >> message_body_length;
+		ss >> _client.body_length;
 	}
 
-	if (message_body_length != -1) {
+	if (_client.body_length != 0) {
 		// Read the message body as a stream
-		if (message_body_length > 0) {
-			message_body.resize(message_body_length);
-			stream.read(&message_body[0], message_body_length);
+		if (_client.body_length > 0) {
+			message_body.resize(_client.body_length);
+			stream.read(&message_body[0], _client.body_length);
 		} else {
 			// If no message body length was specified, read until the end of the stream
 			getline(stream, message_body, '\0');
@@ -84,7 +83,7 @@ int HttpHandler::parseRequest(const std::string &http_message) {
 	}
 	std::cout << std::endl;
 
-	if (message_body_length != -1)
+	if (_client.body_length != 0)
 		std::cout << "Message body: " << message_body << std::endl;
 
 	return 0;

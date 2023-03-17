@@ -56,10 +56,8 @@ public:
 
     void initializeServer();
 	void pollSockets();
-    void handleNewConnections();
 	void handleNewConnectionsEpoll();
 
-    void handleRequests(int client_fd);
     void sendFile(int client_fd, const std::string &path);
     void sendDirectoryListing(int client_fd, const std::string &path);
     void sendErrorResponse(int client_fd, int status_code);

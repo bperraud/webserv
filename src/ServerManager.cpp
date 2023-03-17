@@ -110,10 +110,8 @@ void ServerManager::handleNewConnectionsEpoll() {
 			else {
 				if (!readFromClient(fd)) {	// if no error, read complete
 					std::cout << "end of read" << std::endl;
-					std::cout << _client_map[fd]->getRequest() << std::endl;
-
-					_client_map[fd]->parseRequest(_client_map[fd]->getRequest());
-
+					std::cout << "Message body: " << std::endl;
+					std::cout << _client_map[fd]->getBody() << std::endl;
 					//_client_map[fd].addToResponse(response);
 					//_client_map[fd].addFileToResponse("./website/index.html");
 					writeToClient(fd);
@@ -165,22 +163,28 @@ int	ServerManager::readFromClient(int client_fd) {
 	else {
 		printf("finished reading data from client %d\n", client_fd);
 
-		size_t pos_end_header = std::string(buffer).rfind("\r\n\r\n");
+		if (_client_map[client_fd]->getLeftToRead())
+		{
+			_client_map[client_fd]->writeToBody(buffer, nbytes);
+			return (_client_map[client_fd]->subLeftToRead(nbytes) != 0);
+		}
 
-		if (pos_end_header == std::string::npos) {// pas trouve
+		std::string oldRequest = _client_map[client_fd]->getRequest();
+		std::string newRequest = oldRequest + (std::string) buffer;
+		//size_t pos_end_header = std::string(buffer).rfind("\r\n\r\n");
+		size_t pos_end_header = newRequest.rfind("\r\n\r\n");
+		if (pos_end_header == std::string::npos) {
 			_client_map[client_fd]->writeToStream(buffer, nbytes);
 			return 1;
 		}
-		else {		// fin
-			_client_map[client_fd]->writeToStream(buffer, pos_end_header);
-			_client_map[client_fd]->writeToBody(buffer + pos_end_header, nbytes - pos_end_header);
+		else {
+			int pos = pos_end_header - oldRequest.length();
+			_client_map[client_fd]->writeToStream(buffer, pos);
+			_client_map[client_fd]->parseRequest(_client_map[client_fd]->getRequest());
+			_client_map[client_fd]->writeToBody(buffer + pos, nbytes - pos);
+			_client_map[client_fd]->subLeftToRead(nbytes - pos);
 			return 0;
 		}
-
-		//if (nbytes > 4)
-		//	return (!isEOF(buffer));
-		//else
-		//	return (!isEOF(_client_map[client_fd]->getRequest()));
 	}
 	return 1;
 }
@@ -207,11 +211,6 @@ int ServerManager::writeToClient(int client_fd) {
 bool ServerManager::isEOF(const std::string& str) {
     // Find the last occurrence of a newline character
     return (str.rfind("\r\n\r\n") != std::string::npos);
-}
-
-
-void ServerManager::handleRequests(int client_fd) {
-	(void) client_fd;
 }
 
 ServerManager::~ServerManager() {

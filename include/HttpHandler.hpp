@@ -26,7 +26,6 @@ struct HttpMessage {
     bool has_body;
     size_t body_length;
     std::stringstream body_stream;
-	ssize_t left_to_read;
 };
 
 struct HttpResponse {
@@ -41,11 +40,15 @@ class HttpHandler {
 
 private:
 
-	std::stringstream		*_readStream;
-	HttpMessage				_client;
-	HttpResponse			_server;
-	bool					_close_connection_mode;
-	int						_type;
+	std::stringstream	*_readStream;
+	HttpMessage			_client;
+	HttpResponse		_server;
+	bool				_close_connection_mode;
+	int					_type;
+
+
+	ssize_t				_left_to_read;
+
 
 	HttpHandler(const HttpHandler &copy) {
 		*this = copy;
@@ -74,6 +77,19 @@ public:
 
 	std::string		getRequest() {
 		return _readStream->str();
+	}
+
+	std::string		getBody() {
+		return _client.body_stream.str();
+	}
+
+	ssize_t getLeftToRead() const {
+		return _left_to_read;
+	}
+
+	ssize_t subLeftToRead(ssize_t i) {
+		_left_to_read -= i;
+		return _left_to_read;
 	}
 
 	int parseRequest(const std::string &http_message);

@@ -37,13 +37,10 @@ int main(int argc, char **argv, char ** envp)
 	while (true)
 	{
 		// Wait for events on our file descriptors
-		serverManager.pollSockets();
 
 		// Process incoming connections
-		serverManager.handleNewConnections();
 
 		// Process requests from existing connections
-		serverManager.handleRequests(0);
 	}
 
 	return 0;

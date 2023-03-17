@@ -23,6 +23,14 @@ HttpHandler::~HttpHandler() {
 //	return _sended;
 //}
 
+void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
+	_readStream->write(buffer, nbytes);
+}
+
+void HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
+	_client.body_stream.write(buffer, nbytes);
+}
+
 bool HttpHandler::getConnectionMode() const {
 	return _close_connection_mode;
 }

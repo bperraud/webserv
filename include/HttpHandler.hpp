@@ -26,12 +26,13 @@ struct HttpMessage {
     bool has_body;
     size_t body_length;
     std::stringstream body_stream;
+	ssize_t left_to_read;
 };
 
 struct HttpResponse {
-    std::string http_version;
+    std::string version;
     int status_code;
-    std::string reason_phrase;
+    std::string status_phrase;
     std::map<std::string, std::string> headers;
     std::stringstream body;
 };
@@ -68,9 +69,8 @@ public:
 	//bool		hasBeenSend() const;
 	bool		getConnectionMode() const;
 
-	void	writeToStream(char *buffer, ssize_t nbytes) {
-		_readStream->write(buffer, nbytes);
-	}
+	void	writeToStream(char *buffer, ssize_t nbytes) ;
+	void	writeToBody(char *buffer, ssize_t nbytes);
 
 	std::string		getRequest() {
 		return _readStream->str();

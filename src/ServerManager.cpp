@@ -140,6 +140,15 @@ void ServerManager::closeClientConnection(int client_fd) {
 }
 
 // return 0 if read is complete, 1 otherwise
+
+
+// Idee : lit jusqu'a lire dans le buffer \r\n\r\n
+// -> si pas de Content-Length -> pas de body
+// si body -> garde en memoire le nombre de char lu apres \r\n\r\n ; char_left
+// tant que char_left < Content-Length -> continue a lire
+
+
+
 int	ServerManager::readFromClient(int client_fd) {
 	char buffer[BUFFER_SIZE];
 	ssize_t nbytes = recv(client_fd, buffer, BUFFER_SIZE, 0);
@@ -155,11 +164,23 @@ int	ServerManager::readFromClient(int client_fd) {
 	}
 	else {
 		printf("finished reading data from client %d\n", client_fd);
-		_client_map[client_fd]->writeToStream(buffer, nbytes);
-		if (nbytes > 4)
-			return (isEOF(buffer));
-		else
-			return (isEOF(_client_map[client_fd]->getRequest()));
+
+		size_t pos_end_header = std::string(buffer).rfind("\r\n\r\n");
+
+		if (pos_end_header == std::string::npos) {// pas trouve
+			_client_map[client_fd]->writeToStream(buffer, nbytes);
+			return 1;
+		}
+		else {		// fin
+			_client_map[client_fd]->writeToStream(buffer, pos_end_header);
+			_client_map[client_fd]->writeToBody(buffer + pos_end_header, nbytes - pos_end_header);
+			return 0;
+		}
+
+		//if (nbytes > 4)
+		//	return (!isEOF(buffer));
+		//else
+		//	return (!isEOF(_client_map[client_fd]->getRequest()));
 	}
 	return 1;
 }
@@ -182,9 +203,10 @@ int ServerManager::writeToClient(int client_fd) {
 	return 0;
 }
 
+
 bool ServerManager::isEOF(const std::string& str) {
     // Find the last occurrence of a newline character
-    return (str.rfind("\r\n\r\n") == std::string::npos);
+    return (str.rfind("\r\n\r\n") != std::string::npos);
 }
 
 

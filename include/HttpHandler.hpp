@@ -5,7 +5,6 @@
 #include "ResponseServer.hpp"
 #include "RequestClient.hpp"
 
-
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -76,6 +75,8 @@ public:
 	std::string		getRequest() {
 		return _readStream->str();
 	}
+
+	int parseRequest(const std::string &http_message);
 
 	void addFileToResponse(const std::string &fileName);
 };

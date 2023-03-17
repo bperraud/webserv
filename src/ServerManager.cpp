@@ -112,6 +112,8 @@ void ServerManager::handleNewConnectionsEpoll() {
 					std::cout << "end of read" << std::endl;
 					std::cout << _client_map[fd]->getRequest() << std::endl;
 
+					_client_map[fd]->parseRequest(_client_map[fd]->getRequest());
+
 					//_client_map[fd].addToResponse(response);
 					//_client_map[fd].addFileToResponse("./website/index.html");
 					writeToClient(fd);

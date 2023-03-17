@@ -47,7 +47,8 @@ int HttpHandler::parseRequest(const std::string &http_message) {
 	while (getline(stream, header_name, ':') && getline(stream, header_value, '\r')) {
 		// Remove any leading or trailing whitespace from the header value
 		header_value.erase(0, header_value.find_first_not_of(" \r\n\t"));
-		header_value.erase(header_value.find_last_not_of(" \r\n\t") + 1);
+		header_value.erase(header_value.find_last_not_of(" \r\n\t") + 1, header_value.length());
+		header_name.erase(0, header_name.find_first_not_of(" \r\n\t"));
 		headers[header_name] = header_value;
 	}
 
@@ -79,7 +80,7 @@ int HttpHandler::parseRequest(const std::string &http_message) {
 	std::cout << "Version: " << _client.version << std::endl;
 	std::cout << "Headers: " << std::endl;
 	for (std::map<std::string, std::string>::const_iterator it = headers.begin(); it != headers.end(); ++it) {
-		std::cout << it->first << ": " << it->second;
+		std::cout << it->first << ": " << it->second << std::endl;
 	}
 	std::cout << std::endl;
 

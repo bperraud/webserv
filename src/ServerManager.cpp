@@ -97,9 +97,8 @@ void ServerManager::handleNewConnectionsEpoll() {
 					exit(EXIT_FAILURE);
 				}
 				setNonBlockingMode(newsockfd);
-				// Add the new socket to the epoll interest list
 				event.data.fd = newsockfd;
-				event.events = EPOLLIN; // ready to read from client
+				event.events = EPOLLIN;
 				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
 					perror("epoll_ctl EPOLL_CTL_ADD");
 					exit(EXIT_FAILURE);
@@ -109,10 +108,8 @@ void ServerManager::handleNewConnectionsEpoll() {
 			}
 			else {
 				if (!readFromClient(fd)) {	// if no error, read complete
-					std::cout << "end of read" << std::endl;
 					std::cout << "Message body: " << std::endl;
 					std::cout << _client_map[fd]->getBody() << std::endl;
-					//_client_map[fd].addToResponse(response);
 					//_client_map[fd].addFileToResponse("./website/index.html");
 					writeToClient(fd);
 					connectionCloseMode(fd);
@@ -137,16 +134,7 @@ void ServerManager::closeClientConnection(int client_fd) {
 	close(client_fd);
 }
 
-// return 0 if read is complete, 1 otherwise
-
-
-// Idee : lit jusqu'a lire dans le buffer \r\n\r\n
-// -> si pas de Content-Length -> pas de body
-// si body -> garde en memoire le nombre de char lu apres \r\n\r\n ; char_left
-// tant que char_left < Content-Length -> continue a lire
-
-
-
+// return 0 if read complete, 1 otherwise
 int	ServerManager::readFromClient(int client_fd) {
 	char buffer[BUFFER_SIZE];
 	ssize_t nbytes = recv(client_fd, buffer, BUFFER_SIZE, 0);
@@ -171,7 +159,6 @@ int	ServerManager::readFromClient(int client_fd) {
 
 		std::string oldRequest = _client_map[client_fd]->getRequest();
 		std::string newRequest = oldRequest + (std::string) buffer;
-		//size_t pos_end_header = std::string(buffer).rfind("\r\n\r\n");
 		size_t pos_end_header = newRequest.rfind("\r\n\r\n");
 		if (pos_end_header == std::string::npos) {
 			_client_map[client_fd]->writeToStream(buffer, nbytes);

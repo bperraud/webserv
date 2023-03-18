@@ -72,17 +72,6 @@ int HttpHandler::parseRequest(const std::string &http_message) {
 		ss >> _client.body_length;
 	}
 
-	if (_client.body_length != 0) {
-		// Read the message body as a stream
-		if (_client.body_length > 0) {
-			message_body.resize(_client.body_length);
-			stream.read(&message_body[0], _client.body_length);
-		} else {
-			// If no message body length was specified, read until the end of the stream
-			getline(stream, message_body, '\0');
-		}
-	}
-
 	// Print out the parsed data
 	std::cout << "Method: " << _client.method << std::endl;
 	std::cout << "Path: " << _client.path << std::endl;

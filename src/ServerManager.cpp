@@ -181,7 +181,7 @@ int	ServerManager::readFromClient(int client_fd) {
 			int pos = pos_end_header - oldRequest.length();
 			_client_map[client_fd]->writeToStream(buffer, pos);
 			_client_map[client_fd]->parseRequest(_client_map[client_fd]->getRequest());
-			_client_map[client_fd]->writeToBody(buffer + pos, nbytes - pos);
+			_client_map[client_fd]->writeToBody(buffer + pos + 4, nbytes - pos);
 			_client_map[client_fd]->subLeftToRead(nbytes - pos);
 			return 0;
 		}

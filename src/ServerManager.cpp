@@ -150,13 +150,12 @@ int	ServerManager::readFromClient(int client_fd) {
 	}
 	else {
 		printf("finished reading data from client %d\n", client_fd);
-
 		if (_client_map[client_fd]->getLeftToRead())
 		{
+			int lft = _client_map[client_fd]->subLeftToRead(nbytes);
 			_client_map[client_fd]->writeToBody(buffer, nbytes);
-			return (_client_map[client_fd]->subLeftToRead(nbytes) != 0);
+			return (lft != 0);
 		}
-
 		std::string oldRequest = _client_map[client_fd]->getRequest();
 		std::string newRequest = oldRequest + (std::string) buffer;
 		size_t pos_end_header = newRequest.rfind("\r\n\r\n");
@@ -168,7 +167,7 @@ int	ServerManager::readFromClient(int client_fd) {
 			int pos = pos_end_header - oldRequest.length();
 			_client_map[client_fd]->writeToStream(buffer, pos);
 			_client_map[client_fd]->parseRequest(_client_map[client_fd]->getRequest());
-			_client_map[client_fd]->writeToBody(buffer + pos + 4, nbytes - pos);
+			_client_map[client_fd]->writeToBody(buffer + pos + 4, nbytes - pos - 4);
 			_client_map[client_fd]->subLeftToRead(nbytes - pos);
 			return 0;
 		}

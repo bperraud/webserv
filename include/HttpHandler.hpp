@@ -92,13 +92,15 @@ public:
 		return _lastFour;
 	}
 
-	void	memcpy_lf(char *buffer, ssize_t nbytes) {
-		std::memcpy(_lastFour, buffer + nbytes - 4, 4);		// copies last 4 bytes
+
+	void	rmemcpy(char *buffer, ssize_t nbytes) {
+		if (_lastFour[0])
+			std::memcpy(buffer, _lastFour, 4);
+		else
+			std::memcpy(buffer, buffer + 4, 4);
+		std::memcpy(_lastFour, buffer + nbytes, 4);		// copies last 4 bytes
 	}
 
-	void	rmemcpy(char *buffer) {
-		std::memcpy(buffer, _lastFour, 4);
-	}
 
 	ssize_t getLeftToRead() const {
 		return _left_to_read;

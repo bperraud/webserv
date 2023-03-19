@@ -141,21 +141,10 @@ void ServerManager::closeClientConnection(int client_fd) {
 
 // return 0 if read complete, 1 otherwise
 int	ServerManager::readFromClient(int client_fd) {
-	char buffer[BUFFER_SIZE];
-	ssize_t nbytes;
+	char buffer[BUFFER_SIZE + 4];
+	ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
 
-	//char *_lastFour = _client_map[client_fd]->getLastFour();
-	if (_client_map[client_fd]->getLastFour()[0])
-	{
-		//std::memcpy(buffer, _lastFour, 4);
-		_client_map[client_fd]->rmemcpy(buffer);
-		nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE - 4, 0);
-	}
-	else
-		nbytes = recv(client_fd, buffer, BUFFER_SIZE, 0);
-
-
-	_client_map[client_fd]->memcpy_lf(buffer, nbytes);	// copies last 4 bytes
+	_client_map[client_fd]->rmemcpy(buffer, nbytes);
 
 	if (nbytes == -1) {
 		perror("recv()");
@@ -169,15 +158,7 @@ int	ServerManager::readFromClient(int client_fd) {
 	}
 	else {
 		printf("finished reading data from client %d\n", client_fd);
-		if (_client_map[client_fd]->getLeftToRead())
-		{
-			int lft = _client_map[client_fd]->subLeftToRead(nbytes);
-			_client_map[client_fd]->writeToBody(buffer + 4, nbytes);
-			return (lft != 0);
-		}
-		//std::string oldRequest = _client_map[client_fd]->getRequest();
-		//std::string newRequest = oldRequest + (std::string) buffer;
-		//size_t pos_end_header = newRequest.rfind("\r\n\r\n");
+
 
 		size_t pos_end_header = ((std::string)buffer).find("\r\n\r\n");
 
@@ -189,7 +170,7 @@ int	ServerManager::readFromClient(int client_fd) {
 			int pos = pos_end_header - 4;
 			_client_map[client_fd]->writeToStream(buffer + 4, pos);
 			//_client_map[client_fd]->parseRequest(_client_map[client_fd]->getRequest());
-			_client_map[client_fd]->writeToBody(buffer + 4 + pos + 4, nbytes - pos - 4);
+			//_client_map[client_fd]->writeToBody(buffer + 4 + pos + 4, nbytes - pos - 4);
 			_client_map[client_fd]->subLeftToRead(nbytes - pos);
 			return 0;
 		}

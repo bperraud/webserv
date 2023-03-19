@@ -159,7 +159,6 @@ int	ServerManager::readFromClient(int client_fd) {
 	else {
 		printf("finished reading data from client %d\n", client_fd);
 
-
 		size_t pos_end_header = ((std::string)buffer).find("\r\n\r\n");
 
 		if (pos_end_header == std::string::npos) {			// not found

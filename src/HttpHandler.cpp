@@ -30,6 +30,7 @@ void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
 
 void HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	_client.body_stream.write(buffer, nbytes);
+	_left_to_read -= nbytes;
 }
 
 bool HttpHandler::getConnectionMode() const {
@@ -63,8 +64,6 @@ int HttpHandler::parseRequest(const std::string &http_message) {
 
 	// Check if a message body is expected
 	_client.body_length = 0;
-	std::string message_body;
-
 	std::map<std::string, std::string>::iterator content_length_header = map_headers.find("Content-Length");
 	if (content_length_header != map_headers.end()) {
 		// Parse the content length header to determine the message body length

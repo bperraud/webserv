@@ -84,15 +84,6 @@ public:
 		return _client.body_stream.str();
 	}
 
-	void bbzero() {
-		bzero( _lastFour, 4);
-	}
-
-	const char * getLastFour() const {
-		return _lastFour;
-	}
-
-
 	void	rmemcpy(char *buffer, ssize_t nbytes) {
 		if (_lastFour[0])
 			std::memcpy(buffer, _lastFour, 4);
@@ -100,7 +91,6 @@ public:
 			std::memcpy(buffer, buffer + 4, 4);
 		std::memcpy(_lastFour, buffer + nbytes, 4);		// copies last 4 bytes
 	}
-
 
 	ssize_t getLeftToRead() const {
 		return _left_to_read;

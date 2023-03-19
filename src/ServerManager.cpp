@@ -112,12 +112,11 @@ void ServerManager::handleNewConnectionsEpoll() {
 					std::cout << "All : " << std::endl;
 					std::cout << _client_map[fd]->getRequest() << std::endl;
 
-					//std::cout << "Message body: " << std::endl;
-					//std::cout << _client_map[fd]->getBody() << std::endl;
+					std::cout << "Message body: " << std::endl;
+					std::cout << _client_map[fd]->getBody() << std::endl;
 					//_client_map[fd].addFileToResponse("./website/index.html");
 					writeToClient(fd);
 					connectionCloseMode(fd);
-					_client_map[fd]->bbzero();
 				}
 			}
 		}
@@ -166,11 +165,11 @@ int	ServerManager::readFromClient(int client_fd) {
 			return 1;
 		}
 		else {
-			int pos = pos_end_header - 4;
-			_client_map[client_fd]->writeToStream(buffer + 4, pos);
-			//_client_map[client_fd]->parseRequest(_client_map[client_fd]->getRequest());
-			//_client_map[client_fd]->writeToBody(buffer + 4 + pos + 4, nbytes - pos - 4);
-			_client_map[client_fd]->subLeftToRead(nbytes - pos);
+			//int pos = pos_end_header - 4;
+			_client_map[client_fd]->writeToStream(buffer + 4, pos_end_header);
+			_client_map[client_fd]->parseRequest(_client_map[client_fd]->getRequest());
+			_client_map[client_fd]->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header);
+			_client_map[client_fd]->subLeftToRead(nbytes - pos_end_header);
 			return 0;
 		}
 	}

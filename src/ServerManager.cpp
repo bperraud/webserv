@@ -144,6 +144,8 @@ int	ServerManager::readFromClient(int client_fd) {
 	ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
 	_client_map[client_fd]->copyLastFour(buffer, nbytes);
 
+	//HttpHandler client = *_client_map[client_fd];
+
 	if (nbytes == -1) {
 		perror("recv()");
 		closeClientConnection(client_fd);
@@ -156,15 +158,11 @@ int	ServerManager::readFromClient(int client_fd) {
 	}
 	else {
 		printf("finished reading data from client %d\n", client_fd);
-
 		if (_client_map[client_fd]->getLeftToRead())
 		{
-			_client_map[client_fd]->writeToBody(buffer + 4, nbytes);
-			return (_client_map[client_fd]->getLeftToRead());
+			return (_client_map[client_fd]->writeToBody(buffer + 4, nbytes) != 0);
 		}
-
 		size_t pos_end_header = ((std::string)buffer).find("\r\n\r\n");
-
 		if (pos_end_header == std::string::npos) {
 			_client_map[client_fd]->writeToStream(buffer + 4, nbytes);
 			return 1;
@@ -172,8 +170,7 @@ int	ServerManager::readFromClient(int client_fd) {
 		else {
 			_client_map[client_fd]->writeToStream(buffer + 4, pos_end_header);
 			_client_map[client_fd]->parseRequest(_client_map[client_fd]->getRequest());
-			_client_map[client_fd]->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header);
-			return 0;
+			return (_client_map[client_fd]->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header) != 0);
 		}
 	}
 	return 1;

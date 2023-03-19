@@ -28,9 +28,12 @@ void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
 	_readStream->write(buffer, nbytes);
 }
 
-void HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
+int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
+	if (!_left_to_read)
+		return 0;
 	_client.body_stream.write(buffer, nbytes);
 	_left_to_read -= nbytes;
+	return _left_to_read;
 }
 
 bool HttpHandler::getConnectionMode() const {

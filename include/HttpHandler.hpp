@@ -74,7 +74,7 @@ public:
 	bool		getConnectionMode() const;
 
 	void	writeToStream(char *buffer, ssize_t nbytes) ;
-	void	writeToBody(char *buffer, ssize_t nbytes);
+	int		writeToBody(char *buffer, ssize_t nbytes);
 
 	std::string		getRequest() {
 		return _readStream->str();

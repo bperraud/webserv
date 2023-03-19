@@ -25,7 +25,7 @@ void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
 int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	if (!_left_to_read)
 		return 0;
-	_client.body_stream.write(buffer, nbytes);
+	_request.body_stream.write(buffer, nbytes);
 	_left_to_read -= nbytes;
 	return _left_to_read;
 }
@@ -36,9 +36,7 @@ bool HttpHandler::getConnectionMode() const {
 
 void HttpHandler::addFileToResponse(const std::string &fileName) {
 	std::ifstream input_file(fileName.c_str());
-	std::stringstream buffer;
-	buffer << input_file.rdbuf();
-	//_server._response += buffer.str();
+	_response.body << input_file.rdbuf();
 }
 
 
@@ -46,7 +44,7 @@ void HttpHandler::parseRequest(const std::string &http_message) {
 
 	// Parse the start-line
 	std::stringstream stream(http_message);
-	stream >> _client.method >> _client.path >> _client.version;
+	stream >> _request.method >> _request.path >> _request.version;
 
 	// Parse the headers into a hash table
 	std::map<std::string, std::string> map_headers;
@@ -60,22 +58,66 @@ void HttpHandler::parseRequest(const std::string &http_message) {
 	}
 
 	// Check if a message body is expected
-	_client.body_length = 0;
+	_request.body_length = 0;
 	std::map<std::string, std::string>::iterator content_length_header = map_headers.find("Content-Length");
 	if (content_length_header != map_headers.end()) {
 		// Parse the content length header to determine the message body length
 		std::stringstream ss(content_length_header->second);
-		ss >> _client.body_length;
+		ss >> _request.body_length;
 	}
 
 	// Print out the parsed data
-	std::cout << "Method: " << _client.method << std::endl;
-	std::cout << "Path: " << _client.path << std::endl;
-	std::cout << "Version: " << _client.version << std::endl;
+	std::cout << "Method: " << _request.method << std::endl;
+	std::cout << "Path: " << _request.path << std::endl;
+	std::cout << "Version: " << _request.version << std::endl;
 	std::cout << "Headers: " << std::endl;
 	for (std::map<std::string, std::string>::const_iterator it = map_headers.begin(); it != map_headers.end(); ++it) {
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
 
-	_left_to_read = _client.body_length;
+	_left_to_read = _request.body_length;
+}
+
+std::string HttpHandler::getContentType(const std::string& path) {
+	return "empty";
+}
+
+bool HttpHandler::pathExists(const std::string& path) {
+	return true;
+}
+
+
+std::string HttpHandler::intToString(int value)
+{
+    std::ostringstream oss;
+    oss << value;
+    return oss.str();
+}
+
+void HttpHandler::createResponse()
+{
+    // Set the HTTP version to the same as the request
+    _response.version = _request.version;
+
+    // Set a default response status code and phrase
+    _response.status_code = 200;
+    _response.status_phrase = "OK";
+
+    // Check if the requested path exists and is accessible
+    if (!pathExists(_request.path)) {
+        _response.status_code = 404;
+        _response.status_phrase = "Not Found";
+        _response.body << "<html><body><h1>404 Not Found</h1></body></html>";
+    }
+    else {
+        // Set the response body based on the requested path
+        std::string content_type = getContentType(_request.path);
+        addFileToResponse(_request.path);
+        //_response.body << file_contents;
+
+        // Add headers to the response
+        _response.headers["Content-Type"] = content_type;
+        _response.headers["Content-Length"] = intToString(_response.body.str().length());
+    }
+
 }

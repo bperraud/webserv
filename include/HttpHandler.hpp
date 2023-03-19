@@ -19,6 +19,12 @@ enum Type {
 	HEAD
 };
 
+#if 0
+Recipients of an invalid request-line SHOULD respond with either a
+   400 (Bad Request) error or a 301 (Moved Permanently) redirect with
+   the request-target properly encoded
+#endif
+
 struct HttpMessage {
     std::string method;
     std::string path;
@@ -42,8 +48,8 @@ class HttpHandler {
 private:
 
 	std::stringstream	*_readStream;
-	HttpMessage			_client;
-	HttpResponse		_server;
+	HttpMessage			_request;
+	HttpResponse		_response;
 	bool				_close_connection_mode;
 	int					_type;
 	char				_lastFour[4];
@@ -69,7 +75,6 @@ public:
 
 	//std::string addToRequest(const std::string &str);
 	//std::string addToResponse(const std::string &str);
-
 	//bool		hasBeenSend() const;
 	bool		getConnectionMode() const;
 
@@ -81,7 +86,7 @@ public:
 	}
 
 	std::string		getBody() {
-		return _client.body_stream.str();
+		return _request.body_stream.str();
 	}
 
 	void	copyLastFour(char *buffer, ssize_t nbytes) ;
@@ -91,8 +96,14 @@ public:
 	}
 
 	void parseRequest(const std::string &http_message);
+	void createResponse();
+
+	bool pathExists(const std::string& path);
 
 	void addFileToResponse(const std::string &fileName);
+
+	std::string getContentType(const std::string& path);
+	std::string intToString(int value);
 };
 
 #endif

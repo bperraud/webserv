@@ -23,7 +23,7 @@
 
 
 # define PORT 8080
-# define BUFFER_SIZE 10
+# define BUFFER_SIZE 1024
 # define MAX_EVENTS 50
 # define MAX_CLIENT 10
 

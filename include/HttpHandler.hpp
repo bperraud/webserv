@@ -84,19 +84,13 @@ public:
 		return _client.body_stream.str();
 	}
 
-	void	copyLastFour(char *buffer, ssize_t nbytes) {
-		if (_lastFour[0])
-			std::memcpy(buffer, _lastFour, 4);
-		else
-			std::memcpy(buffer, buffer + 4, 4);
-		std::memcpy(_lastFour, buffer + nbytes, 4);		// copies last 4 bytes
-	}
+	void	copyLastFour(char *buffer, ssize_t nbytes) ;
 
 	ssize_t getLeftToRead() const {
 		return _left_to_read;
 	}
 
-	int parseRequest(const std::string &http_message);
+	void parseRequest(const std::string &http_message);
 
 	void addFileToResponse(const std::string &fileName);
 };

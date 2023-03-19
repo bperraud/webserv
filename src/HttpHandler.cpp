@@ -10,19 +10,13 @@ HttpHandler::~HttpHandler() {
 	delete _readStream;
 }
 
-//std::string HttpHandler::addToRequest(const std::string &str) {
-//	_client._request += str;
-//	return _client._request;
-//}
-
-//std::string HttpHandler::addToResponse(const std::string &str) {
-//	_server._responseServer += str;
-//	return _server._response;
-//}
-
-//bool HttpHandler::hasBeenSend() const {
-//	return _sended;
-//}
+void	HttpHandler::copyLastFour(char *buffer, ssize_t nbytes) {
+	if (_lastFour[0])
+		std::memcpy(buffer, _lastFour, 4);
+	else
+		std::memcpy(buffer, buffer + 4, 4);
+	std::memcpy(_lastFour, buffer + nbytes, 4);		// copies last 4 bytes
+}
 
 void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
 	_readStream->write(buffer, nbytes);
@@ -48,7 +42,7 @@ void HttpHandler::addFileToResponse(const std::string &fileName) {
 }
 
 
-int HttpHandler::parseRequest(const std::string &http_message) {
+void HttpHandler::parseRequest(const std::string &http_message) {
 
 	// Parse the start-line
 	std::stringstream stream(http_message);
@@ -84,5 +78,4 @@ int HttpHandler::parseRequest(const std::string &http_message) {
 	}
 
 	_left_to_read = _client.body_length;
-	return 0;
 }

@@ -108,11 +108,16 @@ void ServerManager::handleNewConnectionsEpoll() {
 			}
 			else {
 				if (!readFromClient(fd)) {	// if no error, read complete
-					std::cout << "Message body: " << std::endl;
-					std::cout << _client_map[fd]->getBody() << std::endl;
+
+					std::cout << "All : " << std::endl;
+					std::cout << _client_map[fd]->getRequest() << std::endl;
+
+					//std::cout << "Message body: " << std::endl;
+					//std::cout << _client_map[fd]->getBody() << std::endl;
 					//_client_map[fd].addFileToResponse("./website/index.html");
 					writeToClient(fd);
 					connectionCloseMode(fd);
+					_client_map[fd]->bbzero();
 				}
 			}
 		}
@@ -137,7 +142,21 @@ void ServerManager::closeClientConnection(int client_fd) {
 // return 0 if read complete, 1 otherwise
 int	ServerManager::readFromClient(int client_fd) {
 	char buffer[BUFFER_SIZE];
-	ssize_t nbytes = recv(client_fd, buffer, BUFFER_SIZE, 0);
+	ssize_t nbytes;
+
+	//char *_lastFour = _client_map[client_fd]->getLastFour();
+	if (_client_map[client_fd]->getLastFour()[0])
+	{
+		//std::memcpy(buffer, _lastFour, 4);
+		_client_map[client_fd]->rmemcpy(buffer);
+		nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE - 4, 0);
+	}
+	else
+		nbytes = recv(client_fd, buffer, BUFFER_SIZE, 0);
+
+
+	_client_map[client_fd]->memcpy_lf(buffer, nbytes);	// copies last 4 bytes
+
 	if (nbytes == -1) {
 		perror("recv()");
 		closeClientConnection(client_fd);
@@ -153,21 +172,24 @@ int	ServerManager::readFromClient(int client_fd) {
 		if (_client_map[client_fd]->getLeftToRead())
 		{
 			int lft = _client_map[client_fd]->subLeftToRead(nbytes);
-			_client_map[client_fd]->writeToBody(buffer, nbytes);
+			_client_map[client_fd]->writeToBody(buffer + 4, nbytes);
 			return (lft != 0);
 		}
-		std::string oldRequest = _client_map[client_fd]->getRequest();
-		std::string newRequest = oldRequest + (std::string) buffer;
-		size_t pos_end_header = newRequest.rfind("\r\n\r\n");
-		if (pos_end_header == std::string::npos) {
-			_client_map[client_fd]->writeToStream(buffer, nbytes);
+		//std::string oldRequest = _client_map[client_fd]->getRequest();
+		//std::string newRequest = oldRequest + (std::string) buffer;
+		//size_t pos_end_header = newRequest.rfind("\r\n\r\n");
+
+		size_t pos_end_header = ((std::string)buffer).find("\r\n\r\n");
+
+		if (pos_end_header == std::string::npos) {			// not found
+			_client_map[client_fd]->writeToStream(buffer + 4, nbytes);
 			return 1;
 		}
 		else {
-			int pos = pos_end_header - oldRequest.length();
-			_client_map[client_fd]->writeToStream(buffer, pos);
-			_client_map[client_fd]->parseRequest(_client_map[client_fd]->getRequest());
-			_client_map[client_fd]->writeToBody(buffer + pos + 4, nbytes - pos - 4);
+			int pos = pos_end_header - 4;
+			_client_map[client_fd]->writeToStream(buffer + 4, pos);
+			//_client_map[client_fd]->parseRequest(_client_map[client_fd]->getRequest());
+			_client_map[client_fd]->writeToBody(buffer + 4 + pos + 4, nbytes - pos - 4);
 			_client_map[client_fd]->subLeftToRead(nbytes - pos);
 			return 0;
 		}

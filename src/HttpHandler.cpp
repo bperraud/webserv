@@ -3,7 +3,7 @@
 
 HttpHandler::HttpHandler() : _readStream(new std::stringstream()),  _close_connection_mode(false), _type(0)
 , _left_to_read(0) {
-
+	_lastFour[0] = '\0';
 }
 
 HttpHandler::~HttpHandler() {

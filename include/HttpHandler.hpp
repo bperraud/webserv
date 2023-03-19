@@ -6,6 +6,7 @@
 #include "RequestClient.hpp"
 
 #include <string>
+#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -45,7 +46,7 @@ private:
 	HttpResponse		_server;
 	bool				_close_connection_mode;
 	int					_type;
-
+	char				_lastFour[4];
 
 	ssize_t				_left_to_read;
 
@@ -81,6 +82,22 @@ public:
 
 	std::string		getBody() {
 		return _client.body_stream.str();
+	}
+
+	void bbzero() {
+		bzero( _lastFour, 4);
+	}
+
+	const char * getLastFour() const {
+		return _lastFour;
+	}
+
+	void	memcpy_lf(char *buffer, ssize_t nbytes) {
+		std::memcpy(_lastFour, buffer + nbytes - 4, 4);		// copies last 4 bytes
+	}
+
+	void	rmemcpy(char *buffer) {
+		std::memcpy(buffer, _lastFour, 4);
 	}
 
 	ssize_t getLeftToRead() const {

@@ -36,7 +36,7 @@ private:
     int		_listen_fd;
 	int		_epoll_fd;
 	struct sockaddr_in _host_addr;
-	int	_host_addrlen;
+	int		_host_addrlen;
 
 public:
     ServerManager(Config config);

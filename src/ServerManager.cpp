@@ -119,9 +119,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 
 					writeToClient(fd, _client_map[fd]->getResponseHeader());
 					writeToClient(fd, _client_map[fd]->getResponseBody());
-					//connectionCloseMode(fd);
-
-					closeClientConnection(fd);
+					connectionCloseMode(fd);
 				}
 			}
 		}
@@ -129,7 +127,7 @@ void ServerManager::handleNewConnectionsEpoll() {
 }
 
 void ServerManager::connectionCloseMode(int client_fd) {
-	if (_client_map[client_fd]->getConnectionMode())
+	if (!_client_map[client_fd]->isKeepAlive())
 		closeClientConnection(client_fd);
 }
 
@@ -181,8 +179,6 @@ int	ServerManager::readFromClient(int client_fd){
 }
 
 int ServerManager::writeToClient(int client_fd, const std::string &str) {
-
-	std::cout << "str :" <<  str << std::endl;
 	ssize_t nbytes = send(client_fd, str.c_str(), str.length(), 0);
 	if (nbytes == -1) {
 		perror("send()");

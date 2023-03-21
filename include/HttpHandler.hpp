@@ -55,7 +55,7 @@ private:
 	std::stringstream	*_readStream;
 	HttpMessage			_request;
 	HttpResponse		_response;
-	bool				_close_connection_mode;
+	bool				_close_keep_alive;
 	int					_type;
 	char				_lastFour[4];
 
@@ -81,7 +81,7 @@ public:
 	//std::string addToRequest(const std::string &str);
 	//std::string addToResponse(const std::string &str);
 	//bool		hasBeenSend() const;
-	bool		getConnectionMode() const;
+	bool		isKeepAlive() const;
 
 	void	writeToStream(char *buffer, ssize_t nbytes) ;
 	int		writeToBody(char *buffer, ssize_t nbytes);

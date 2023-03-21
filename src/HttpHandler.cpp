@@ -1,7 +1,7 @@
 #include "HttpHandler.hpp"
 
 
-HttpHandler::HttpHandler() : _readStream(new std::stringstream()),  _close_connection_mode(false), _type(0)
+HttpHandler::HttpHandler() : _readStream(new std::stringstream()),  _close_keep_alive(true), _type(0)
 , _left_to_read(0) {
 	_lastFour[0] = '\0';
 }
@@ -30,8 +30,8 @@ int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	return _left_to_read;
 }
 
-bool HttpHandler::getConnectionMode() const {
-	return _close_connection_mode;
+bool HttpHandler::isKeepAlive() const {
+	return _close_keep_alive;
 }
 
 void HttpHandler::addFileToResponse(const std::string &fileName) {
@@ -74,6 +74,7 @@ void HttpHandler::parseRequest(const std::string &http_message) {
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
 
+	_close_keep_alive = _request.map_headers["Connection"] == "Keep-Alive";
 	_left_to_read = _request.body_length;
 }
 

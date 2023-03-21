@@ -21,12 +21,9 @@
 #include <fcntl.h>		// fcntl
 #include <netinet/tcp.h>	// TCP_NODELAY
 
-
-# define PORT 8080
+# define PORT 80
 # define BUFFER_SIZE 1024
 # define MAX_EVENTS 50
-# define MAX_CLIENT 10
-
 
 class ServerManager {
 

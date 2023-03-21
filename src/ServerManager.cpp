@@ -161,7 +161,7 @@ void ServerManager::handleNewConnectionsKqueue() {
 					perror("accept()");
 					exit(EXIT_FAILURE);
 				}
-				setNonBlockingMode(newsockfd);
+				//setNonBlockingMode(newsockfd);
 				EV_SET(&event, newsockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 				if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1) {
 					perror("kevent");
@@ -180,7 +180,8 @@ void ServerManager::handleNewConnectionsKqueue() {
 					std::cout << _client_map[fd]->getBody() << std::endl;
 					//_client_map[fd].addFileToResponse("./website/index.html");
 					writeToClient(fd);
-					connectionCloseMode(fd);
+					//connectionCloseMode(fd);
+					closeClientConnection(fd);
 				}
 			}
 		}
@@ -215,6 +216,7 @@ void ServerManager::closeClientConnection(int client_fd) {
     delete _client_map[client_fd];
     _client_map.erase(client_fd);
     close(client_fd);
+	printf("connection closed on client %d\n", client_fd);
 }
 #endif
 
@@ -225,7 +227,6 @@ int	ServerManager::readFromClient(int client_fd) {
 	HttpHandler *client = _client_map[client_fd];
 
 	client->copyLastFour(buffer, nbytes);
-
 
 	if (nbytes == -1) {
 		perror("recv()");

@@ -17,15 +17,18 @@
 #include <netinet/in.h>
 #include <poll.h>
 #include <arpa/inet.h> 	// inet_ntoa
-#include <sys/epoll.h>  // epoll
+
+
+//#include <sys/epoll.h>  // epoll
+#include <sys/event.h> //kqueue
+
 #include <fcntl.h>		// fcntl
 #include <netinet/tcp.h>	// TCP_NODELAY
 
 
-# define PORT 8080
+# define PORT 80
 # define BUFFER_SIZE 1024
-# define MAX_EVENTS 50
-# define MAX_CLIENT 10
+# define MAX_EVENTS 4096
 
 
 class ServerManager {
@@ -34,7 +37,8 @@ private:
 	std::map<int, HttpHandler*> _client_map;
 
     int		_listen_fd;
-	int		_epoll_fd;
+	//int		_epoll_fd;
+	int		_kqueue_fd;
 	struct sockaddr_in _host_addr;
 	int		_host_addrlen;
 
@@ -57,6 +61,8 @@ public:
     void initializeServer();
 	void pollSockets();
 	void handleNewConnectionsEpoll();
+
+	void handleNewConnectionsKqueue();
 
     void sendFile(int client_fd, const std::string &path);
     void sendDirectoryListing(int client_fd, const std::string &path);

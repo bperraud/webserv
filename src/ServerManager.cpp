@@ -58,6 +58,7 @@ void ServerManager::setNonBlockingMode(int socket) {
 	}
 }
 
+#if 0
 void ServerManager::handleNewConnectionsEpoll() {
 	// Create the epoll file descriptor
 	_epoll_fd = epoll_create1(0);
@@ -122,12 +123,77 @@ void ServerManager::handleNewConnectionsEpoll() {
 		}
 	}
 }
+#else
+void ServerManager::handleNewConnectionsKqueue() {
+	// Create the kqueue file descriptor
+	_kqueue_fd = kqueue();
+	if (_kqueue_fd == -1) {
+		perror("kqueue");
+		exit(EXIT_FAILURE);
+	}
+	// Add the listen socket to the kqueue interest list
+	struct kevent event;
+	EV_SET(&event, _listen_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1) {
+		perror("kevent");
+		exit(EXIT_FAILURE);
+	}
+	struct kevent events[MAX_EVENTS];
+	// events array is used to store events that occur on any of
+	// the file descriptors that have been registered with kevent()
+
+	while (1) {
+		std::cout << "waiting..." << std::endl;
+		int n_ready = kevent(_kqueue_fd, NULL, 0, events, MAX_EVENTS, NULL);
+		// if any of the file descriptors match the interest then kevent can return without blocking.
+		if (n_ready == -1) {
+			perror("kevent");
+			exit(EXIT_FAILURE);
+		}
+		for (int i = 0; i < n_ready; i++) {
+			int fd = events[i].ident;
+			// If the listen socket is ready, accept a new connection and add it to the kqueue interest list
+			if (fd == _listen_fd) {
+				struct sockaddr_in client_addr;
+				socklen_t client_addrlen = sizeof(client_addr);
+				int newsockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
+				if (newsockfd < 0) {
+					perror("accept()");
+					exit(EXIT_FAILURE);
+				}
+				setNonBlockingMode(newsockfd);
+				EV_SET(&event, newsockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+				if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1) {
+					perror("kevent");
+					exit(EXIT_FAILURE);
+				}
+				_client_map.insert(std::make_pair(newsockfd, new HttpHandler()));
+				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
+			}
+			else {
+				if (!readFromClient(fd)) {	// if no error, read complete
+
+					std::cout << "All : " << std::endl;
+					std::cout << _client_map[fd]->getRequest() << std::endl;
+
+					std::cout << "Message body: " << std::endl;
+					std::cout << _client_map[fd]->getBody() << std::endl;
+					//_client_map[fd].addFileToResponse("./website/index.html");
+					writeToClient(fd);
+					connectionCloseMode(fd);
+				}
+			}
+		}
+	}
+}
+#endif
 
 void ServerManager::connectionCloseMode(int client_fd) {
 	if (_client_map[client_fd]->getConnectionMode())
 		closeClientConnection(client_fd);
 }
 
+#if 0
 void ServerManager::closeClientConnection(int client_fd) {
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) == -1) {
 		perror("epoll_ctl EPOLL_CTL_DEL");
@@ -137,14 +203,29 @@ void ServerManager::closeClientConnection(int client_fd) {
 	_client_map.erase(client_fd);
 	close(client_fd);
 }
+#else
+void ServerManager::closeClientConnection(int client_fd) {
+    struct kevent event;
+    EV_SET(&event, client_fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+
+    if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1) {
+        perror("kevent");
+        exit(EXIT_FAILURE);
+    }
+    delete _client_map[client_fd];
+    _client_map.erase(client_fd);
+    close(client_fd);
+}
+#endif
 
 // return 0 if read complete, 1 otherwise
 int	ServerManager::readFromClient(int client_fd) {
 	char buffer[BUFFER_SIZE + 4];
 	ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
-	_client_map[client_fd]->copyLastFour(buffer, nbytes);
+	HttpHandler *client = _client_map[client_fd];
 
-	//HttpHandler client = *_client_map[client_fd];
+	client->copyLastFour(buffer, nbytes);
+
 
 	if (nbytes == -1) {
 		perror("recv()");
@@ -158,19 +239,19 @@ int	ServerManager::readFromClient(int client_fd) {
 	}
 	else {
 		printf("finished reading data from client %d\n", client_fd);
-		if (_client_map[client_fd]->getLeftToRead())
+		if (client->getLeftToRead())
 		{
-			return (_client_map[client_fd]->writeToBody(buffer + 4, nbytes) != 0);
+			return (client->writeToBody(buffer + 4, nbytes) != 0);
 		}
 		size_t pos_end_header = ((std::string)buffer).find("\r\n\r\n");
 		if (pos_end_header == std::string::npos) {
-			_client_map[client_fd]->writeToStream(buffer + 4, nbytes);
+			client->writeToStream(buffer + 4, nbytes);
 			return 1;
 		}
 		else {
-			_client_map[client_fd]->writeToStream(buffer + 4, pos_end_header);
-			_client_map[client_fd]->parseRequest(_client_map[client_fd]->getRequest());
-			return (_client_map[client_fd]->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header) != 0);
+			client->writeToStream(buffer + 4, pos_end_header);
+			client->parseRequest(client->getRequest());
+			return (client->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header) != 0);
 		}
 	}
 	return 1;

@@ -27,8 +27,8 @@ int main(int argc, char **argv, char ** envp)
 	// Set up listen sockets
 
 	serverManager.setupSocket();
-	serverManager.handleNewConnectionsEpoll();
-
+	//serverManager.handleNewConnectionsEpoll();
+	serverManager.handleNewConnectionsKqueue();
 
 	return 0;
 	//serverManager.listenAll();

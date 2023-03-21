@@ -82,55 +82,68 @@ std::string HttpHandler::getContentType(const std::string& path) {
 }
 
 bool HttpHandler::pathExists(const std::string& path) {
-	return true;
+	DIR* directory = opendir(path.c_str());
+    if (directory != NULL)
+    {
+        closedir(directory);
+        return true;
+    }
+    return false;
 }
-
 
 std::string HttpHandler::intToString(int value)
 {
-    std::ostringstream oss;
-    oss << value;
-    return oss.str();
+	std::ostringstream oss;
+	oss << value;
+	return oss.str();
+}
+
+bool HttpHandler::isDirectory(const char* path)
+{
+    struct stat filestat;
+    if (stat(path, &filestat) != 0)
+    {
+        return false;
+    }
+    return S_ISDIR(filestat.st_mode);
 }
 
 void HttpHandler::fillResponse()
 {
-    // Set the HTTP version to the same as the request
-    _response.version = _request.version;
+	// Set the HTTP version to the same as the request
+	_response.version = _request.version;
 
-    // Set a default response status code and phrase
-    _response.status_code = 200;
-    _response.status_phrase = "OK";
+	// Set a default response status code and phrase
+	_response.status_code = 200;
+	_response.status_phrase = "OK";
 
-    // Check if the requested path exists and is accessible
-    if (!pathExists(_request.path)) {
-        _response.status_code = 404;
-        _response.status_phrase = "Not Found";
-        _response.body_stream << "<html><body><h1>404 Not Found</h1></body></html>";
-    }
-    else {
-        // Set the response body based on the requested path
-        std::string content_type = getContentType(_request.path);
-        //addFileToResponse(_request.path);
-		addFileToResponse("./website/index.html");
-        // Add headers to the response
-        _response.map_headers["Content-Type"] = content_type;
-        _response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
-    }
-
+	// Check if the requested path exists and is accessible
+	if (!pathExists(_request.path) || (isDirectory(_request.path.c_str()) && !pathExists(_request.path + DEFAULT_PAGE))) {
+		_response.status_code = 404;
+		_response.status_phrase = "Not Found";
+		_response.body_stream << "<html><body><h1>404 Not Found</h1></body></html>";
+	}
+	else {
+		// Set the response body based on the requested path
+		std::string content_type = getContentType(_request.path);
+		addFileToResponse(_request.path);
+		// Add headers to the response
+		_response.map_headers["Content-Type"] = content_type;
+		_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
+	}
 }
 
 
 void HttpHandler::createResponse() {
 
-    // Write the HTTP version, status code, and status phrase to the stream
-    _response.header_stream << _response.version << " " << _response.status_code << " " << _response.status_phrase << "\r\n";
+	// Write the HTTP version, status code, and status phrase to the stream
+	_response.header_stream << _response.version << " " << _response.status_code << " " << _response.status_phrase << "\r\n";
 
-    // Write each header field to the stream
-    for (std::map<std::string, std::string>::const_iterator it = _response.map_headers.begin(); it != _response.map_headers.end(); ++it) {
-        _response.header_stream << it->first << ": " << it->second << "\r\n";
-    }
+	// Write each header field to the stream
+	for (std::map<std::string, std::string>::const_iterator it = _response.map_headers.begin(); it != _response.map_headers.end(); ++it) {
+		_response.header_stream << it->first << ": " << it->second << "\r\n";
+	}
 
-    // Write a blank line to indicate the end of the header section
-    _response.header_stream << "\r\n";
+	// Write a blank line to indicate the end of the header section
+	_response.header_stream << "\r\n";
 }

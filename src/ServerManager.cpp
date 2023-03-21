@@ -116,9 +116,12 @@ void ServerManager::handleNewConnectionsEpoll() {
 
 					_client_map[fd]->fillResponse();
 					_client_map[fd]->createResponse();
+
 					writeToClient(fd, _client_map[fd]->getResponseHeader());
 					writeToClient(fd, _client_map[fd]->getResponseBody());
-					connectionCloseMode(fd);
+					//connectionCloseMode(fd);
+
+					closeClientConnection(fd);
 				}
 			}
 		}
@@ -141,7 +144,7 @@ void ServerManager::closeClientConnection(int client_fd) {
 }
 
 // return 0 if read complete, 1 otherwise
-int	ServerManager::readFromClient(int client_fd) {
+int	ServerManager::readFromClient(int client_fd){
 	char buffer[BUFFER_SIZE + 4];
 	HttpHandler *client = _client_map[client_fd];
 
@@ -178,27 +181,17 @@ int	ServerManager::readFromClient(int client_fd) {
 }
 
 int ServerManager::writeToClient(int client_fd, const std::string &str) {
-	std::string response = "HTTP/1.1 200 OK\r\n"
-					"Content-Type: text/html\r\n"
-					"Content-Length: 30\r\n"
-					"Connection: close\r\n\r\n"
-					"<html><body>Hello my world!</body></html>";
 
+	std::cout << "str :" <<  str << std::endl;
 	ssize_t nbytes = send(client_fd, str.c_str(), str.length(), 0);
 	if (nbytes == -1) {
 		perror("send()");
 		return 1;
 	}
-	else if ((size_t) nbytes == response.length()) {
+	else if ((size_t) nbytes == str.length()) {
 		printf("finished writing %d\n", client_fd);
 	}
 	return 0;
-}
-
-
-bool ServerManager::isEOF(const std::string& str) {
-    // Find the last occurrence of a newline character
-    return (str.rfind("\r\n\r\n") != std::string::npos);
 }
 
 ServerManager::~ServerManager() {

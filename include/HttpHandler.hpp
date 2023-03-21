@@ -5,12 +5,14 @@
 #include "ResponseServer.hpp"
 #include "RequestClient.hpp"
 
+#include <sys/stat.h> // stat()
 #include <string>
 #include <cstring>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <dirent.h> //closedir()
 
 enum Type {
 	GET,
@@ -18,6 +20,8 @@ enum Type {
 	DELETE,
 	HEAD
 };
+
+#define DEFAULT_PAGE "/index.html"
 
 #if 0
 Recipients of an invalid request-line SHOULD respond with either a
@@ -110,6 +114,7 @@ public:
 	void fillResponse();
 	void createResponse();
 
+	bool isDirectory(const char* path);
 	bool pathExists(const std::string& path);
 
 	void addFileToResponse(const std::string &fileName);

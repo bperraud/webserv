@@ -41,7 +41,7 @@ struct HttpMessage {
 
 struct HttpResponse {
     std::string version;
-    int status_code;
+    std::string status_code;
     std::string status_phrase;
     std::map<std::string, std::string> map_headers;
     std::stringstream body_stream;

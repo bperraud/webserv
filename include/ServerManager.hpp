@@ -21,7 +21,7 @@
 #include <fcntl.h>		// fcntl
 #include <netinet/tcp.h>	// TCP_NODELAY
 
-# define PORT 80
+# define PORT 8080
 # define BUFFER_SIZE 1024
 # define MAX_EVENTS 50
 

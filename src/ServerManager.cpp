@@ -108,7 +108,6 @@ void ServerManager::handleNewConnectionsEpoll() {
 			}
 			else {
 				if (!readFromClient(fd)) {	// if no error, read complete
-
 					std::cout << "Header :" << std::endl;
 					std::cout << _client_map[fd]->getRequest() << std::endl;
 					std::cout << "Message body :" << std::endl;

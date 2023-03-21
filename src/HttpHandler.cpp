@@ -1,7 +1,7 @@
 #include "HttpHandler.hpp"
 
 
-HttpHandler::HttpHandler() : _readStream(new std::stringstream()),  _close_keep_alive(true), _type(0)
+HttpHandler::HttpHandler() : _readStream(new std::stringstream()),  _close_keep_alive(false), _type(0)
 , _left_to_read(0) {
 	_lastFour[0] = '\0';
 }
@@ -39,7 +39,6 @@ void HttpHandler::addFileToResponse(const std::string &fileName) {
 	_response.body_stream << input_file.rdbuf();
 }
 
-
 void HttpHandler::parseRequest(const std::string &http_message) {
 
 	// Parse the start-line
@@ -74,7 +73,7 @@ void HttpHandler::parseRequest(const std::string &http_message) {
 		std::cout << it->first << ": " << it->second << std::endl;
 	}
 
-	_close_keep_alive = _request.map_headers["Connection"] == "Keep-Alive";
+	_close_keep_alive = _request.map_headers["Connection"] == "keep-alive";
 	_left_to_read = _request.body_length;
 }
 
@@ -111,16 +110,19 @@ bool HttpHandler::isDirectory(const char* path)
 
 void HttpHandler::fillResponse()
 {
+	_response.body_stream.str(std::string());
+	_response.header_stream.str(std::string());
+
 	// Set the HTTP version to the same as the request
 	_response.version = _request.version;
 
 	// Set a default response status code and phrase
-	_response.status_code = 200;
+	_response.status_code = "200";
 	_response.status_phrase = "OK";
 
 	// Check if the requested path exists and is accessible
 	if (!pathExists(_request.path) || (isDirectory(_request.path.c_str()) && !pathExists(_request.path + DEFAULT_PAGE))) {
-		_response.status_code = 404;
+		_response.status_code = "404";
 		_response.status_phrase = "Not Found";
 		_response.body_stream << "<html><body><h1>404 Not Found</h1></body></html>";
 	}
@@ -130,21 +132,25 @@ void HttpHandler::fillResponse()
 		addFileToResponse(_request.path);
 		// Add headers to the response
 		_response.map_headers["Content-Type"] = content_type;
-		_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
 	}
+	_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
 }
-
 
 void HttpHandler::createResponse() {
 
 	// Write the HTTP version, status code, and status phrase to the stream
 	_response.header_stream << _response.version << " " << _response.status_code << " " << _response.status_phrase << "\r\n";
 
+	bool first = true;
 	// Write each header field to the stream
 	for (std::map<std::string, std::string>::const_iterator it = _response.map_headers.begin(); it != _response.map_headers.end(); ++it) {
-		_response.header_stream << it->first << ": " << it->second << "\r\n";
+		if (!first)
+		{
+			first = false;
+			_response.header_stream << "\r\n";
+		}
+		_response.header_stream << it->first << ": " << it->second;
 	}
-
 	// Write a blank line to indicate the end of the header section
-	_response.header_stream << "\r\n";
+	_response.header_stream << "\r\n\r\n";
 }

@@ -29,7 +29,7 @@ struct HttpMessage {
     std::string method;
     std::string path;
     std::string version;
-    std::map<std::string, std::string> headers;
+    std::map<std::string, std::string> map_headers;
     bool has_body;
     size_t body_length;
     std::stringstream body_stream;
@@ -39,8 +39,9 @@ struct HttpResponse {
     std::string version;
     int status_code;
     std::string status_phrase;
-    std::map<std::string, std::string> headers;
-    std::stringstream body;
+    std::map<std::string, std::string> map_headers;
+    std::stringstream body_stream;
+	std::stringstream header_stream;
 };
 
 class HttpHandler {
@@ -95,7 +96,18 @@ public:
 		return _left_to_read;
 	}
 
+	std::string getResponseHeader() {
+		return _response.header_stream.str();
+	}
+
+	std::string getResponseBody() {
+		return _response.body_stream.str();
+	}
+
 	void parseRequest(const std::string &http_message);
+
+
+	void fillResponse();
 	void createResponse();
 
 	bool pathExists(const std::string& path);

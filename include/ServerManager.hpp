@@ -48,7 +48,7 @@ public:
 	void setupSocket();
 
 	int	readFromClient(int client_fd);
-	int	writeToClient(int client_fd);
+	int	writeToClient(int client_fd, const std::string &str);
 
 	void connectionCloseMode(int client_fd);
 

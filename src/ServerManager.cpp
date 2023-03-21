@@ -109,13 +109,15 @@ void ServerManager::handleNewConnectionsEpoll() {
 			else {
 				if (!readFromClient(fd)) {	// if no error, read complete
 
-					std::cout << "All : " << std::endl;
+					std::cout << "Header :" << std::endl;
 					std::cout << _client_map[fd]->getRequest() << std::endl;
-
-					std::cout << "Message body: " << std::endl;
+					std::cout << "Message body :" << std::endl;
 					std::cout << _client_map[fd]->getBody() << std::endl;
-					//_client_map[fd].addFileToResponse("./website/index.html");
-					writeToClient(fd);
+
+					_client_map[fd]->fillResponse();
+					_client_map[fd]->createResponse();
+					writeToClient(fd, _client_map[fd]->getResponseHeader());
+					writeToClient(fd, _client_map[fd]->getResponseBody());
 					connectionCloseMode(fd);
 				}
 			}
@@ -141,11 +143,10 @@ void ServerManager::closeClientConnection(int client_fd) {
 // return 0 if read complete, 1 otherwise
 int	ServerManager::readFromClient(int client_fd) {
 	char buffer[BUFFER_SIZE + 4];
+	HttpHandler *client = _client_map[client_fd];
+
 	ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
-	_client_map[client_fd]->copyLastFour(buffer, nbytes);
-
-	//HttpHandler client = *_client_map[client_fd];
-
+	client->copyLastFour(buffer, nbytes);
 	if (nbytes == -1) {
 		perror("recv()");
 		closeClientConnection(client_fd);
@@ -158,32 +159,32 @@ int	ServerManager::readFromClient(int client_fd) {
 	}
 	else {
 		printf("finished reading data from client %d\n", client_fd);
-		if (_client_map[client_fd]->getLeftToRead())
+		if (client->getLeftToRead())
 		{
-			return (_client_map[client_fd]->writeToBody(buffer + 4, nbytes) != 0);
+			return (client->writeToBody(buffer + 4, nbytes) != 0);
 		}
 		size_t pos_end_header = ((std::string)buffer).find("\r\n\r\n");
 		if (pos_end_header == std::string::npos) {
-			_client_map[client_fd]->writeToStream(buffer + 4, nbytes);
+			client->writeToStream(buffer + 4, nbytes);
 			return 1;
 		}
 		else {
-			_client_map[client_fd]->writeToStream(buffer + 4, pos_end_header);
-			_client_map[client_fd]->parseRequest(_client_map[client_fd]->getRequest());
-			return (_client_map[client_fd]->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header) != 0);
+			client->writeToStream(buffer + 4, pos_end_header);
+			client->parseRequest(client->getRequest());
+			return (client->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header) != 0);
 		}
 	}
 	return 1;
 }
 
-int ServerManager::writeToClient(int client_fd) {
+int ServerManager::writeToClient(int client_fd, const std::string &str) {
 	std::string response = "HTTP/1.1 200 OK\r\n"
 					"Content-Type: text/html\r\n"
 					"Content-Length: 30\r\n"
 					"Connection: close\r\n\r\n"
 					"<html><body>Hello my world!</body></html>";
 
-	ssize_t nbytes = send(client_fd, response.c_str(), response.length(), 0);
+	ssize_t nbytes = send(client_fd, str.c_str(), str.length(), 0);
 	if (nbytes == -1) {
 		perror("send()");
 		return 1;

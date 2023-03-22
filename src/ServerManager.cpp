@@ -120,8 +120,12 @@ void ServerManager::handleNewConnections() {
 	}
 	struct kevent events[MAX_EVENTS];
 	while (1) {
+		struct timespec timeout;
+		timeout.tv_sec = 5; // 5 seconds
+		timeout.tv_nsec = 0;
+
 		std::cout << "waiting..." << std::endl;
-		int n_ready = kevent(_kqueue_fd, NULL, 0, events, MAX_EVENTS, NULL);
+		int n_ready = kevent(_kqueue_fd, NULL, 0, events, MAX_EVENTS, &timeout);
 		if (n_ready == -1) {
 			perror("kevent");
 			exit(EXIT_FAILURE);
@@ -200,8 +204,6 @@ void ServerManager::closeClientConnection(int client_fd) {
 int	ServerManager::readFromClient(int client_fd){
 	char buffer[BUFFER_SIZE + 4];
 	HttpHandler *client = _client_map[client_fd];
-
-	std::cout << "waiting on recv.." << std::endl;
 	ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
 
 	client->copyLastFour(buffer, nbytes);

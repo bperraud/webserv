@@ -13,19 +13,15 @@ void	ServerManager::setupSocket() {
 	}
 	memset((char *)&_host_addr, 0, sizeof(_host_addr));
 	int _host_addrlen = sizeof(_host_addr);
-	_host_addr.sin_family = AF_INET;  // AF_INET for IPv4 Internet protocols
-	// htonl converts a long integer (e.g. address) to a network representation
-	// htons converts a short integer (e.g. port) to a network representation
+	_host_addr.sin_family = AF_INET;				// AF_INET for IPv4 Internet protocols
 	_host_addr.sin_addr.s_addr = htonl(INADDR_ANY); // INADDR_ANY = any address = 0.0.0.0
 	_host_addr.sin_port = htons(PORT);
-
 	int enable_reuseaddr = 1;
 	if (setsockopt(_listen_fd, SOL_SOCKET, SO_REUSEADDR, &enable_reuseaddr, sizeof(int)) < 0) {
 		perror("setsockopt(SO_REUSEADDR) failed");
 		exit(EXIT_FAILURE);
 	}
 
-	#if 1
 	// disables the Nagle algorithm, which can improve performance for small messages,
 	//but can degrade performance for large messages or bulk data transfer.
 	int enable_nodelay = 1;
@@ -33,8 +29,6 @@ void	ServerManager::setupSocket() {
 		perror("setsockopt(TCP_NODELAY) failed");
 		exit(EXIT_FAILURE);
 	}
-	#endif
-
 	if (bind(_listen_fd, (struct sockaddr *) &_host_addr, _host_addrlen) < 0)
 	{
 		perror("bind failed");
@@ -121,7 +115,7 @@ void ServerManager::handleNewConnections() {
 	struct kevent events[MAX_EVENTS];
 	while (1) {
 		struct timespec timeout;
-		timeout.tv_sec = 5; // 5 seconds
+		timeout.tv_sec = 5;
 		timeout.tv_nsec = 0;
 
 		std::cout << "waiting..." << std::endl;
@@ -144,7 +138,7 @@ void ServerManager::handleNewConnections() {
 				// set SO_LINGER socket option with a short timeout value
 				struct linger l;
 				l.l_onoff = 1;
-				l.l_linger = 0; // 1 second timeout
+				l.l_linger = 0; // no timeout for closing socket
 				setsockopt(newsockfd, SOL_SOCKET, SO_LINGER, &l, sizeof(l));
 				EV_SET(&event, newsockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 				if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1) {
@@ -194,7 +188,6 @@ void ServerManager::closeClientConnection(int client_fd) {
 void ServerManager::closeClientConnection(int client_fd) {
     struct kevent event;
     EV_SET(&event, client_fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-
     if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1) {
         perror("kevent");
         exit(EXIT_FAILURE);
@@ -219,7 +212,6 @@ int	ServerManager::readFromClient(int client_fd){
 	}
 	else if (nbytes == 0) {
 		closeClientConnection(client_fd);
-		printf("connection closed on client %d\n", client_fd);
 		return 1;
 	}
 	else {
@@ -256,4 +248,7 @@ int ServerManager::writeToClient(int client_fd, const std::string &str) {
 
 ServerManager::~ServerManager() {
 	close(_listen_fd);
+	for (std::map<int, HttpHandler*>::const_iterator it = _client_map.begin(); it != _client_map.end(); it++) {
+		delete it->second;
+	}
 }

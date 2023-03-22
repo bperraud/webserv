@@ -246,5 +246,5 @@ int ServerManager::writeToClient(int client_fd, const std::string &str) {
 }
 
 ServerManager::~ServerManager() {
-
+	close(_listen_fd);
 }

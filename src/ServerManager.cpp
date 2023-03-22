@@ -141,16 +141,11 @@ void ServerManager::handleNewConnections() {
 					exit(EXIT_FAILURE);
 				}
 				setNonBlockingMode(newsockfd);\
-
-				int optval = 1;
-				setsockopt(newsockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
-
 				// set SO_LINGER socket option with a short timeout value
 				struct linger l;
 				l.l_onoff = 1;
-				l.l_linger = 1; // 1 second timeout
+				l.l_linger = 0; // 1 second timeout
 				setsockopt(newsockfd, SOL_SOCKET, SO_LINGER, &l, sizeof(l));
-
 				EV_SET(&event, newsockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 				if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1) {
 					perror("kevent");

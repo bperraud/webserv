@@ -183,16 +183,13 @@ void ServerManager::closeClientConnection(int client_fd) {
 }
 #else
 void ServerManager::closeClientConnection(int client_fd) {
-    struct kevent event;
-    EV_SET(&event, client_fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-
-    if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1) {
-        perror("kevent");
-        exit(EXIT_FAILURE);
-    }
-    delete _client_map[client_fd];
-    _client_map.erase(client_fd);
-    close(client_fd);
+	if (kevent(_kevent_fd, &(struct kevent){client_fd, EVFILT_READ, EV_DELETE, 0, 0, NULL}, 1, NULL, 0, NULL) < 0) {
+		perror("kevent EV_DELETE");
+		exit(EXIT_FAILURE);
+	}
+	delete _client_map[client_fd];
+	_client_map.erase(client_fd);
+	close(client_fd);
 	printf("connection closed on client %d\n", client_fd);
 }
 #endif

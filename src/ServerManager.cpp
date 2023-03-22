@@ -136,18 +136,15 @@ void ServerManager::handleNewConnections() {
 				struct sockaddr_in client_addr;
 				socklen_t client_addrlen = sizeof(client_addr);
 				int newsockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
-
-				int enable_nodelay = 1;
-				if (setsockopt(newsockfd, IPPROTO_TCP, TCP_NODELAY, &enable_nodelay, sizeof(int)) < 0) {
-					perror("setsockopt(TCP_NODELAY) failed");
-					exit(EXIT_FAILURE);
-				}
-
 				if (newsockfd < 0) {
 					perror("accept()");
 					exit(EXIT_FAILURE);
 				}
-				setNonBlockingMode(newsockfd);
+				setNonBlockingMode(newsockfd);\
+
+				int optval = 1;
+				setsockopt(newsockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval));
+
 				EV_SET(&event, newsockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 				if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1) {
 					perror("kevent");

@@ -53,7 +53,7 @@ public:
 
     void initializeServer();
 	void pollSockets();
-	void handleNewConnectionsEpoll();
+	void handleNewConnections();
 
     void sendFile(int client_fd, const std::string &path);
     void sendDirectoryListing(int client_fd, const std::string &path);

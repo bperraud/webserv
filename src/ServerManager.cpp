@@ -200,6 +200,8 @@ void ServerManager::closeClientConnection(int client_fd) {
 int	ServerManager::readFromClient(int client_fd){
 	char buffer[BUFFER_SIZE + 4];
 	HttpHandler *client = _client_map[client_fd];
+
+	std::cout << "waiting on recv.." << std::endl;
 	ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
 
 	client->copyLastFour(buffer, nbytes);

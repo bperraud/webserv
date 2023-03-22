@@ -136,6 +136,13 @@ void ServerManager::handleNewConnections() {
 				struct sockaddr_in client_addr;
 				socklen_t client_addrlen = sizeof(client_addr);
 				int newsockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
+
+				int enable_nodelay = 1;
+				if (setsockopt(newsockfd, IPPROTO_TCP, TCP_NODELAY, &enable_nodelay, sizeof(int)) < 0) {
+					perror("setsockopt(TCP_NODELAY) failed");
+					exit(EXIT_FAILURE);
+				}
+
 				if (newsockfd < 0) {
 					perror("accept()");
 					exit(EXIT_FAILURE);

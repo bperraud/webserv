@@ -140,7 +140,7 @@ void ServerManager::handleNewConnections() {
 					perror("accept()");
 					exit(EXIT_FAILURE);
 				}
-				setNonBlockingMode(newsockfd);\
+				setNonBlockingMode(newsockfd);
 				// set SO_LINGER socket option with a short timeout value
 				struct linger l;
 				l.l_onoff = 1;

@@ -36,7 +36,6 @@ class ServerManager {
 private:
 	std::map<int, HttpHandler*> _client_map;
 
-
     int		_listen_fd;
 
 	#if (defined (LINUX) || defined (__linux__))
@@ -61,13 +60,8 @@ public:
 
 	void connectionCloseMode(int client_fd);
 
-	bool isEOF(const std::string &str);
-
-    void initializeServer();
-	void pollSockets();
 	void handleNewConnections();
 
-    void sendFile(int client_fd, const std::string &path);
     void sendDirectoryListing(int client_fd, const std::string &path);
     void sendErrorResponse(int client_fd, int status_code);
     void closeClientConnection(int client_fd);

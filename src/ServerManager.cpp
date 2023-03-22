@@ -59,61 +59,53 @@ void ServerManager::setNonBlockingMode(int socket) {
 
 void ServerManager::handleNewConnections() {
 	#if (defined (LINUX) || defined (__linux__))
-		_epoll_fd = epoll_create1(0);
-		if (_epoll_fd < 0) {
-			perror("epoll_create1");
-			exit(EXIT_FAILURE);
-		}
-		// Add the listen socket to the epoll interest list
-		struct epoll_event event;
-		event.data.fd = _listen_fd;
-		event.events = EPOLLIN;
-		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, _listen_fd, &event) < 0) {
-			perror("epoll_ctl EPOLL_CTL_ADD");
-			exit(EXIT_FAILURE);
-		}
-		struct epoll_event events[MAX_EVENTS];
-		// events array is used to store events that occur on any of
-		// the file descriptors that have been registered with epoll_ctl()
+	_epoll_fd = epoll_create1(0);
+	if (_epoll_fd < 0) {
+		perror("epoll_create1");
+		exit(EXIT_FAILURE);
+	}
+	// Add the listen socket to the epoll interest list
+	struct epoll_event event;
+	event.data.fd = _listen_fd;
+	event.events = EPOLLIN;
+	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, _listen_fd, &event) < 0) {
+		perror("epoll_ctl EPOLL_CTL_ADD");
+		exit(EXIT_FAILURE);
+	}
+	struct epoll_event events[MAX_EVENTS];
+	// events array is used to store events that occur on any of
+	// the file descriptors that have been registered with epoll_ctl()
 
-		while (1) {
-		std::cout << "waiting..." << std::endl;
-		int n_ready = epoll_wait(_epoll_fd, events, MAX_EVENTS, -1);
-		// if any of the file descriptors match the interest then epoll_wait can return without blocking.
-		if (n_ready == -1) {
-			perror("epoll_wait");
-			exit(EXIT_FAILURE);
-		}
-		for (int i = 0; i < n_ready; i++) {
-			int fd = events[i].data.fd;
-			// If the listen socket is ready, accept a new connection and add it to the epoll interest list
-			if (fd == _listen_fd) {
-				struct sockaddr_in client_addr;
-				socklen_t client_addrlen = sizeof(client_addr);
-				int newsockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
-				if (newsockfd < 0) {
-					perror("accept()");
-					exit(EXIT_FAILURE);
-				}
-				setNonBlockingMode(newsockfd);
-				event.data.fd = newsockfd;
-				event.events = EPOLLIN;
-				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
-					perror("epoll_ctl EPOLL_CTL_ADD");
-					exit(EXIT_FAILURE);
-				}
-				_client_map.insert(std::make_pair(newsockfd, new HttpHandler()));
-				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
+	while (1) {
+	std::cout << "waiting..." << std::endl;
+	int n_ready = epoll_wait(_epoll_fd, events, MAX_EVENTS, -1);
+	// if any of the file descriptors match the interest then epoll_wait can return without blocking.
+	if (n_ready == -1) {
+		perror("epoll_wait");
+		exit(EXIT_FAILURE);
+	}
+	for (int i = 0; i < n_ready; i++) {
+		int fd = events[i].data.fd;
+		// If the listen socket is ready, accept a new connection and add it to the epoll interest list
+		if (fd == _listen_fd) {
+			struct sockaddr_in client_addr;
+			socklen_t client_addrlen = sizeof(client_addr);
+			int newsockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
+			if (newsockfd < 0) {
+				perror("accept()");
+				exit(EXIT_FAILURE);
 			}
-	#else
-		_epoll_fd = kqueue();
-		struct kevent event;
-		EV_SET(&event, _listen_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-		if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1) {
-			perror("kevent");
-			exit(EXIT_FAILURE);
+			setNonBlockingMode(newsockfd);
+			event.data.fd = newsockfd;
+			event.events = EPOLLIN;
+			if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
+				perror("epoll_ctl EPOLL_CTL_ADD");
+				exit(EXIT_FAILURE);
+			}
+			_client_map.insert(std::make_pair(newsockfd, new HttpHandler()));
+			std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 		}
-		struct kevent events[MAX_EVENTS];
+	#else
 
 	_kqueue_fd = kqueue();
 	if (_kqueue_fd == -1) {

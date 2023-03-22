@@ -17,7 +17,13 @@
 #include <netinet/in.h>
 #include <poll.h>
 #include <arpa/inet.h> 	// inet_ntoa
+
+#if (defined (LINUX) || defined (__linux__))
 #include <sys/epoll.h>  // epoll
+#else
+#include <sys/event.h>  // kqueue
+#endif
+
 #include <fcntl.h>		// fcntl
 #include <netinet/tcp.h>	// TCP_NODELAY
 
@@ -30,8 +36,14 @@ class ServerManager {
 private:
 	std::map<int, HttpHandler*> _client_map;
 
+
     int		_listen_fd;
+
+	#if (defined (LINUX) || defined (__linux__))
 	int		_epoll_fd;
+	#else
+	int		_kqueue_fd;
+	#endif
 	struct sockaddr_in _host_addr;
 	int		_host_addrlen;
 

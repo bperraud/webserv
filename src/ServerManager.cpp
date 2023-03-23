@@ -156,8 +156,13 @@ void ServerManager::handleNewConnections() {
 					std::cout << "Message body :" << std::endl;
 					std::cout << _client_map[fd]->getBody() << std::endl;
 
-					_client_map[fd]->fillResponse();
+					_client_map[fd]->createHttpResponse();
 					_client_map[fd]->createResponse();
+
+					std::cout << "Response Header :" << std::endl;
+					std::cout << _client_map[fd]->getResponseHeader() << std::endl;
+					std::cout << "Response Message body :" << std::endl;
+					std::cout << _client_map[fd]->getResponseBody() << std::endl;
 
 					writeToClient(fd, _client_map[fd]->getResponseHeader());
 					writeToClient(fd, _client_map[fd]->getResponseBody());

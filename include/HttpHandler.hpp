@@ -21,7 +21,8 @@ enum Type {
 	HEAD
 };
 
-#define DEFAULT_PAGE "index.html"
+#define ROOT_PATH "./website"
+#define DEFAULT_PAGE "./website/index.html"
 
 #if 0
 Recipients of an invalid request-line SHOULD respond with either a
@@ -121,7 +122,8 @@ public:
 	void fillResponse();
 	void createResponse();
 
-	bool isDirectory(const char* path);
+	bool pathToFileExist(const std::string& path);
+	bool isDirectory(const std::string& path);
 	bool pathExists(const std::string& path);
 
 	void addFileToResponse(const std::string &fileName);

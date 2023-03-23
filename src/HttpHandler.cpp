@@ -88,6 +88,7 @@ bool HttpHandler::pathExists(const std::string& path) {
 	if (directory != NULL)
     {
         closedir(directory);
+		std::cout << "true" << std::endl;
         return true;
     }
     return false;
@@ -100,16 +101,20 @@ std::string HttpHandler::intToString(int value)
 	return oss.str();
 }
 
-bool HttpHandler::isDirectory(const char* path)
+bool HttpHandler::isDirectory(const std::string& path)
 {
     struct stat filestat;
-    if (stat(path, &filestat) != 0)
+    if (stat(path.c_str(), &filestat) != 0)
     {
         return false;
     }
     return S_ISDIR(filestat.st_mode);
 }
 
+bool HttpHandler::pathToFileExist(const std::string& path) {
+    std::ifstream file(path.c_str());
+    return (file.is_open());
+}
 
 void HttpHandler::createHttpResponse() {
 	int index;
@@ -131,12 +136,46 @@ void HttpHandler::createHttpResponse() {
 			DELETE();
 			break;
 		default:
+			std::cout << "Wrong Request Type" << std::endl;
 			return ;
 	}
 }
 
 void HttpHandler::GET() {
-	;
+	_response.body_stream.str(std::string());
+	_response.header_stream.str(std::string());
+	_response.version = _request.version;
+	_response.status_code = "200";
+	_response.status_phrase = "OK";
+
+	if (!_request.path.compare("/")) {
+
+		std::string content_type = getContentType(_request.path);
+		addFileToResponse(DEFAULT_PAGE);
+		_response.map_headers["Content-Type"] = content_type;
+		_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
+		return ;
+	}
+
+	_request.path = ROOT_PATH + _request.path;
+	if ( isDirectory(_request.path))
+	{
+		;//directory listing
+	}
+	else if (pathToFileExist(_request.path)) {
+		std::string content_type = getContentType(_request.path);
+		addFileToResponse(_request.path);
+		// Add headers to the response
+		_response.map_headers["Content-Type"] = content_type;
+	}
+	else	// Error
+	{
+		_response.status_code = "404";
+		_response.status_phrase = "Not Found";
+		_response.body_stream << "<html><body><h1>404 Not Found</h1></body></html>";
+	}
+
+	_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
 }
 
 void HttpHandler::POST() {
@@ -181,10 +220,10 @@ void HttpHandler::createResponse() {
 	for (std::map<std::string, std::string>::const_iterator it = _response.map_headers.begin(); it != _response.map_headers.end(); ++it) {
 		if (!first)
 		{
-			first = false;
 			_response.header_stream << "\r\n";
 		}
 		_response.header_stream << it->first << ": " << it->second;
+		first = false;
 	}
 	// Write a blank line to indicate the end of the header section
 	_response.header_stream << "\r\n\r\n";

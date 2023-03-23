@@ -83,7 +83,9 @@ std::string HttpHandler::getContentType(const std::string& path) {
 
 bool HttpHandler::pathExists(const std::string& path) {
 	DIR* directory = opendir(path.c_str());
-    if (directory != NULL)
+
+	std::cout << "path : " << path << std::endl;
+	if (directory != NULL)
     {
         closedir(directory);
         return true;
@@ -108,15 +110,48 @@ bool HttpHandler::isDirectory(const char* path)
     return S_ISDIR(filestat.st_mode);
 }
 
+
+void HttpHandler::createHttpResponse() {
+	int index;
+	std::string type[3] = {"GET", "POST", "DELETE"};
+	for (index = 0; index < 3; index++)
+	{
+		if (type[index].compare(_request.method) == 0)
+			break;
+	}
+	switch (index)
+	{
+		case 0:
+			GET();
+			break;
+		case 1:
+			POST();
+			break;
+		case 2:
+			DELETE();
+			break;
+		default:
+			return ;
+	}
+}
+
+void HttpHandler::GET() {
+	;
+}
+
+void HttpHandler::POST() {
+	;
+}
+
+void HttpHandler::DELETE() {
+	;
+}
+
 void HttpHandler::fillResponse()
 {
 	_response.body_stream.str(std::string());
 	_response.header_stream.str(std::string());
-
-	// Set the HTTP version to the same as the request
 	_response.version = _request.version;
-
-	// Set a default response status code and phrase
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
 

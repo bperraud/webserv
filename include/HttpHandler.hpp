@@ -21,7 +21,7 @@ enum Type {
 	HEAD
 };
 
-#define DEFAULT_PAGE "/index.html"
+#define DEFAULT_PAGE "index.html"
 
 #if 0
 Recipients of an invalid request-line SHOULD respond with either a
@@ -109,6 +109,13 @@ public:
 	}
 
 	void parseRequest(const std::string &http_message);
+
+
+	void createHttpResponse();
+
+	void GET();
+	void POST();
+	void DELETE();
 
 
 	void fillResponse();

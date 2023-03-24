@@ -35,7 +35,7 @@ bool HttpHandler::isKeepAlive() const {
 }
 
 void HttpHandler::addFileToResponse(const std::string &fileName) {
-	std::ifstream input_file(fileName.c_str());
+	std::ifstream input_file(fileName.c_str(), std::ios::binary);
 	_response.body_stream << input_file.rdbuf();
 }
 
@@ -62,15 +62,6 @@ void HttpHandler::parseRequest(const std::string &http_message) {
 		// Parse the content length header to determine the message body length
 		std::stringstream ss(content_length_header->second);
 		ss >> _request.body_length;
-	}
-
-	// Print out the parsed data
-	std::cout << "Method: " << _request.method << std::endl;
-	std::cout << "Path: " << _request.path << std::endl;
-	std::cout << "Version: " << _request.version << std::endl;
-	std::cout << "Headers: " << std::endl;
-	for (std::map<std::string, std::string>::const_iterator it = _request.map_headers.begin(); it != _request.map_headers.end(); ++it) {
-		std::cout << it->first << ": " << it->second << std::endl;
 	}
 
 	_close_keep_alive = _request.map_headers["Connection"] == "keep-alive";
@@ -168,7 +159,7 @@ void HttpHandler::GET() {
 		// Add headers to the response
 		_response.map_headers["Content-Type"] = content_type;
 	}
-	else	// Error
+	else
 	{
 		_response.status_code = "404";
 		_response.status_phrase = "Not Found";

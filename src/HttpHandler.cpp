@@ -2,8 +2,17 @@
 
 
 HttpHandler::HttpHandler() : _readStream(new std::stringstream()),  _close_keep_alive(false), _type(0)
-, _left_to_read(0) {
+, _left_to_read(0), _MIME_TYPES(){
 	_lastFour[0] = '\0';
+
+	_MIME_TYPES["html"] = "text/html";
+    _MIME_TYPES["css"] = "text/css";
+    _MIME_TYPES["js"] = "text/javascript";
+    _MIME_TYPES["png"] = "image/png";
+    _MIME_TYPES["jpg"] = "image/jpeg";
+    _MIME_TYPES["gif"] = "image/gif";
+    _MIME_TYPES["json"] = "application/json";
+	_MIME_TYPES["webmanifest"] = "application/manifest+json";
 }
 
 HttpHandler::~HttpHandler() {
@@ -69,7 +78,19 @@ void HttpHandler::parseRequest(const std::string &http_message) {
 }
 
 std::string HttpHandler::getContentType(const std::string& path) {
-	return "empty";
+    std::string::size_type dot_pos = path.find_last_of('.');
+    if (dot_pos == std::string::npos) {
+        // No extension found, assume plain text
+        return "text/plain";
+    }
+    std::string ext = path.substr(dot_pos + 1);
+    // Look up the MIME type for the file extension
+    std::map<std::string, std::string>::const_iterator it = _MIME_TYPES.find(ext);
+    if (it == _MIME_TYPES.end()) {
+        // Extension not found, assume plain text
+        return "text/plain";
+    }
+    return it->second;
 }
 
 bool HttpHandler::pathExists(const std::string& path) {
@@ -140,10 +161,8 @@ void HttpHandler::GET() {
 	_response.status_phrase = "OK";
 
 	if (!_request.path.compare("/")) {
-
-		std::string content_type = getContentType(_request.path);
 		addFileToResponse(DEFAULT_PAGE);
-		_response.map_headers["Content-Type"] = content_type;
+		_response.map_headers["Content-Type"] = getContentType(DEFAULT_PAGE);
 		_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
 		return ;
 	}
@@ -154,10 +173,8 @@ void HttpHandler::GET() {
 		;//directory listing
 	}
 	else if (pathToFileExist(_request.path)) {
-		std::string content_type = getContentType(_request.path);
 		addFileToResponse(_request.path);
 		// Add headers to the response
-		_response.map_headers["Content-Type"] = content_type;
 	}
 	else
 	{
@@ -165,7 +182,7 @@ void HttpHandler::GET() {
 		_response.status_phrase = "Not Found";
 		_response.body_stream << "<html><body><h1>404 Not Found</h1></body></html>";
 	}
-
+	_response.map_headers["Content-Type"] = getContentType(_request.path);
 	_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
 }
 

@@ -61,6 +61,7 @@ private:
 	char				_lastFour[4];
 
 	ssize_t				_left_to_read;
+	std::map<std::string, std::string> _MIME_TYPES;
 
 
 	HttpHandler(const HttpHandler &copy) {

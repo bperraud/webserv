@@ -96,6 +96,10 @@ public:
 		return _request.body_stream.str();
 	}
 
+	std::string		getRequestMethod() {
+		return _request.method;
+	}
+
 	void	copyLastFour(char *buffer, ssize_t nbytes) ;
 
 	ssize_t getLeftToRead() const {
@@ -110,7 +114,7 @@ public:
 		return _response.body_stream.str();
 	}
 
-	void parseRequest(const std::string &http_message);
+	void parseRequest();
 
 
 	void createHttpResponse();
@@ -119,9 +123,7 @@ public:
 	void POST();
 	void DELETE();
 
-
-	void fillResponse();
-	void createResponse();
+	void constructStringResponse();
 
 	bool pathToFileExist(const std::string& path);
 	bool isDirectory(const std::string& path);

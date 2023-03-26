@@ -151,21 +151,26 @@ void ServerManager::handleNewConnections() {
 	#endif
 			else {
 				if (!readFromClient(fd)) {
-					std::cout << "Header :" << std::endl;
-					std::cout << _client_map[fd]->getRequest() << std::endl;
-					std::cout << "Message body :" << std::endl;
-					std::cout << _client_map[fd]->getBody() << std::endl;
 
-					_client_map[fd]->createHttpResponse();
-					_client_map[fd]->createResponse();
+					HttpHandler *client = _client_map[fd];
 
-					std::cout << "Response Header :" << std::endl;
-					std::cout << _client_map[fd]->getResponseHeader() << std::endl;
-					std::cout << "Response Message body :" << std::endl;
-					std::cout << _client_map[fd]->getResponseBody() << std::endl;
+					client->parseRequest();
+					client->createHttpResponse();
 
-					writeToClient(fd, _client_map[fd]->getResponseHeader());
-					writeToClient(fd, _client_map[fd]->getResponseBody());
+					if (client->getRequestMethod() == "POST") {
+
+						std::cout << "Header :" << std::endl;
+						std::cout << client->getRequest() << std::endl;
+						std::cout << "Message body :" << std::endl;
+						std::cout << client->getBody() << std::endl;
+						std::cout << "Response Header :" << std::endl;
+						std::cout << client->getResponseHeader() << std::endl;
+						std::cout << "Response Message body :" << std::endl;
+						std::cout << client->getResponseBody() << std::endl;
+					}
+
+					writeToClient(fd, client->getResponseHeader());
+					writeToClient(fd, client->getResponseBody());
 					connectionCloseMode(fd);
 				}
 			}
@@ -232,7 +237,7 @@ int	ServerManager::readFromClient(int client_fd){
 		}
 		else {
 			client->writeToStream(buffer + 4, pos_end_header);
-			client->parseRequest(client->getRequest());
+			//client->parseRequest(client->getRequest());
 			return (client->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header) != 0);
 		}
 	}

@@ -48,15 +48,14 @@ void HttpHandler::addFileToResponse(const std::string &fileName) {
 	_response.body_stream << input_file.rdbuf();
 }
 
-void HttpHandler::parseRequest(const std::string &http_message) {
+void HttpHandler::parseRequest() {
 
 	// Parse the start-line
-	std::stringstream stream(http_message);
-	stream >> _request.method >> _request.path >> _request.version;
+	*_readStream >> _request.method >> _request.path >> _request.version;
 
 	// Parse the headers into a hash table
 	std::string header_name, header_value;
-	while (getline(stream, header_name, ':') && getline(stream, header_value, '\r')) {
+	while (getline(*_readStream, header_name, ':') && getline(*_readStream, header_value, '\r')) {
 		// Remove any leading or trailing whitespace from the header value
 		header_value.erase(0, header_value.find_first_not_of(" \r\n\t"));
 		header_value.erase(header_value.find_last_not_of(" \r\n\t") + 1, header_value.length());
@@ -75,6 +74,9 @@ void HttpHandler::parseRequest(const std::string &http_message) {
 
 	_close_keep_alive = _request.map_headers["Connection"] == "keep-alive";
 	_left_to_read = _request.body_length;
+
+	// reset read stream
+	//_readStream.str(std::string());
 }
 
 std::string HttpHandler::getContentType(const std::string& path) {
@@ -131,6 +133,8 @@ bool HttpHandler::pathToFileExist(const std::string& path) {
 void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[3] = {"GET", "POST", "DELETE"};
+	_response.body_stream.str(std::string());
+	_response.header_stream.str(std::string());
 	for (index = 0; index < 3; index++)
 	{
 		if (type[index].compare(_request.method) == 0)
@@ -151,11 +155,11 @@ void HttpHandler::createHttpResponse() {
 			std::cout << "Wrong Request Type" << std::endl;
 			return ;
 	}
+
+	constructStringResponse();
 }
 
 void HttpHandler::GET() {
-	_response.body_stream.str(std::string());
-	_response.header_stream.str(std::string());
 	_response.version = _request.version;
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
@@ -184,41 +188,27 @@ void HttpHandler::GET() {
 	}
 	_response.map_headers["Content-Type"] = getContentType(_request.path);
 	_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
+
 }
 
 void HttpHandler::POST() {
-	;
+	// create a POST http request
+	std::cout << "POST" << std::endl;
+
+	_response.status_code = "404";
+	_response.status_phrase = "Not Found";
+	_response.body_stream << "<html><body><h1>404 Not Found</h1></body></html>";
+
+	_response.map_headers["Content-Type"] = getContentType(_request.path);
+	_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
 }
+
 
 void HttpHandler::DELETE() {
 	;
 }
 
-void HttpHandler::fillResponse()
-{
-	_response.body_stream.str(std::string());
-	_response.header_stream.str(std::string());
-	_response.version = _request.version;
-	_response.status_code = "200";
-	_response.status_phrase = "OK";
-
-	// Check if the requested path exists and is accessible
-	if (!pathExists(_request.path) || (isDirectory(_request.path.c_str()) && !pathExists(_request.path + DEFAULT_PAGE))) {
-		_response.status_code = "404";
-		_response.status_phrase = "Not Found";
-		_response.body_stream << "<html><body><h1>404 Not Found</h1></body></html>";
-	}
-	else {
-		// Set the response body based on the requested path
-		std::string content_type = getContentType(_request.path);
-		addFileToResponse(_request.path);
-		// Add headers to the response
-		_response.map_headers["Content-Type"] = content_type;
-	}
-	_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
-}
-
-void HttpHandler::createResponse() {
+void HttpHandler::constructStringResponse() {
 
 	// Write the HTTP version, status code, and status phrase to the stream
 	_response.header_stream << _response.version << " " << _response.status_code << " " << _response.status_phrase << "\r\n";

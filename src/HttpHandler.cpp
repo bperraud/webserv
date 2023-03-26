@@ -53,6 +53,8 @@ void HttpHandler::parseRequest() {
 	// Parse the start-line
 	*_readStream >> _request.method >> _request.path >> _request.version;
 
+	std::cout << "method: " << _request.method << std::endl;
+
 	// Parse the headers into a hash table
 	std::string header_name, header_value;
 	while (getline(*_readStream, header_name, ':') && getline(*_readStream, header_value, '\r')) {
@@ -189,17 +191,23 @@ void HttpHandler::GET() {
 	_response.map_headers["Content-Type"] = getContentType(_request.path);
 	_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
 
+
+	#if 0
+	_response.map_headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
+	_response.map_headers["Pragma"] = "no-cache";
+	_response.map_headers["Expires"] = "0";
+	#endif
 }
 
 void HttpHandler::POST() {
 	// create a POST http request
 	std::cout << "POST" << std::endl;
 
-	_response.status_code = "404";
-	_response.status_phrase = "Not Found";
+	_response.status_code = "200";
+	_response.status_phrase = "OK";
 	_response.body_stream << "<html><body><h1>404 Not Found</h1></body></html>";
 
-	_response.map_headers["Content-Type"] = getContentType(_request.path);
+	_response.map_headers["Content-Type"] = "text/html";
 	_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
 }
 

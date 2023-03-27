@@ -9,6 +9,8 @@
 #include <sstream>
 #include <map>
 
+# define CRLF "\r\n\r\n"
+
 enum Type {
 	GET,
 	POST,

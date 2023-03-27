@@ -154,6 +154,28 @@ void HttpHandler::POST() {
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
 
+	//createOrEraseFile
+
+	std::cout << "CONTENT : " << _request.map_headers["Content-Type"] << std::endl;
+	size_t pos_boundary = _request.map_headers["Content-Type"].find("boundary=");
+
+	if (pos_boundary != std::string::npos) {	//multipart/form-data
+
+		std::string messageBody = _request.body_stream.str();
+		std::string boundary = _request.map_headers["Content-Type"].substr(pos_boundary + 9);
+
+		std::string fileContentEnd = "\r\n--" + boundary + "--";
+		size_t start = messageBody.find(CRLF);
+		size_t end = messageBody.find(fileContentEnd, start);
+
+		if (start == std::string::npos || end == std::string::npos) {
+        	return ;
+    	}
+
+		start += std::strlen(CRLF);
+    	std::cout <<  messageBody.substr(start, end - start) << std::endl;
+		return ;
+	}
 
 
 	#if 0

@@ -155,7 +155,7 @@ void ServerManager::handleNewConnections() {
 					client->createHttpResponse();
 
 					//if (client->getRequestMethod() == "POST") {
-					if (1) {
+					if (0) {
 						std::cout << "Header :" << std::endl;
 						std::cout << client->getRequest() << std::endl;
 						std::cout << "Message body :" << std::endl;
@@ -230,7 +230,7 @@ int	ServerManager::readFromClient(int client_fd){
 		{
 			return (client->writeToBody(buffer + 4, nbytes) != 0);
 		}
-		size_t pos_end_header = ((std::string)buffer).find("\r\n\r\n");
+		size_t pos_end_header = ((std::string)buffer).find(CRLF);
 		if (pos_end_header == std::string::npos) {
 			client->writeToStream(buffer + 4, nbytes);
 			return 1;

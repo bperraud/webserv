@@ -123,8 +123,6 @@ public:
 	}
 
 	void parseRequest();
-
-
 	void createHttpResponse();
 
 	void GET();
@@ -144,7 +142,6 @@ public:
 };
 
 #endif
-
 
 // no body ? end with \r\n\r\n
 // GET and HEAD : no body

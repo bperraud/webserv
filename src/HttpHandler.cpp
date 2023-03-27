@@ -49,7 +49,6 @@ void HttpHandler::addFileToResponse(const std::string &fileName) {
 }
 
 void HttpHandler::parseRequest() {
-
 	// Parse the start-line
 	*_readStream >> _request.method >> _request.path >> _request.version;
 
@@ -92,19 +91,6 @@ std::string HttpHandler::getContentType(const std::string& path) {
     return it->second;
 }
 
-bool HttpHandler::pathExists(const std::string& path) {
-	DIR* directory = opendir(path.c_str());
-
-	std::cout << "path : " << path << std::endl;
-	if (directory != NULL)
-    {
-        closedir(directory);
-		std::cout << "true" << std::endl;
-        return true;
-    }
-    return false;
-}
-
 std::string HttpHandler::intToString(int value)
 {
 	std::ostringstream oss;
@@ -130,7 +116,6 @@ bool HttpHandler::pathToFileExist(const std::string& path) {
 void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[3] = {"GET", "POST", "DELETE"};
-
 	for (index = 0; index < 3; index++)
 	{
 		if (type[index].compare(_request.method) == 0)
@@ -151,7 +136,6 @@ void HttpHandler::createHttpResponse() {
 			std::cout << "Wrong Request Type" << std::endl;
 			return ;
 	}
-
 	constructStringResponse();
 }
 
@@ -208,17 +192,11 @@ void HttpHandler::DELETE() {
 }
 
 void HttpHandler::constructStringResponse() {
-
-	// Write the HTTP version, status code, and status phrase to the stream
-	_response.header_stream << _response.version << " " << _response.status_code << " " << _response.status_phrase << "\r\n";
-
 	bool first = true;
-	// Write each header field to the stream
+	_response.header_stream << _response.version << " " << _response.status_code << " " << _response.status_phrase << "\r\n";
 	for (std::map<std::string, std::string>::const_iterator it = _response.map_headers.begin(); it != _response.map_headers.end(); ++it) {
 		if (!first)
-		{
 			_response.header_stream << "\r\n";
-		}
 		_response.header_stream << it->first << ": " << it->second;
 		first = false;
 	}

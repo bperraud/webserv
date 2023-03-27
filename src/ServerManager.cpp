@@ -226,7 +226,6 @@ int	ServerManager::readFromClient(int client_fd){
 	}
 	else {
 		printf("finished reading data from client %d\n", client_fd);
-
 		if (client->getLeftToRead())
 		{
 			return (client->writeToBody(buffer + 4, nbytes) != 0);

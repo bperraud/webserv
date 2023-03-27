@@ -91,32 +91,10 @@ std::string HttpHandler::getContentType(const std::string& path) {
     return it->second;
 }
 
-std::string HttpHandler::intToString(int value)
-{
-	std::ostringstream oss;
-	oss << value;
-	return oss.str();
-}
-
-bool HttpHandler::isDirectory(const std::string& path)
-{
-    struct stat filestat;
-    if (stat(path.c_str(), &filestat) != 0)
-    {
-        return false;
-    }
-    return S_ISDIR(filestat.st_mode);
-}
-
-bool HttpHandler::pathToFileExist(const std::string& path) {
-    std::ifstream file(path.c_str());
-    return (file.is_open());
-}
-
 void HttpHandler::createHttpResponse() {
 	int index;
-	std::string type[3] = {"GET", "POST", "DELETE"};
-	for (index = 0; index < 3; index++)
+	std::string type[4] = {"GET", "POST", "DELETE", ""};
+	for (index = 0; index < 4; index++)
 	{
 		if (type[index].compare(_request.method) == 0)
 			break;
@@ -147,16 +125,16 @@ void HttpHandler::GET() {
 	if (!_request.path.compare("/")) {
 		addFileToResponse(DEFAULT_PAGE);
 		_response.map_headers["Content-Type"] = getContentType(DEFAULT_PAGE);
-		_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
+		_response.map_headers["Content-Length"] = Utils::intToString(_response.body_stream.str().length());
 		return ;
 	}
 
 	_request.path = ROOT_PATH + _request.path;
-	if ( isDirectory(_request.path))
+	if ( Utils::isDirectory(_request.path))
 	{
 		;//directory listing
 	}
-	else if (pathToFileExist(_request.path)) {
+	else if (Utils::pathToFileExist(_request.path)) {
 		addFileToResponse(_request.path);
 		// Add headers to the response
 	}
@@ -167,7 +145,7 @@ void HttpHandler::GET() {
 		_response.body_stream << "<html><body><h1>404 Not Found</h1></body></html>";
 	}
 	_response.map_headers["Content-Type"] = getContentType(_request.path);
-	_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
+	_response.map_headers["Content-Length"] = Utils::intToString(_response.body_stream.str().length());
 
 	#if 0
 	_response.map_headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
@@ -183,7 +161,7 @@ void HttpHandler::POST() {
 
 	addFileToResponse(DEFAULT_PAGE);
 	_response.map_headers["Content-Type"] = getContentType(DEFAULT_PAGE);
-	_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
+	_response.map_headers["Content-Length"] = Utils::intToString(_response.body_stream.str().length());
 }
 
 

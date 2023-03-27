@@ -1,18 +1,13 @@
 #ifndef HTTPHANDLER_HPP
 #define HTTPHANDLER_HPP
 
-
-#include "ResponseServer.hpp"
-#include "RequestClient.hpp"
-
-#include <sys/stat.h> // stat()
+#include "Utils.hpp"
 #include <string>
 #include <cstring>
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <map>
-#include <dirent.h> //closedir()
 
 enum Type {
 	GET,
@@ -131,14 +126,9 @@ public:
 
 	void constructStringResponse();
 
-	bool pathToFileExist(const std::string& path);
-	bool isDirectory(const std::string& path);
-	bool pathExists(const std::string& path);
-
 	void addFileToResponse(const std::string &fileName);
 
 	std::string getContentType(const std::string& path);
-	std::string intToString(int value);
 };
 
 #endif

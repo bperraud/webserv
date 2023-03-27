@@ -87,6 +87,8 @@ std::string HttpHandler::getContentType(const std::string& path) {
 void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
+
+	_response.version = _request.version;
 	for (index = 0; index < 4; index++)
 	{
 		if (type[index].compare(_request.method) == 0)
@@ -111,7 +113,6 @@ void HttpHandler::createHttpResponse() {
 }
 
 void HttpHandler::GET() {
-	_response.version = _request.version;
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
 
@@ -129,36 +130,26 @@ void HttpHandler::GET() {
 	}
 	else if (Utils::pathToFileExist(_request.path)) {
 		Utils::loadFile(_request.path, _response.body_stream);
-		// Add headers to the response
+		_response.map_headers["Content-Type"] = getContentType(_request.path);
 	}
 	else
 	{
 		_response.status_code = "404";
 		_response.status_phrase = "Not Found";
 		_response.body_stream << "<html><body><h1>404 Not Found</h1></body></html>";
+		_response.map_headers["Content-Type"] = "text/html";
 	}
-	_response.map_headers["Content-Type"] = getContentType(_request.path);
-	_response.map_headers["Content-Length"] = Utils::intToString(_response.body_stream.str().length());
 
-	#if 0
-	_response.map_headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
-	_response.map_headers["Pragma"] = "no-cache";
-	_response.map_headers["Expires"] = "0";
-	#endif
+	_response.map_headers["Content-Type"] = "text/html";
+	_response.map_headers["Content-Length"] = Utils::intToString(_response.body_stream.str().length());
 }
 
 
 void HttpHandler::POST() {
-
-	_response.version = _request.version;
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
 
-	//createOrEraseFile
-
-	std::cout << "CONTENT : " << _request.map_headers["Content-Type"] << std::endl;
 	size_t pos_boundary = _request.map_headers["Content-Type"].find("boundary=");
-
 	if (pos_boundary != std::string::npos) {	//multipart/form-data
 
 		std::string messageBody = _request.body_stream.str();
@@ -169,12 +160,31 @@ void HttpHandler::POST() {
 		size_t end = messageBody.find(fileContentEnd, start);
 
 		if (start == std::string::npos || end == std::string::npos) {
+			_response.status_code = "400";
+			_response.status_phrase = "Bad Request";
+			Utils::loadFile("./website/400.html", _response.body_stream);
+			_response.map_headers["Location"] = "http://localhost:8080/400.html";
+			_response.map_headers["Content-Type"] = getContentType("./website/400.html");
+			_response.map_headers["Content-Length"] = Utils::intToString(_response.body_stream.str().length());
         	return ;
     	}
 
 		start += std::strlen(CRLF);
-    	std::cout <<  messageBody.substr(start, end - start) << std::endl;
+    	messageBody =  messageBody.substr(start, end - start);
+
+		_response.status_code = "201";
+		_response.status_phrase = "Created";
+
 		return ;
+		//std::ofstream *outfile = Utils::createOrEraseFile("upload.html");
+		// Write the data to the file
+		//_response.body_stream.write(start, end - start);
+		//return ;
+	}
+
+	else if (_request.map_headers["Content-Type"].find("application/x-www-form-urlencoded") != std::string::npos) {
+		//application/x-www-form-urlencoded
+
 	}
 
 
@@ -204,6 +214,5 @@ void HttpHandler::constructStringResponse() {
 		_response.header_stream << it->first << ": " << it->second;
 		first = false;
 	}
-	// Write a blank line to indicate the end of the header section
 	_response.header_stream << "\r\n\r\n";
 }

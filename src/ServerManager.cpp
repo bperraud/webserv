@@ -155,7 +155,7 @@ void ServerManager::handleNewConnections() {
 					client->createHttpResponse();
 
 					//if (client->getRequestMethod() == "POST") {
-					if (0) {
+					if (1) {
 						std::cout << "Header :" << std::endl;
 						std::cout << client->getRequest() << std::endl;
 						std::cout << "Message body :" << std::endl;

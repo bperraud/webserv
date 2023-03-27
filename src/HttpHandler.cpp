@@ -24,7 +24,7 @@ void	HttpHandler::copyLastFour(char *buffer, ssize_t nbytes) {
 		std::memcpy(buffer, _lastFour, 4);
 	else
 		std::memcpy(buffer, buffer + 4, 4);
-	std::memcpy(_lastFour, buffer + nbytes, 4);		// copies last 4 bytes
+	std::memcpy(_lastFour, buffer + nbytes, 4);
 }
 
 void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
@@ -43,11 +43,6 @@ bool HttpHandler::isKeepAlive() const {
 	return _close_keep_alive;
 }
 
-void HttpHandler::addFileToResponse(const std::string &fileName) {
-	std::ifstream input_file(fileName.c_str(), std::ios::binary);
-	_response.body_stream << input_file.rdbuf();
-}
-
 void HttpHandler::parseRequest() {
 	// Parse the start-line
 	*_readStream >> _request.method >> _request.path >> _request.version;
@@ -61,8 +56,6 @@ void HttpHandler::parseRequest() {
 		header_name.erase(0, header_name.find_first_not_of(" \r\n\t"));
 		_request.map_headers[header_name] = header_value;
 	}
-
-	// Check if a message body is expected
 	_request.body_length = 0;
 	std::map<std::string, std::string>::iterator content_length_header = _request.map_headers.find("Content-Length");
 	if (content_length_header != _request.map_headers.end()) {
@@ -123,7 +116,7 @@ void HttpHandler::GET() {
 	_response.status_phrase = "OK";
 
 	if (!_request.path.compare("/")) {
-		addFileToResponse(DEFAULT_PAGE);
+		Utils::loadFile(DEFAULT_PAGE, _response.body_stream);
 		_response.map_headers["Content-Type"] = getContentType(DEFAULT_PAGE);
 		_response.map_headers["Content-Length"] = Utils::intToString(_response.body_stream.str().length());
 		return ;
@@ -135,7 +128,7 @@ void HttpHandler::GET() {
 		;//directory listing
 	}
 	else if (Utils::pathToFileExist(_request.path)) {
-		addFileToResponse(_request.path);
+		Utils::loadFile(_request.path, _response.body_stream);
 		// Add headers to the response
 	}
 	else
@@ -154,14 +147,25 @@ void HttpHandler::GET() {
 	#endif
 }
 
+
 void HttpHandler::POST() {
+
 	_response.version = _request.version;
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
 
-	addFileToResponse(DEFAULT_PAGE);
-	_response.map_headers["Content-Type"] = getContentType(DEFAULT_PAGE);
-	_response.map_headers["Content-Length"] = Utils::intToString(_response.body_stream.str().length());
+
+
+	#if 0
+	_response.version = _request.version;
+	_response.status_code = "302";
+	_response.status_phrase = "Found";
+
+	//addFileToResponse(DEFAULT_PAGE);
+	_response.map_headers["Location"] = "http://localhost:8080/index.html";
+	#endif
+	//_response.map_headers["Content-Type"] = getContentType(DEFAULT_PAGE);
+	//_response.map_headers["Content-Length"] = Utils::intToString(_response.body_stream.str().length());
 }
 
 

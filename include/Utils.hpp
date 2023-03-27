@@ -6,6 +6,7 @@
 #include <fstream>
 #include <sys/stat.h> // stat()
 #include <dirent.h> //closedir()
+#include <iostream>
 
 class Utils {
 
@@ -18,6 +19,10 @@ public:
 	static bool 		pathToFileExist(const std::string& path);
 	static bool 		isDirectory(const std::string& path);
 	static std::string	intToString(int value);
+
+	static void			loadFile(const std::string &fileName, std::basic_iostream<char> &stream) ;
+
+	static std::ofstream* createOrEraseFile(const char* filename);
 
     ~Utils();
 };

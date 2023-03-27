@@ -126,8 +126,6 @@ public:
 
 	void constructStringResponse();
 
-	void addFileToResponse(const std::string &fileName);
-
 	std::string getContentType(const std::string& path);
 };
 

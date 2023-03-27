@@ -161,7 +161,7 @@ void ServerManager::handleNewConnections() {
 						std::cout << "Message body :" << std::endl;
 						std::cout << client->getBody() << std::endl;
 
-						#if 0
+						#if 1
 						std::cout << "Response Header :" << std::endl;
 						std::cout << client->getResponseHeader() << std::endl;
 						std::cout << "Response Message body :" << std::endl;

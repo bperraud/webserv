@@ -25,6 +25,33 @@ std::string Utils::intToString(int value)
 	return oss.str();
 }
 
+void Utils::loadFile(const std::string &fileName, std::basic_iostream<char> &stream) {
+	std::ifstream input_file(fileName.c_str());
+	stream << input_file.rdbuf();
+}
+
+std::ofstream* createOrEraseFile(const char* filename) {
+    // Check if file exists
+    if (remove(filename) != 0) {
+        // File does not exist, so proceed with creating it
+        std::ofstream* file = new std::ofstream(filename);
+        if (!(*file)) {
+            delete file;
+            return NULL; // Return null pointer on error
+        }
+        return file;
+    } else {
+        // File exists and has been erased, so create it again
+        std::ofstream* file = new std::ofstream(filename);
+        if (!(*file)) {
+            delete file;
+            return NULL; // Return null pointer on error
+        }
+        return file;
+    }
+}
+
+
 Utils::~Utils() {
 
 }

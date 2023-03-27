@@ -80,9 +80,6 @@ public:
 	HttpHandler();
 	~HttpHandler();
 
-	//std::string addToRequest(const std::string &str);
-	//std::string addToResponse(const std::string &str);
-	//bool		hasBeenSend() const;
 	bool		isKeepAlive() const;
 
 	void	writeToStream(char *buffer, ssize_t nbytes) ;
@@ -100,7 +97,18 @@ public:
 		return _request.method;
 	}
 
-	void	copyLastFour(char *buffer, ssize_t nbytes) ;
+	void	resetStream() {
+		delete _readStream;
+		_readStream = new std::stringstream();
+
+		_request.body_stream.str(std::string());
+		_request.body_stream.seekp(0, std::ios_base::beg);
+		_response.body_stream.str(std::string());
+		_response.header_stream.str(std::string());
+		_lastFour[0] = '\0';
+	}
+
+	void	copyLastFour(char *buffer, ssize_t nbytes);
 
 	ssize_t getLeftToRead() const {
 		return _left_to_read;

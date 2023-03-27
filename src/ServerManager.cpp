@@ -151,26 +151,26 @@ void ServerManager::handleNewConnections() {
 	#endif
 			else {
 				if (!readFromClient(fd)) {
-
 					HttpHandler *client = _client_map[fd];
-
-					client->parseRequest();
 					client->createHttpResponse();
 
-					if (client->getRequestMethod() == "POST") {
-
+					//if (client->getRequestMethod() == "POST") {
+					if (1) {
 						std::cout << "Header :" << std::endl;
 						std::cout << client->getRequest() << std::endl;
 						std::cout << "Message body :" << std::endl;
 						std::cout << client->getBody() << std::endl;
+
+						#if 0
 						std::cout << "Response Header :" << std::endl;
 						std::cout << client->getResponseHeader() << std::endl;
 						std::cout << "Response Message body :" << std::endl;
 						std::cout << client->getResponseBody() << std::endl;
+						#endif
 					}
-
 					writeToClient(fd, client->getResponseHeader());
 					writeToClient(fd, client->getResponseBody());
+					client->resetStream();
 					connectionCloseMode(fd);
 				}
 			}
@@ -212,8 +212,8 @@ void ServerManager::closeClientConnection(int client_fd) {
 int	ServerManager::readFromClient(int client_fd){
 	char buffer[BUFFER_SIZE + 4];
 	HttpHandler *client = _client_map[client_fd];
-	ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
 
+	ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
 	client->copyLastFour(buffer, nbytes);
 	if (nbytes == -1) {
 		perror("recv()");
@@ -226,6 +226,7 @@ int	ServerManager::readFromClient(int client_fd){
 	}
 	else {
 		printf("finished reading data from client %d\n", client_fd);
+
 		if (client->getLeftToRead())
 		{
 			return (client->writeToBody(buffer + 4, nbytes) != 0);
@@ -237,7 +238,7 @@ int	ServerManager::readFromClient(int client_fd){
 		}
 		else {
 			client->writeToStream(buffer + 4, pos_end_header);
-			//client->parseRequest(client->getRequest());
+			client->parseRequest();
 			return (client->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header) != 0);
 		}
 	}

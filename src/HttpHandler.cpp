@@ -53,8 +53,6 @@ void HttpHandler::parseRequest() {
 	// Parse the start-line
 	*_readStream >> _request.method >> _request.path >> _request.version;
 
-	std::cout << "method: " << _request.method << std::endl;
-
 	// Parse the headers into a hash table
 	std::string header_name, header_value;
 	while (getline(*_readStream, header_name, ':') && getline(*_readStream, header_value, '\r')) {
@@ -76,9 +74,6 @@ void HttpHandler::parseRequest() {
 
 	_close_keep_alive = _request.map_headers["Connection"] == "keep-alive";
 	_left_to_read = _request.body_length;
-
-	// reset read stream
-	//_readStream.str(std::string());
 }
 
 std::string HttpHandler::getContentType(const std::string& path) {
@@ -135,8 +130,7 @@ bool HttpHandler::pathToFileExist(const std::string& path) {
 void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[3] = {"GET", "POST", "DELETE"};
-	_response.body_stream.str(std::string());
-	_response.header_stream.str(std::string());
+
 	for (index = 0; index < 3; index++)
 	{
 		if (type[index].compare(_request.method) == 0)
@@ -191,7 +185,6 @@ void HttpHandler::GET() {
 	_response.map_headers["Content-Type"] = getContentType(_request.path);
 	_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
 
-
 	#if 0
 	_response.map_headers["Cache-Control"] = "no-cache, no-store, must-revalidate";
 	_response.map_headers["Pragma"] = "no-cache";
@@ -200,14 +193,12 @@ void HttpHandler::GET() {
 }
 
 void HttpHandler::POST() {
-	// create a POST http request
-	std::cout << "POST" << std::endl;
-
+	_response.version = _request.version;
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
-	_response.body_stream << "<html><body><h1>404 Not Found</h1></body></html>";
 
-	_response.map_headers["Content-Type"] = "text/html";
+	addFileToResponse(DEFAULT_PAGE);
+	_response.map_headers["Content-Type"] = getContentType(DEFAULT_PAGE);
 	_response.map_headers["Content-Length"] = intToString(_response.body_stream.str().length());
 }
 

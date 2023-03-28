@@ -2,7 +2,7 @@
 
 
 HttpHandler::HttpHandler() : _readStream(new std::stringstream()),  _close_keep_alive(false), _type(0)
-, _left_to_read(0), _MIME_TYPES(){
+, _left_to_read(0), _MIME_TYPES(), _cgiMode(false){
 	_lastFour[0] = '\0';
 
 	_MIME_TYPES["html"] = "text/html";
@@ -34,7 +34,7 @@ void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
 int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	if (!_left_to_read)
 		return 0;
-	_request.body_stream.write(buffer, nbytes);
+	_request_body_stream.write(buffer, nbytes);
 	_left_to_read -= nbytes;
 	return _left_to_read;
 }
@@ -112,14 +112,23 @@ void HttpHandler::createHttpResponse() {
 	constructStringResponse();
 }
 
+bool HttpHandler::isCGI(const std::string &path) {
+	return path.substr(0, std::strlen("/cgi-bin/")).compare("/cgi-bin/") == 0;
+}
+
 void HttpHandler::GET() {
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
 
 	if (!_request.path.compare("/")) {
-		Utils::loadFile(DEFAULT_PAGE, _response.body_stream);
+		Utils::loadFile(DEFAULT_PAGE, _response_body_stream);
 		_response.map_headers["Content-Type"] = getContentType(DEFAULT_PAGE);
-		_response.map_headers["Content-Length"] = Utils::intToString(_response.body_stream.str().length());
+		_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+		return ;
+	}
+	else if (isCGI(_request.path))
+	{
+		_cgiMode = true;
 		return ;
 	}
 
@@ -129,19 +138,23 @@ void HttpHandler::GET() {
 		;//directory listing
 	}
 	else if (Utils::pathToFileExist(_request.path)) {
-		Utils::loadFile(_request.path, _response.body_stream);
+
+
+
+
+		Utils::loadFile(_request.path, _response_body_stream);
 		_response.map_headers["Content-Type"] = getContentType(_request.path);
 	}
 	else
 	{
 		_response.status_code = "404";
 		_response.status_phrase = "Not Found";
-		_response.body_stream << "<html><body><h1>404 Not Found</h1></body></html>";
+		_response_body_stream << "<html><body><h1>404 Not Found</h1></body></html>";
 		_response.map_headers["Content-Type"] = "text/html";
 	}
 
 	_response.map_headers["Content-Type"] = "text/html";
-	_response.map_headers["Content-Length"] = Utils::intToString(_response.body_stream.str().length());
+	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
 }
 
 
@@ -152,7 +165,7 @@ void HttpHandler::POST() {
 	size_t pos_boundary = _request.map_headers["Content-Type"].find("boundary=");
 	if (pos_boundary != std::string::npos) {	//multipart/form-data
 
-		std::string messageBody = _request.body_stream.str();
+		std::string messageBody = _request_body_stream.str();
 		std::string boundary = _request.map_headers["Content-Type"].substr(pos_boundary + 9);
 
 		std::string fileContentEnd = "\r\n--" + boundary + "--";
@@ -162,10 +175,10 @@ void HttpHandler::POST() {
 		if (start == std::string::npos || end == std::string::npos) {
 			_response.status_code = "400";
 			_response.status_phrase = "Bad Request";
-			Utils::loadFile("./website/400.html", _response.body_stream);
+			Utils::loadFile("./website/400.html", _response_body_stream);
 			_response.map_headers["Location"] = "http://localhost:8080/400.html";
 			_response.map_headers["Content-Type"] = getContentType("./website/400.html");
-			_response.map_headers["Content-Length"] = Utils::intToString(_response.body_stream.str().length());
+			_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
         	return ;
     	}
 
@@ -178,7 +191,7 @@ void HttpHandler::POST() {
 		return ;
 		//std::ofstream *outfile = Utils::createOrEraseFile("upload.html");
 		// Write the data to the file
-		//_response.body_stream.write(start, end - start);
+		//_response_body_stream.write(start, end - start);
 		//return ;
 	}
 
@@ -197,7 +210,7 @@ void HttpHandler::POST() {
 	_response.map_headers["Location"] = "http://localhost:8080/index.html";
 	#endif
 	//_response.map_headers["Content-Type"] = getContentType(DEFAULT_PAGE);
-	//_response.map_headers["Content-Length"] = Utils::intToString(_response.body_stream.str().length());
+	//_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
 }
 
 
@@ -207,12 +220,12 @@ void HttpHandler::DELETE() {
 
 void HttpHandler::constructStringResponse() {
 	bool first = true;
-	_response.header_stream << _response.version << " " << _response.status_code << " " << _response.status_phrase << "\r\n";
+	_response_header_stream << _response.version << " " << _response.status_code << " " << _response.status_phrase << "\r\n";
 	for (std::map<std::string, std::string>::const_iterator it = _response.map_headers.begin(); it != _response.map_headers.end(); ++it) {
 		if (!first)
-			_response.header_stream << "\r\n";
-		_response.header_stream << it->first << ": " << it->second;
+			_response_header_stream << "\r\n";
+		_response_header_stream << it->first << ": " << it->second;
 		first = false;
 	}
-	_response.header_stream << "\r\n\r\n";
+	_response_header_stream << "\r\n\r\n";
 }

@@ -34,7 +34,6 @@ struct HttpMessage {
     std::map<std::string, std::string> map_headers;
     bool has_body;
     size_t body_length;
-    std::stringstream body_stream;
 };
 
 struct HttpResponse {
@@ -42,8 +41,6 @@ struct HttpResponse {
     std::string status_code;
     std::string status_phrase;
     std::map<std::string, std::string> map_headers;
-    std::stringstream body_stream;
-	std::stringstream header_stream;
 };
 
 class HttpHandler {
@@ -51,6 +48,11 @@ class HttpHandler {
 private:
 
 	std::stringstream	*_readStream;
+
+	std::stringstream   _request_body_stream;
+	std::stringstream   _response_header_stream;
+	std::stringstream   _response_body_stream;
+
 	HttpMessage			_request;
 	HttpResponse		_response;
 	bool				_close_keep_alive;
@@ -59,6 +61,8 @@ private:
 
 	ssize_t				_left_to_read;
 	std::map<std::string, std::string> _MIME_TYPES;
+
+	bool				_cgiMode;
 
 
 	HttpHandler(const HttpHandler &copy) {
@@ -82,12 +86,20 @@ public:
 	void	writeToStream(char *buffer, ssize_t nbytes) ;
 	int		writeToBody(char *buffer, ssize_t nbytes);
 
+	bool	isCGIMode() const {
+		return _cgiMode;
+	}
+
+	HttpMessage getStructRequest() {
+		return _request;
+	}
+
 	std::string		getRequest() {
 		return _readStream->str();
 	}
 
 	std::string		getBody() {
-		return _request.body_stream.str();
+		return _request_body_stream.str();
 	}
 
 	std::string		getRequestMethod() {
@@ -98,10 +110,10 @@ public:
 		delete _readStream;
 		_readStream = new std::stringstream();
 
-		_request.body_stream.str(std::string());
-		_request.body_stream.seekp(0, std::ios_base::beg);
-		_response.body_stream.str(std::string());
-		_response.header_stream.str(std::string());
+		_request_body_stream.str(std::string());
+		_request_body_stream.seekp(0, std::ios_base::beg);
+		_response_body_stream.str(std::string());
+		_response_header_stream.str(std::string());
 		_lastFour[0] = '\0';
 	}
 
@@ -112,11 +124,11 @@ public:
 	}
 
 	std::string getResponseHeader() {
-		return _response.header_stream.str();
+		return _response_header_stream.str();
 	}
 
 	std::string getResponseBody() {
-		return _response.body_stream.str();
+		return _response_body_stream.str();
 	}
 
 	void parseRequest();
@@ -126,6 +138,7 @@ public:
 	void POST();
 	void DELETE();
 
+	bool isCGI(const std::string &path);
 	void constructStringResponse();
 
 	std::string getContentType(const std::string& path);

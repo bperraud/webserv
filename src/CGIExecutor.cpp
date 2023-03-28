@@ -5,6 +5,14 @@ CGIExecutor::CGIExecutor(char** env) : _env(env) {
 
 }
 
+
+void CGIExecutor::run(const HttpMessage &request) {
+	std::cout << "CGIExecutor::run" << std::endl;
+
+
+}
+
+
 void CGIExecutor::execute(char *path, int input_fd, int output_fd) const {
 
 	//std::string cgi_path = path + extension;

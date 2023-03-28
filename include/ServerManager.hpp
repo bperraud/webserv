@@ -3,6 +3,7 @@
 
 #include "Config.hpp"
 #include "HttpHandler.hpp"
+#include "CGIExecutor.hpp"
 
 #include <iostream>
 #include <errno.h>		// errno
@@ -39,6 +40,7 @@ private:
 
     int		_listen_fd;
 
+	CGIExecutor		_cgi_executor;
 	#if (defined (LINUX) || defined (__linux__))
 	int		_epoll_fd;
 	#else
@@ -48,7 +50,7 @@ private:
 	int		_host_addrlen;
 
 public:
-    ServerManager(Config config);
+    ServerManager(Config config, CGIExecutor cgi);
     ~ServerManager();
 
     void run();

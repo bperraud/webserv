@@ -17,11 +17,14 @@
 
 int main(int argc, char **argv, char ** envp)
 {
-	//if (argc != 2)
-		//return 1;
+	if (argc != 1)
+		return 1;
 
 	Config config(argv[1]);
-	ServerManager serverManager(config);
+
+	CGIExecutor cgi(envp);
+
+	ServerManager serverManager(config, cgi);
 
 	//CGIExecutor cgi(envp);
 	// Set up listen sockets

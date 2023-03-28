@@ -10,10 +10,12 @@
 #include <errno.h>		// errno
 #include <stdio.h>		// perror
 
+#include "HttpHandler.hpp"
+
+
 class CGIExecutor {
 private:
 	char**		_env;
-    //std::string m_cgi_path;
 
 public:
     // Constructor takes the path to the CGI binary as a parameter
@@ -21,6 +23,7 @@ public:
 
     // Execute the CGI script with the given environment variables and input data
     void execute(char* path, int input_fd, int output_fd) const ;
+	void run(const HttpMessage &request);
 };
 
 

@@ -1,7 +1,7 @@
 #include "ServerManager.hpp"
 
 
-ServerManager::ServerManager(Config config) {
+ServerManager::ServerManager(Config config, CGIExecutor cgi) : _cgi_executor(cgi) {
 	(void) config;
 }
 
@@ -152,7 +152,14 @@ void ServerManager::handleNewConnections() {
 			else {
 				if (!readFromClient(fd)) {
 					HttpHandler *client = _client_map[fd];
+
+
 					client->createHttpResponse();
+
+					if (client->isCGIMode())
+					{
+						_cgi_executor.run(client->getStructRequest());
+					}
 
 					//if (client->getRequestMethod() == "POST") {
 					if (1) {

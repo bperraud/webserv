@@ -18,7 +18,7 @@ bool Utils::isDirectory(const std::string& path) {
     return S_ISDIR(filestat.st_mode);
 }
 
-bool hasExecutePermissions(const char* filepath) {
+bool Utils::hasExecutePermissions(const char* filepath) {
 	return access(filepath, X_OK) == 0;
 }
 

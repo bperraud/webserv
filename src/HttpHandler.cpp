@@ -138,10 +138,6 @@ void HttpHandler::GET() {
 		;//directory listing
 	}
 	else if (Utils::pathToFileExist(_request.path)) {
-
-
-
-
 		Utils::loadFile(_request.path, _response_body_stream);
 		_response.map_headers["Content-Type"] = getContentType(_request.path);
 	}

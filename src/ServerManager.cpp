@@ -158,11 +158,20 @@ void ServerManager::handleNewConnections() {
 
 					if (client->isCGIMode())
 					{
-						_cgi_executor.run(client->getStructRequest());
+						std::cout << "Header :" << std::endl;
+						std::cout << client->getRequest() << std::endl;
+						std::cout << "Message body :" << std::endl;
+						std::cout << client->getBody() << std::endl;
+
+						_cgi_executor.run(client->getStructRequest(), fd);
+
 					}
+					else{
+
+
 
 					//if (client->getRequestMethod() == "POST") {
-					if (1) {
+					if (0) {
 						std::cout << "Header :" << std::endl;
 						std::cout << client->getRequest() << std::endl;
 						std::cout << "Message body :" << std::endl;
@@ -177,6 +186,8 @@ void ServerManager::handleNewConnections() {
 					}
 					writeToClient(fd, client->getResponseHeader());
 					writeToClient(fd, client->getResponseBody());
+
+					}
 					client->resetStream();
 					connectionCloseMode(fd);
 				}

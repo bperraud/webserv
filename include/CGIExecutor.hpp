@@ -10,6 +10,8 @@
 #include <errno.h>		// errno
 #include <stdio.h>		// perror
 
+# include "fcntl.h" // open()
+
 #include "HttpHandler.hpp"
 
 
@@ -23,7 +25,9 @@ public:
 
     // Execute the CGI script with the given environment variables and input data
     void execute(char* path, int input_fd, int output_fd) const ;
-	void run(const HttpMessage &request);
+	void run(const HttpMessage &request, int client_fd);
+
+	void readCgiOutput(char *path);
 };
 
 

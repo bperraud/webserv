@@ -168,8 +168,6 @@ void ServerManager::handleNewConnections() {
 					}
 					else{
 
-
-
 					//if (client->getRequestMethod() == "POST") {
 					if (0) {
 						std::cout << "Header :" << std::endl;

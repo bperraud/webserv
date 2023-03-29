@@ -7,6 +7,7 @@
 #include <sys/stat.h> // stat()
 #include <dirent.h> //closedir()
 #include <iostream>
+#include <unistd.h>
 
 class Utils {
 
@@ -22,8 +23,8 @@ public:
 
 	static void			loadFile(const std::string &fileName, std::basic_iostream<char> &stream) ;
 
-	static std::ofstream* createOrEraseFile(const char* filename);
-
+	static std::ofstream*	createOrEraseFile(const char* filename);
+	static bool				hasExecutePermissions(const char* filepath);
     ~Utils();
 };
 

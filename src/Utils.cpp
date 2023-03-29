@@ -18,6 +18,10 @@ bool Utils::isDirectory(const std::string& path) {
     return S_ISDIR(filestat.st_mode);
 }
 
+bool hasExecutePermissions(const char* filepath) {
+	return access(filepath, X_OK) == 0;
+}
+
 std::string Utils::intToString(int value)
 {
 	std::ostringstream oss;

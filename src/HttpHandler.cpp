@@ -185,10 +185,6 @@ void HttpHandler::POST() {
 		_response.status_phrase = "Created";
 
 		return ;
-		//std::ofstream *outfile = Utils::createOrEraseFile("upload.html");
-		// Write the data to the file
-		//_response_body_stream.write(start, end - start);
-		//return ;
 	}
 
 	else if (_request.map_headers["Content-Type"].find("application/x-www-form-urlencoded") != std::string::npos) {

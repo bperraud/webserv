@@ -14,7 +14,6 @@
 
 #include "HttpHandler.hpp"
 
-
 class CGIExecutor {
 private:
 	char**		_env;

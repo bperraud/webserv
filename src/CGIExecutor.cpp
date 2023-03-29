@@ -23,11 +23,12 @@ void CGIExecutor::run(const HttpMessage &request, int client_fd) {
 	//PATH_INFO: The path of the requested file.
 	//SCRIPT_FILENAME: The full path of the CGI program.
 
-	int input_fd = open( "test", O_CREAT | O_RDWR | O_TRUNC, 0644);
+	//int input_fd = open( "test", O_CREAT | O_RDWR | O_TRUNC, 0644);
+	//client_fd = open( "output" , O_CREAT | O_RDWR | O_TRUNC, 0644);
 
-	client_fd = open( "output" , O_CREAT | O_RDWR | O_TRUNC, 0644);
-
-
+	if (!Utils::hasExecutePermissions(SCRIPT_FILENAME.c_str())) {
+		;//TODO: 403
+	}
 
 	putenv(const_cast<char*>(REQUEST_METHOD.c_str()));
 	putenv(const_cast<char*>(QUERY_STRING.c_str()));
@@ -38,15 +39,12 @@ void CGIExecutor::run(const HttpMessage &request, int client_fd) {
 	std::strcpy(path, SCRIPT_FILENAME.c_str());
 
 	//execute(path, input_fd, client_fd);
-
 	readCgiOutput(path);
-
 }
 
 void CGIExecutor::readCgiOutput(char *path) {
 	// Open the CGI script for reading its output
     FILE* cgi_output = popen(path, "r");
-
     if (cgi_output)
     {
         // Read and write the output of the CGI script
@@ -55,7 +53,6 @@ void CGIExecutor::readCgiOutput(char *path) {
         {
             std::cout << buffer;
         }
-
         // Close the CGI script
         pclose(cgi_output);
     }

@@ -85,7 +85,7 @@ public:
 	HttpHandler();
 	~HttpHandler();
 
-	bool		isKeepAlive() const;
+	bool	isKeepAlive() const;
 
 	void	writeToStream(char *buffer, ssize_t nbytes) ;
 	int		writeToBody(char *buffer, ssize_t nbytes);

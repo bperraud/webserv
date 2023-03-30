@@ -21,30 +21,10 @@ int main(int argc, char **argv, char ** envp)
 		return 1;
 
 	Config config(argv[1]);
-
 	CGIExecutor cgi(envp);
-
 	ServerManager serverManager(config, cgi);
 
-	//CGIExecutor cgi(envp);
-	// Set up listen sockets
-
-	serverManager.setupSocket();
-	serverManager.handleNewConnections();
-
-
-	return 0;
-	//serverManager.listenAll();
-
-	// Main event loop
-	while (true)
-	{
-		// Wait for events on our file descriptors
-
-		// Process incoming connections
-
-		// Process requests from existing connections
-	}
+	serverManager.run();
 
 	return 0;
 }

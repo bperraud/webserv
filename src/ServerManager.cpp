@@ -5,6 +5,11 @@ ServerManager::ServerManager(Config config, CGIExecutor cgi) : _cgi_executor(cgi
 	(void) config;
 }
 
+void ServerManager::run() {
+	setupSocket();
+	handleNewConnections();
+}
+
 void	ServerManager::setupSocket() {
 	if ((_listen_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
 	{
@@ -21,7 +26,6 @@ void	ServerManager::setupSocket() {
 		perror("setsockopt(SO_REUSEADDR) failed");
 		exit(EXIT_FAILURE);
 	}
-
 	// disables the Nagle algorithm, which can improve performance for small messages,
 	//but can degrade performance for large messages or bulk data transfer.
 	int enable_nodelay = 1;
@@ -99,14 +103,12 @@ void ServerManager::handleNewConnections() {
 				_client_map.insert(std::make_pair(newsockfd, new HttpHandler()));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
-
 			else {
 				handleReadEvent(fd);
 			}
 		}
 	}
 }
-
 #else
 void ServerManager::handleNewConnections() {
 	_kqueue_fd = kqueue();
@@ -166,8 +168,8 @@ void ServerManager::handleNewConnections() {
 
 void ServerManager::handleReadEvent(int client_fd) {
 	if (!readFromClient(client_fd)) {
-		HttpHandler *client = _client_map[client_fd];
 
+		HttpHandler *client = _client_map[client_fd];
 		client->createHttpResponse();
 
 		if (client->isCGIMode())

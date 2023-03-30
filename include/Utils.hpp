@@ -24,6 +24,7 @@ public:
 	static void			loadFile(const std::string &fileName, std::basic_iostream<char> &stream) ;
 
 	static std::ofstream*	createOrEraseFile(const char* filename);
+
 	static bool				hasExecutePermissions(const char* filepath);
     ~Utils();
 };

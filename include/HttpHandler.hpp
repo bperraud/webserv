@@ -141,6 +141,8 @@ public:
 	void parseRequest();
 	void createHttpResponse();
 
+	bool findHeader(const std::string &header, std::string &value);
+
 	void GET();
 	void POST();
 	void DELETE();

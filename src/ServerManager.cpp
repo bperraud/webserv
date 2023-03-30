@@ -170,6 +170,14 @@ void ServerManager::handleReadEvent(int client_fd) {
 	if (!readFromClient(client_fd)) {
 
 		HttpHandler *client = _client_map[client_fd];
+
+		#if 0
+		std::cout << "Header :" << std::endl;
+		std::cout << client->getRequest() << std::endl;
+		std::cout << "Message body :" << std::endl;
+		std::cout << client->getBody() << std::endl;
+		#endif
+
 		client->createHttpResponse();
 
 		if (client->isCGIMode())
@@ -182,19 +190,14 @@ void ServerManager::handleReadEvent(int client_fd) {
 		}
 		else{
 
-		if (0) {
-			std::cout << "Header :" << std::endl;
-			std::cout << client->getRequest() << std::endl;
-			std::cout << "Message body :" << std::endl;
-			std::cout << client->getBody() << std::endl;
 
-			#if 1
-			std::cout << "Response Header :" << std::endl;
-			std::cout << client->getResponseHeader() << std::endl;
-			std::cout << "Response Message body :" << std::endl;
-			std::cout << client->getResponseBody() << std::endl;
-			#endif
-		}
+		#if 0
+		std::cout << "Response Header :" << std::endl;
+		std::cout << client->getResponseHeader() << std::endl;
+		std::cout << "Response Message body :" << std::endl;
+		std::cout << client->getResponseBody() << std::endl;
+		#endif
+
 		writeToClient(client_fd, client->getResponseHeader());
 		writeToClient(client_fd, client->getResponseBody());
 

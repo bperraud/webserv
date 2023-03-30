@@ -34,9 +34,9 @@ void Utils::loadFile(const std::string &fileName, std::basic_iostream<char> &str
 	stream << input_file.rdbuf();
 }
 
-std::ofstream* createOrEraseFile(const char* filename) {
+std::ofstream* Utils::createOrEraseFile(const char *filename) {
     // Check if file exists
-    if (remove(filename) != 0) {
+	if (remove(filename) != 0) {
         // File does not exist, so proceed with creating it
         std::ofstream* file = new std::ofstream(filename);
         if (!(*file)) {

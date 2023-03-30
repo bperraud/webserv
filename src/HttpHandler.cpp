@@ -159,35 +159,67 @@ void HttpHandler::GET() {
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
 }
 
+bool HttpHandler::findHeader(const std::string &header, std::string &value) {
+	std::map<std::string, std::string>::iterator it = _request.map_headers.find(header);
+	if (it != _request.map_headers.end()) {
+		value = it->second;
+		return true;
+	}
+	return false;
+}
+
+		//if (!findHeader("Content-Disposition", extractContent)) {
+		//	std::cout << "Content-Disposition not found" << std::endl;
+		//	return ;
+		//}
 
 void HttpHandler::POST() {
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
 
-	size_t pos_boundary = _request.map_headers["Content-Type"].find("boundary=");
+	std::string contentType;
+	if (!findHeader("Content-Type", contentType))
+		return error(400);
+
+	size_t pos_boundary = contentType.find("boundary=");
 	if (pos_boundary != std::string::npos) {	//multipart/form-data
 
+		std::string fileName;
 		std::string messageBody = _request_body_stream.str();
-		std::string boundary = _request.map_headers["Content-Type"].substr(pos_boundary + 9);
+		std::string boundary = contentType.substr(pos_boundary + 9);
+		size_t pos1 = messageBody.find("filename=\"");
+		if (pos1 != std::string::npos) {
+			// The filename is enclosed in double quotes
+			size_t pos2 = messageBody.find("\"", pos1 + 10);
+			if (pos2 != std::string::npos)
+				fileName = messageBody.substr(pos1 + 10, pos2 - pos1 - 10);
+			else
+				return error(400);
+		}
+		else
+			return error(400);
 
-		std::string fileContentEnd = "\r\n--" + boundary + "--";
 		size_t start = messageBody.find(CRLF);
-		size_t end = messageBody.find(fileContentEnd, start);
-
-		if (start == std::string::npos || end == std::string::npos) {
-			error(400);
-        	return ;
-    	}
+		size_t end = messageBody.find("\r\n--" + boundary + "--", start);
+		if (start == std::string::npos || end == std::string::npos)
+			return error(400);
 
 		start += std::strlen(CRLF);
     	messageBody =  messageBody.substr(start, end - start);
 
-
-		//Utils::createOrEraseFile();
+		std::ofstream *outfile = Utils::createOrEraseFile(fileName.c_str());
+		outfile->write(messageBody.c_str(), messageBody.length());
+    	outfile->close();
 
 		_response.status_code = "201";
 		_response.status_phrase = "Created";
 
+		_response_body_stream << "<html><head><title>Upload</title></head><body>\n";
+
+		_response.map_headers["Content-Type"] = getContentType(fileName);
+		_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+
+		delete outfile;
 		return ;
 	}
 

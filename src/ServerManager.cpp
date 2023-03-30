@@ -168,7 +168,6 @@ void ServerManager::handleNewConnections() {
 					}
 					else{
 
-					//if (client->getRequestMethod() == "POST") {
 					if (0) {
 						std::cout << "Header :" << std::endl;
 						std::cout << client->getRequest() << std::endl;
@@ -194,22 +193,12 @@ void ServerManager::handleNewConnections() {
 	}
 }
 
-void ServerManager::connectionCloseMode(int client_fd) {
-	if (!_client_map[client_fd]->isKeepAlive())
-		closeClientConnection(client_fd);
-}
-
 #if (defined (LINUX) || defined (__linux__))
 void ServerManager::closeClientConnection(int client_fd) {
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) == -1) {
 		perror("epoll_ctl EPOLL_CTL_DEL");
 		exit(EXIT_FAILURE);
 	}
-	delete _client_map[client_fd];
-	_client_map.erase(client_fd);
-	close(client_fd);
-	printf("connection closed on client %d\n", client_fd);
-}
 #else
 void ServerManager::closeClientConnection(int client_fd) {
     struct kevent event;
@@ -218,12 +207,17 @@ void ServerManager::closeClientConnection(int client_fd) {
         perror("kevent");
         exit(EXIT_FAILURE);
     }
-    delete _client_map[client_fd];
-    _client_map.erase(client_fd);
-    close(client_fd);
+#endif
+	delete _client_map[client_fd];
+	_client_map.erase(client_fd);
+	close(client_fd);
 	printf("connection closed on client %d\n", client_fd);
 }
-#endif
+
+void ServerManager::connectionCloseMode(int client_fd) {
+	if (!_client_map[client_fd]->isKeepAlive())
+		closeClientConnection(client_fd);
+}
 
 int	ServerManager::readFromClient(int client_fd){
 	char buffer[BUFFER_SIZE + 4];

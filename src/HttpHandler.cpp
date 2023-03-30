@@ -4,7 +4,6 @@
 HttpHandler::HttpHandler() : _readStream(new std::stringstream()),  _close_keep_alive(false), _type(0)
 , _left_to_read(0), _MIME_TYPES(), _cgiMode(false){
 	_lastFour[0] = '\0';
-
 	_MIME_TYPES["html"] = "text/html";
     _MIME_TYPES["css"] = "text/css";
     _MIME_TYPES["js"] = "text/javascript";
@@ -13,6 +12,23 @@ HttpHandler::HttpHandler() : _readStream(new std::stringstream()),  _close_keep_
     _MIME_TYPES["gif"] = "image/gif";
     _MIME_TYPES["json"] = "application/json";
 	_MIME_TYPES["webmanifest"] = "application/manifest+json";
+	_MIME_TYPES["ico"] = "image/x-icon";
+	_MIME_TYPES["txt"] = "text/plain";
+	_MIME_TYPES["pdf"] = "application/pdf";
+	_MIME_TYPES["mp3"] = "audio/mpeg";
+	_MIME_TYPES["mp4"] = "video/mp4";
+	_MIME_TYPES["mpeg"] = "video/mpeg";
+	_MIME_TYPES["mov"] = "video/quicktime";
+	_MIME_TYPES["zip"] = "application/zip";
+	_MIME_TYPES["gz"] = "application/gzip";
+	_MIME_TYPES["tar"] = "application/x-tar";
+	_MIME_TYPES["xml"] = "application/xml";
+	_MIME_TYPES["wav"] = "audio/x-wav";
+	_MIME_TYPES["bmp"] = "image/bmp";
+	_MIME_TYPES["webp"] = "image/webp";
+	_MIME_TYPES["doc"] = "application/msword";
+	_MIME_TYPES["php"] = "text/html";
+	_MIME_TYPES["py"] = "text/html";
 }
 
 HttpHandler::~HttpHandler() {
@@ -173,6 +189,37 @@ bool HttpHandler::findHeader(const std::string &header, std::string &value) {
 		//	return ;
 		//}
 
+void HttpHandler::uploadFile(const std::string& contentType, size_t pos_boundary) {
+	std::string fileName;
+	std::string messageBody = _request_body_stream.str();
+	std::string boundary = contentType.substr(pos_boundary + 9);
+	size_t pos1 = messageBody.find("filename=\"");
+	if (pos1 != std::string::npos) {
+		size_t pos2 = messageBody.find("\"", pos1 + 10);
+		if (pos2 != std::string::npos)
+			fileName = messageBody.substr(pos1 + 10, pos2 - pos1 - 10);
+		else
+			return error(400);
+	}
+	else
+		return error(400);
+	size_t start = messageBody.find(CRLF);
+	size_t end = messageBody.find("\r\n--" + boundary + "--", start);
+	if (start == std::string::npos || end == std::string::npos)
+		return error(400);
+	start += std::strlen(CRLF);
+    messageBody =  messageBody.substr(start, end - start);
+	std::ofstream *outfile = Utils::createOrEraseFile(fileName.c_str());
+	outfile->write(messageBody.c_str(), messageBody.length());
+    outfile->close();
+	delete outfile;
+	_response.status_code = "201";
+	_response.status_phrase = "Created";
+	_response_body_stream << messageBody;
+	_response.map_headers["Content-Type"] = getContentType(fileName);
+	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+}
+
 void HttpHandler::POST() {
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
@@ -183,43 +230,7 @@ void HttpHandler::POST() {
 
 	size_t pos_boundary = contentType.find("boundary=");
 	if (pos_boundary != std::string::npos) {	//multipart/form-data
-
-		std::string fileName;
-		std::string messageBody = _request_body_stream.str();
-		std::string boundary = contentType.substr(pos_boundary + 9);
-		size_t pos1 = messageBody.find("filename=\"");
-		if (pos1 != std::string::npos) {
-			// The filename is enclosed in double quotes
-			size_t pos2 = messageBody.find("\"", pos1 + 10);
-			if (pos2 != std::string::npos)
-				fileName = messageBody.substr(pos1 + 10, pos2 - pos1 - 10);
-			else
-				return error(400);
-		}
-		else
-			return error(400);
-
-		size_t start = messageBody.find(CRLF);
-		size_t end = messageBody.find("\r\n--" + boundary + "--", start);
-		if (start == std::string::npos || end == std::string::npos)
-			return error(400);
-
-		start += std::strlen(CRLF);
-    	messageBody =  messageBody.substr(start, end - start);
-
-		std::ofstream *outfile = Utils::createOrEraseFile(fileName.c_str());
-		outfile->write(messageBody.c_str(), messageBody.length());
-    	outfile->close();
-
-		_response.status_code = "201";
-		_response.status_phrase = "Created";
-
-		_response_body_stream << "<html><head><title>Upload</title></head><body>\n";
-
-		_response.map_headers["Content-Type"] = getContentType(fileName);
-		_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
-
-		delete outfile;
+		uploadFile(contentType, pos_boundary);
 		return ;
 	}
 

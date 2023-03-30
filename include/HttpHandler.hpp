@@ -150,6 +150,8 @@ public:
 	bool isCGI(const std::string &path);
 	void constructStringResponse();
 
+	void uploadFile(const std::string& contentType, size_t pos_boundary);
+
 	std::string getContentType(const std::string& path);
 };
 

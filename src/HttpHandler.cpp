@@ -156,8 +156,6 @@ void HttpHandler::GET() {
 		error(404);
 		return;
 	}
-
-	_response.map_headers["Content-Type"] = "text/html";
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
 }
 
@@ -183,6 +181,9 @@ void HttpHandler::POST() {
 
 		start += std::strlen(CRLF);
     	messageBody =  messageBody.substr(start, end - start);
+
+
+		//Utils::createOrEraseFile();
 
 		_response.status_code = "201";
 		_response.status_phrase = "Created";

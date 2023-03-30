@@ -204,7 +204,6 @@ void ServerManager::handleReadEvent(int client_fd) {
 	}
 }
 
-
 #if (defined (LINUX) || defined (__linux__))
 void ServerManager::closeClientConnection(int client_fd) {
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) == -1) {

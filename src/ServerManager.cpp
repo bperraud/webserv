@@ -51,8 +51,8 @@ void ServerManager::setNonBlockingMode(int socket) {
 	}
 }
 
+#if (defined (LINUX) || defined (__linux__))
 void ServerManager::handleNewConnections() {
-	#if (defined (LINUX) || defined (__linux__))
 	_epoll_fd = epoll_create1(0);
 	if (_epoll_fd < 0) {
 		perror("epoll_create1");
@@ -71,36 +71,44 @@ void ServerManager::handleNewConnections() {
 	// the file descriptors that have been registered with epoll_ctl()
 
 	while (1) {
-	std::cout << "waiting..." << std::endl;
-	int n_ready = epoll_wait(_epoll_fd, events, MAX_EVENTS, -1);
-	// if any of the file descriptors match the interest then epoll_wait can return without blocking.
-	if (n_ready == -1) {
-		perror("epoll_wait");
-		exit(EXIT_FAILURE);
-	}
-	for (int i = 0; i < n_ready; i++) {
-		int fd = events[i].data.fd;
-		// If the listen socket is ready, accept a new connection and add it to the epoll interest list
-		if (fd == _listen_fd) {
-			struct sockaddr_in client_addr;
-			socklen_t client_addrlen = sizeof(client_addr);
-			int newsockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
-			if (newsockfd < 0) {
-				perror("accept()");
-				exit(EXIT_FAILURE);
-			}
-			setNonBlockingMode(newsockfd);
-			event.data.fd = newsockfd;
-			event.events = EPOLLIN;
-			if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
-				perror("epoll_ctl EPOLL_CTL_ADD");
-				exit(EXIT_FAILURE);
-			}
-			_client_map.insert(std::make_pair(newsockfd, new HttpHandler()));
-			std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
+		std::cout << "waiting..." << std::endl;
+		int n_ready = epoll_wait(_epoll_fd, events, MAX_EVENTS, -1);
+		// if any of the file descriptors match the interest then epoll_wait can return without blocking.
+		if (n_ready == -1) {
+			perror("epoll_wait");
+			exit(EXIT_FAILURE);
 		}
-	#else
+		for (int i = 0; i < n_ready; i++) {
+			int fd = events[i].data.fd;
+			// If the listen socket is ready, accept a new connection and add it to the epoll interest list
+			if (fd == _listen_fd) {
+				struct sockaddr_in client_addr;
+				socklen_t client_addrlen = sizeof(client_addr);
+				int newsockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
+				if (newsockfd < 0) {
+					perror("accept()");
+					exit(EXIT_FAILURE);
+				}
+				setNonBlockingMode(newsockfd);
+				event.data.fd = newsockfd;
+				event.events = EPOLLIN;
+				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
+					perror("epoll_ctl EPOLL_CTL_ADD");
+					exit(EXIT_FAILURE);
+				}
+				_client_map.insert(std::make_pair(newsockfd, new HttpHandler()));
+				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
+			}
 
+			else {
+				handleReadEvent(fd);
+			}
+		}
+	}
+}
+
+#else
+void ServerManager::handleNewConnections() {
 	_kqueue_fd = kqueue();
 	if (_kqueue_fd == -1) {
 		perror("kqueue");
@@ -148,50 +156,52 @@ void ServerManager::handleNewConnections() {
 				_client_map.insert(std::make_pair(newsockfd, new HttpHandler()));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
-	#endif
 			else {
-				if (!readFromClient(fd)) {
-					HttpHandler *client = _client_map[fd];
-
-
-					client->createHttpResponse();
-
-					if (client->isCGIMode())
-					{
-						std::cout << "Header :" << std::endl;
-						std::cout << client->getRequest() << std::endl;
-						std::cout << "Message body :" << std::endl;
-						std::cout << client->getBody() << std::endl;
-
-						_cgi_executor.run(client->getStructRequest(), fd);
-
-					}
-					else{
-
-					if (0) {
-						std::cout << "Header :" << std::endl;
-						std::cout << client->getRequest() << std::endl;
-						std::cout << "Message body :" << std::endl;
-						std::cout << client->getBody() << std::endl;
-
-						#if 1
-						std::cout << "Response Header :" << std::endl;
-						std::cout << client->getResponseHeader() << std::endl;
-						std::cout << "Response Message body :" << std::endl;
-						std::cout << client->getResponseBody() << std::endl;
-						#endif
-					}
-					writeToClient(fd, client->getResponseHeader());
-					writeToClient(fd, client->getResponseBody());
-
-					}
-					client->resetStream();
-					connectionCloseMode(fd);
-				}
+				handleReadEvent(fd);
 			}
 		}
 	}
 }
+#endif
+
+void ServerManager::handleReadEvent(int client_fd) {
+	if (!readFromClient(client_fd)) {
+		HttpHandler *client = _client_map[client_fd];
+
+		client->createHttpResponse();
+
+		if (client->isCGIMode())
+		{
+			std::cout << "Header :" << std::endl;
+			std::cout << client->getRequest() << std::endl;
+			std::cout << "Message body :" << std::endl;
+			std::cout << client->getBody() << std::endl;
+			_cgi_executor.run(client->getStructRequest(), client_fd);
+		}
+		else{
+
+		if (0) {
+			std::cout << "Header :" << std::endl;
+			std::cout << client->getRequest() << std::endl;
+			std::cout << "Message body :" << std::endl;
+			std::cout << client->getBody() << std::endl;
+
+			#if 1
+			std::cout << "Response Header :" << std::endl;
+			std::cout << client->getResponseHeader() << std::endl;
+			std::cout << "Response Message body :" << std::endl;
+			std::cout << client->getResponseBody() << std::endl;
+			#endif
+		}
+		writeToClient(client_fd, client->getResponseHeader());
+		writeToClient(client_fd, client->getResponseBody());
+
+		}
+		client->resetStream();
+		connectionCloseMode(client_fd);
+	}
+}
+
 
 #if (defined (LINUX) || defined (__linux__))
 void ServerManager::closeClientConnection(int client_fd) {

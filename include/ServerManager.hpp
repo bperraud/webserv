@@ -63,6 +63,8 @@ public:
 
 	void connectionCloseMode(int client_fd);
 
+	void handleReadEvent(int client_fd);
+
 	void handleNewConnections();
 
     void sendDirectoryListing(int client_fd, const std::string &path);

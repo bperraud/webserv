@@ -2,20 +2,21 @@
 #define CLIENTERROR_HPP
 
 #include "ErrorHandler.hpp"
+#include <map>
 
 class ClientError : public ErrorHandler {
 
 private:
-
+	std::map<int, void(ClientError::*)()> _error_map;
 
 public:
-    ClientError(HttpMessage& request, std::stringstream& stream);
+    ClientError(HttpResponse& response, std::stringstream& body_stream);
 
 	void errorProcess(int error);
-	void badRequest();
 	void notFound();
+	void badRequest();
 	void methodNotAllowed();
-
+	void timeout();
     ~ClientError();
 };
 

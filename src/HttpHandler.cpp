@@ -116,6 +116,16 @@ bool HttpHandler::isCGI(const std::string &path) {
 	return path.substr(0, std::strlen("/cgi-bin/")).compare("/cgi-bin/") == 0;
 }
 
+void HttpHandler::error(int error) {
+	ErrorHandler* error_handler;
+	if (error >= 500)
+		error_handler = new ServerError(_response, _response_body_stream);
+	else
+		error_handler = new ClientError(_response, _response_body_stream);
+	error_handler->errorProcess(error);
+	delete error_handler;
+}
+
 void HttpHandler::GET() {
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
@@ -143,10 +153,8 @@ void HttpHandler::GET() {
 	}
 	else
 	{
-		_response.status_code = "404";
-		_response.status_phrase = "Not Found";
-		_response_body_stream << "<html><body><h1>404 Not Found</h1></body></html>";
-		_response.map_headers["Content-Type"] = "text/html";
+		error(404);
+		return;
 	}
 
 	_response.map_headers["Content-Type"] = "text/html";
@@ -169,12 +177,7 @@ void HttpHandler::POST() {
 		size_t end = messageBody.find(fileContentEnd, start);
 
 		if (start == std::string::npos || end == std::string::npos) {
-			_response.status_code = "400";
-			_response.status_phrase = "Bad Request";
-			Utils::loadFile("./website/400.html", _response_body_stream);
-			_response.map_headers["Location"] = "http://localhost:8080/400.html";
-			_response.map_headers["Content-Type"] = getContentType("./website/400.html");
-			_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+			error(400);
         	return ;
     	}
 

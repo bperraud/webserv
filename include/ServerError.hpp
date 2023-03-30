@@ -3,13 +3,15 @@
 
 #include "ErrorHandler.hpp"
 
+#include <map>
+
 class ServerError : public ErrorHandler {
 
 private:
-
+	std::map<int, void(ServerError::*)()> _error_map;
 
 public:
-    ServerError(HttpMessage& request, std::stringstream& stream);
+    ServerError(HttpResponse& request, std::stringstream& body_stream);
 
 	void errorProcess(int error);
 

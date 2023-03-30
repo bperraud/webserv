@@ -1,3 +1,4 @@
 #include "ErrorHandler.hpp"
+#include "HttpHandler.hpp"
 
-ErrorHandler::ErrorHandler(HttpMessage& request, std::stringstream& stream) : _request(request), _stream(stream) {}
+ErrorHandler::ErrorHandler(HttpResponse& response, std::stringstream& body_stream) : _response(response), _body_stream(body_stream) {}

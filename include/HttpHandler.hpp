@@ -9,6 +9,10 @@
 #include <sstream>
 #include <map>
 
+#include "ErrorHandler.hpp"
+#include "ServerError.hpp"
+#include "ClientError.hpp"
+
 # define CRLF "\r\n\r\n"
 
 enum Type {
@@ -85,6 +89,9 @@ public:
 
 	void	writeToStream(char *buffer, ssize_t nbytes) ;
 	int		writeToBody(char *buffer, ssize_t nbytes);
+
+
+	void error(int error);
 
 	bool	isCGIMode() const {
 		return _cgiMode;

@@ -2,20 +2,20 @@
 #define ERRORHANDLER_HPP
 
 #include <sstream>
-#include "HttpHandler.hpp"
+
+struct HttpResponse;
 
 class ErrorHandler {
 
-private:
-    HttpMessage&		_request;
-    std::stringstream&	_stream;
-
 protected:
-	ErrorHandler(HttpMessage& request, std::stringstream& stream);
+    HttpResponse&		_response;
+    std::stringstream&	_body_stream;
 
 public:
+	ErrorHandler(HttpResponse& response, std::stringstream& body_stream);
 	ErrorHandler();
 	virtual void errorProcess(int error) = 0;
+	virtual ~ErrorHandler() {};
 };
 
 #endif

@@ -3,4 +3,5 @@ TODO :
   - chuncked message
   - timeout
   - config
-  - cgi 
+  - cgi
+  - limit client body size

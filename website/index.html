@@ -36,4 +36,34 @@
       <input type="submit" value="Add">
     </form>
   </body>
+  <body>
+	<h1>Delete file</h1>
+	<form id="delete-form">
+	  <label for="file-selector">Select file to delete:</label>
+	  <input type="file" id="file-selector" name="file">
+	  <button type="submit">Delete</button>
+	</form>
+
+	<script>
+	  const deleteForm = document.querySelector('#delete-form');
+	  deleteForm.addEventListener('submit', function(event) {
+		event.preventDefault();
+		const file = document.querySelector('#file-selector').files[0];
+		const fileUrl = 'http://localhost:8080/' + file.name;
+		const requestOptions = {
+		  method: 'DELETE'
+		};
+		fetch(fileUrl, requestOptions)
+		  .then(response => {
+			if (response.ok) {
+			  console.log('File deleted successfully');
+			} else {
+			  console.error('Failed to delete file:', response.statusText);
+			}
+		  })
+		  .catch(error => console.error('Error:', error));
+	  });
+	</script>
+  </body>
+
 </html>

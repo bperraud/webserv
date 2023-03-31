@@ -62,7 +62,6 @@ bool HttpHandler::isKeepAlive() const {
 void HttpHandler::parseRequest() {
 	// Parse the start-line
 	*_readStream >> _request.method >> _request.path >> _request.version;
-
 	// Parse the headers into a hash table
 	std::string header_name, header_value;
 	while (getline(*_readStream, header_name, ':') && getline(*_readStream, header_value, '\r')) {
@@ -73,14 +72,16 @@ void HttpHandler::parseRequest() {
 		_request.map_headers[header_name] = header_value;
 	}
 	_request.body_length = 0;
-	std::map<std::string, std::string>::iterator content_length_header = _request.map_headers.find("Content-Length");
-	if (content_length_header != _request.map_headers.end()) {
-		// Parse the content length header to determine the message body length
-		std::stringstream ss(content_length_header->second);
+	std::string content_length_header;
+	if (findHeader("Content-Length", content_length_header)) {
+		std::stringstream ss(content_length_header);
 		ss >> _request.body_length;
 	}
-
-	_close_keep_alive = _request.map_headers["Connection"] == "keep-alive";
+	std::string connection_header;
+	if (findHeader("Connection", connection_header))
+		_close_keep_alive = connection_header == "keep-alive";
+	else
+		_close_keep_alive = true;
 	_left_to_read = _request.body_length;
 }
 
@@ -103,7 +104,6 @@ std::string HttpHandler::getContentType(const std::string& path) {
 void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
-
 	_response.version = _request.version;
 	for (index = 0; index < 4; index++)
 	{
@@ -184,25 +184,17 @@ bool HttpHandler::findHeader(const std::string &header, std::string &value) {
 	return false;
 }
 
-		//if (!findHeader("Content-Disposition", extractContent)) {
-		//	std::cout << "Content-Disposition not found" << std::endl;
-		//	return ;
-		//}
-
 void HttpHandler::uploadFile(const std::string& contentType, size_t pos_boundary) {
-	std::string fileName;
 	std::string messageBody = _request_body_stream.str();
 	std::string boundary = contentType.substr(pos_boundary + 9);
+	const size_t headerPrefixLength = strlen("filename=\"");
 	size_t pos1 = messageBody.find("filename=\"");
-	if (pos1 != std::string::npos) {
-		size_t pos2 = messageBody.find("\"", pos1 + 10);
-		if (pos2 != std::string::npos)
-			fileName = messageBody.substr(pos1 + 10, pos2 - pos1 - 10);
-		else
-			return error(400);
-	}
-	else
+	size_t pos2 = pos1 != std::string::npos ? messageBody.find("\"", pos1 + headerPrefixLength) : std::string::npos;
+	std::string fileName = pos2 != std::string::npos ? messageBody.substr(pos1 + headerPrefixLength, pos2 - pos1 - headerPrefixLength) : "";
+	if (pos1 == std::string::npos || pos2 == std::string::npos || fileName.empty()) {
 		return error(400);
+	}
+
 	size_t start = messageBody.find(CRLF);
 	size_t end = messageBody.find("\r\n--" + boundary + "--", start);
 	if (start == std::string::npos || end == std::string::npos)

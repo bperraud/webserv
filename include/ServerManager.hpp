@@ -64,6 +64,7 @@ public:
 	void connectionCloseMode(int client_fd);
 
 	void handleReadEvent(int client_fd);
+	void handleWriteEvent(int client_fd);
 
 	void handleNewConnections();
 

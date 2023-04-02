@@ -12,19 +12,12 @@
 #include "ErrorHandler.hpp"
 #include "ServerError.hpp"
 #include "ClientError.hpp"
+#include "Timer.hpp"
 
 # define CRLF "\r\n\r\n"
-
-enum Type {
-	GET,
-	POST,
-	DELETE,
-	HEAD
-};
-
-#define ROOT_PATH "./website"
-#define DEFAULT_PAGE "./website/index.html"
-#define UPLOAD_PATH "./website/upload/"
+# define ROOT_PATH "./website"
+# define DEFAULT_PAGE "./website/index.html"
+# define UPLOAD_PATH "./website/upload/"
 
 
 #if 0
@@ -53,6 +46,8 @@ class HttpHandler {
 
 private:
 
+	Timer				_timer;
+
 	std::stringstream	*_readStream;
 
 	std::stringstream   _request_body_stream;
@@ -70,11 +65,6 @@ private:
 
 	bool				_cgiMode;
 
-
-	HttpHandler(const HttpHandler &copy) {
-		*this = copy;
-	}
-
 	HttpHandler &operator=(HttpHandler const &other) {
 		if (this != &other) {
 			;
@@ -84,7 +74,7 @@ private:
 
 
 public:
-	HttpHandler();
+	HttpHandler(int timeout_seconds);
 	~HttpHandler();
 
 	bool	isKeepAlive() const;

@@ -31,7 +31,7 @@
 # define PORT 8080
 # define BUFFER_SIZE 1024
 # define MAX_EVENTS 4096
-
+# define TIMEOUT_MSECS 5000
 
 class ServerManager {
 
@@ -39,6 +39,8 @@ private:
 	std::map<int, HttpHandler*> _client_map;
 
     int		_listen_fd;
+
+	int		_tfd;
 
 	CGIExecutor		_cgi_executor;
 	#if (defined (LINUX) || defined (__linux__))
@@ -57,6 +59,9 @@ public:
 
 	void setNonBlockingMode(int socket);
 	void setupSocket();
+
+
+	void setTimeoutSocket();
 
 	int	readFromClient(int client_fd);
 	int	writeToClient(int client_fd, const std::string &str);

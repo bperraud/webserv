@@ -55,9 +55,18 @@ void ServerManager::setNonBlockingMode(int socket) {
 	}
 }
 
+void ServerManager::setTimeoutSocket() {
+
+}
+
+
+
 #if (defined (LINUX) || defined (__linux__))
 void ServerManager::handleNewConnections() {
 	_epoll_fd = epoll_create1(0);
+
+	setTimeoutSocket();
+
 	if (_epoll_fd < 0) {
 		perror("epoll_create1");
 		exit(EXIT_FAILURE);
@@ -94,19 +103,27 @@ void ServerManager::handleNewConnections() {
 					exit(EXIT_FAILURE);
 				}
 				setNonBlockingMode(newsockfd);
+				//setTimeoutSocket();
+
 				event.data.fd = newsockfd;
-				event.events = EPOLLIN;
+				event.events = EPOLLIN ;
 				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
 					perror("epoll_ctl EPOLL_CTL_ADD");
 					exit(EXIT_FAILURE);
 				}
-				_client_map.insert(std::make_pair(newsockfd, new HttpHandler()));
+				_client_map.insert(std::make_pair(newsockfd, new HttpHandler(TIMEOUT_MSECS)));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
 			else if ( events[i].events & EPOLLIN ) {
 				handleReadEvent(fd);
 			}
+
+			else {
+				;
+			}
 		}
+
+
 	}
 }
 #else
@@ -124,12 +141,8 @@ void ServerManager::handleNewConnections() {
 	}
 	struct kevent events[MAX_EVENTS];
 	while (1) {
-		struct timespec timeout;
-		timeout.tv_sec = 5;
-		timeout.tv_nsec = 0;
-
 		std::cout << "waiting..." << std::endl;
-		int n_ready = kevent(_kqueue_fd, NULL, 0, events, MAX_EVENTS, &timeout);
+		int n_ready = kevent(_kqueue_fd, NULL, 0, events, MAX_EVENTS, -1);
 		if (n_ready == -1) {
 			perror("kevent");
 			exit(EXIT_FAILURE);
@@ -155,7 +168,7 @@ void ServerManager::handleNewConnections() {
 					perror("kevent");
 					exit(EXIT_FAILURE);
 				}
-				_client_map.insert(std::make_pair(newsockfd, new HttpHandler()));
+				_client_map.insert(std::make_pair(newsockfd, new HttpHandler(TIMEOUT_MSECS)));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
 			else if (_events[i].filter ==  EVFILT_READ) {

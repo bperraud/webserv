@@ -103,7 +103,7 @@ void ServerManager::handleNewConnections() {
 				_client_map.insert(std::make_pair(newsockfd, new HttpHandler()));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
-			else {
+			else if ( events[i].events & EPOLLIN ) {
 				handleReadEvent(fd);
 			}
 		}
@@ -158,7 +158,8 @@ void ServerManager::handleNewConnections() {
 				_client_map.insert(std::make_pair(newsockfd, new HttpHandler()));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
-			else {
+			else if (_events[i].filter ==  EVFILT_READ) {
+			// else
 				handleReadEvent(fd);
 			}
 		}
@@ -171,7 +172,7 @@ void ServerManager::handleReadEvent(int client_fd) {
 
 		HttpHandler *client = _client_map[client_fd];
 
-		#if 1
+		#if 0
 		std::cout << "Header :" << std::endl;
 		std::cout << client->getRequest() << std::endl;
 		std::cout << "Message body :" << std::endl;

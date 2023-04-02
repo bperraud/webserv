@@ -95,8 +95,8 @@ void ServerManager::handleNewConnections() {
 				}
 				setNonBlockingMode(newsockfd);
 				event.data.fd = newsockfd;
-				//event.events = EPOLLIN | EPOLLOUT;
-				event.events = EPOLLIN;
+				event.events = EPOLLIN | EPOLLOUT;
+				//event.events = EPOLLIN;
 				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1) {
 					perror("epoll_ctl EPOLL_CTL_ADD");
 					exit(EXIT_FAILURE);
@@ -109,11 +109,11 @@ void ServerManager::handleNewConnections() {
 
 				if (!readFromClient(fd)) {		// read finished
 					handleReadEvent(fd);
-					event.events = EPOLLIN | EPOLLOUT;
-					if (epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, fd, &event) == -1) {
-						perror("read EPOLL_CTL_MOD");
-						exit(EXIT_FAILURE);
-					}
+					//event.events = EPOLLIN | EPOLLOUT;
+					//if (epoll_ctl(_epoll_fd, EPOLL_CTL_MOD, fd, &event) == -1) {
+					//	perror("read EPOLL_CTL_MOD");
+					//	exit(EXIT_FAILURE);
+					//}
 				}
 
 			}
@@ -125,16 +125,16 @@ void ServerManager::handleNewConnections() {
 				//	exit(EXIT_FAILURE);
 				//}
 
-				if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL) == -1) {
-					perror("write EPOLL_CTL_DEL");
-					exit(EXIT_FAILURE);
-				}
+				//if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, fd, NULL) == -1) {
+				//	perror("write EPOLL_CTL_DEL");
+				//	exit(EXIT_FAILURE);
+				//}
 
-				event.events = EPOLLIN;
-				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &event) == -1) {
-					perror("write EPOLL_CTL_ADD");
-					exit(EXIT_FAILURE);
-				}
+				//event.events = EPOLLIN;
+				//if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, fd, &event) == -1) {
+				//	perror("write EPOLL_CTL_ADD");
+				//	exit(EXIT_FAILURE);
+				//}
 			}
 		}
 	}
@@ -201,8 +201,14 @@ void ServerManager::handleWriteEvent(int client_fd) {
 	//std::cout << "handleWriteEvent" << std::endl;
 	HttpHandler *client = _client_map[client_fd];
 
-	writeToClient(client_fd, client->getResponseHeader());
-	writeToClient(client_fd, client->getResponseBody());
+	std::string response = client->getResponseHeader() + client->getResponseBody();
+
+	std::cout << response << std::endl;
+
+	writeToClient(client_fd, response);
+
+	//writeToClient(client_fd, client->getResponseHeader());
+	//writeToClient(client_fd, client->getResponseBody());
 
 	client->resetStream();
 	connectionCloseMode(client_fd);
@@ -272,7 +278,7 @@ void ServerManager::closeClientConnection(int client_fd) {
 
 void ServerManager::connectionCloseMode(int client_fd) {
 	if (!_client_map[client_fd]->isKeepAlive())
-		;//closeClientConnection(client_fd);
+		closeClientConnection(client_fd);
 }
 
 int	ServerManager::readFromClient(int client_fd){

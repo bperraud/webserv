@@ -28,11 +28,10 @@
 #include <fcntl.h>		// fcntl
 #include <netinet/tcp.h>	// TCP_NODELAY
 
-# define PORT 8080
 # define BUFFER_SIZE 1024
 # define MAX_EVENTS 4096
 # define TIMEOUT_SECS 5
-# define WAIT_TIMEOUT_SECS 1
+# define WAIT_TIMEOUT_SECS 2
 
 typedef std::map<int, HttpHandler*> map_type;
 typedef std::map<int, HttpHandler*>::iterator map_iterator_type;
@@ -40,18 +39,21 @@ typedef std::map<int, HttpHandler*>::iterator map_iterator_type;
 class ServerManager {
 
 private:
-	map_type	_client_map;
-    int			_listen_fd;
-	int			_tfd;
+	map_type			_client_map;
+    int					_listen_fd;
+	int					_tfd;
+	int					_PORT;
+	std::string			_host;
+	struct sockaddr_in	_host_addr;
+	int					_host_addrlen;
 
-	CGIExecutor		_cgi_executor;
+	CGIExecutor			_cgi_executor;
+
 	#if (defined (LINUX) || defined (__linux__))
 	int		_epoll_fd;
 	#else
 	int		_kqueue_fd;
 	#endif
-	struct sockaddr_in _host_addr;
-	int		_host_addrlen;
 
 public:
     ServerManager(Config config, CGIExecutor cgi);

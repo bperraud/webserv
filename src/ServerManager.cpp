@@ -3,6 +3,8 @@
 
 ServerManager::ServerManager(Config config, CGIExecutor cgi) : _cgi_executor(cgi) {
 	(void) config;
+	_PORT = 8080;
+	_host = "0.0.0.0";
 }
 
 void ServerManager::run() {
@@ -19,8 +21,10 @@ void	ServerManager::setupSocket() {
 	memset((char *)&_host_addr, 0, sizeof(_host_addr));
 	int _host_addrlen = sizeof(_host_addr);
 	_host_addr.sin_family = AF_INET;				// AF_INET for IPv4 Internet protocols
-	_host_addr.sin_addr.s_addr = htonl(INADDR_ANY); // INADDR_ANY = any address = 0.0.0.0
-	_host_addr.sin_port = htons(PORT);
+	//_host_addr.sin_addr.s_addr = htonl(INADDR_ANY); // INADDR_ANY = any address = 0.0.0.0
+
+	_host_addr.sin_addr.s_addr = inet_addr(_host.c_str());
+	_host_addr.sin_port = htons(_PORT);
 	int enable_reuseaddr = 1;
 	if (setsockopt(_listen_fd, SOL_SOCKET, SO_REUSEADDR, &enable_reuseaddr, sizeof(int)) < 0) {
 		perror("setsockopt(SO_REUSEADDR) failed");
@@ -59,9 +63,6 @@ void ServerManager::setNonBlockingMode(int socket) {
 #if (defined (LINUX) || defined (__linux__))
 void ServerManager::handleNewConnections() {
 	_epoll_fd = epoll_create1(0);
-
-	setTimeoutSocket();
-
 	if (_epoll_fd < 0) {
 		perror("epoll_create1");
 		exit(EXIT_FAILURE);

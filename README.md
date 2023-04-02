@@ -1,4 +1,4 @@
 TODO :
   - chuncked message
-  - timeout
   - config
+  - epoll write event

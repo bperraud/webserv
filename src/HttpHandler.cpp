@@ -3,7 +3,7 @@
 
 HttpHandler::HttpHandler() : _readStream(new std::stringstream()),  _close_keep_alive(false), _type(0)
 , _left_to_read(0), _MIME_TYPES(), _cgiMode(false){
-	_lastFour[0] = '\0';
+	_last_4_char[0] = '\0';
 	_MIME_TYPES["html"] = "text/html";
     _MIME_TYPES["css"] = "text/css";
     _MIME_TYPES["js"] = "text/javascript";
@@ -35,12 +35,12 @@ HttpHandler::~HttpHandler() {
 	delete _readStream;
 }
 
-void	HttpHandler::copyLastFour(char *buffer, ssize_t nbytes) {
-	if (_lastFour[0])
-		std::memcpy(buffer, _lastFour, 4);
+void	HttpHandler::copyLast4Char(char *buffer, ssize_t nbytes) {
+	if (_last_4_char[0])
+		std::memcpy(buffer, _last_4_char, 4);
 	else
 		std::memcpy(buffer, buffer + 4, 4);
-	std::memcpy(_lastFour, buffer + nbytes, 4);
+	std::memcpy(_last_4_char, buffer + nbytes, 4);
 }
 
 void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
@@ -61,7 +61,7 @@ bool HttpHandler::isKeepAlive() const {
 
 void HttpHandler::parseRequest() {
 	// Parse the start-line
-	*_readStream >> _request.method >> _request.path >> _request.version;
+	*_readStream >> _request.method >> _request.url >> _request.version;
 	// Parse the headers into a hash table
 	std::string header_name, header_value;
 	while (getline(*_readStream, header_name, ':') && getline(*_readStream, header_value, '\r')) {
@@ -122,8 +122,7 @@ void HttpHandler::createHttpResponse() {
 			DELETE();
 			break;
 		default:
-			std::cout << "Wrong Request Type" << std::endl;
-			return ;
+			return error(405);
 	}
 	constructStringResponse();
 }
@@ -146,32 +145,29 @@ void HttpHandler::GET() {
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
 
-	if (!_request.path.compare("/")) {
+	if (!_request.url.compare("/")) {
 		Utils::loadFile(DEFAULT_PAGE, _response_body_stream);
 		_response.map_headers["Content-Type"] = getContentType(DEFAULT_PAGE);
 		_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
 		return ;
 	}
-	else if (isCGI(_request.path))
+	else if (isCGI(_request.url))
 	{
 		_cgiMode = true;
 		return ;
 	}
 
-	_request.path = ROOT_PATH + _request.path;
-	if ( Utils::isDirectory(_request.path))
+	_request.url = ROOT_PATH + _request.url;
+	if ( Utils::isDirectory(_request.url))
 	{
 		;//directory listing
 	}
-	else if (Utils::pathToFileExist(_request.path)) {
-		Utils::loadFile(_request.path, _response_body_stream);
-		_response.map_headers["Content-Type"] = getContentType(_request.path);
+	else if (Utils::pathToFileExist(_request.url)) {
+		Utils::loadFile(_request.url, _response_body_stream);
+		_response.map_headers["Content-Type"] = getContentType(_request.url);
 	}
 	else
-	{
-		error(404);
-		return;
-	}
+		return error(404);
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
 }
 
@@ -194,14 +190,13 @@ void HttpHandler::uploadFile(const std::string& contentType, size_t pos_boundary
 	if (pos1 == std::string::npos || pos2 == std::string::npos || fileName.empty()) {
 		return error(400);
 	}
-
 	size_t start = messageBody.find(CRLF);
 	size_t end = messageBody.find("\r\n--" + boundary + "--", start);
 	if (start == std::string::npos || end == std::string::npos)
 		return error(400);
 	start += std::strlen(CRLF);
     messageBody =  messageBody.substr(start, end - start);
-	std::ofstream *outfile = Utils::createOrEraseFile(fileName.c_str());
+	std::ofstream *outfile = Utils::createOrEraseFile(UPLOAD_PATH + fileName);
 	outfile->write(messageBody.c_str(), messageBody.length());
     outfile->close();
 	delete outfile;
@@ -213,8 +208,8 @@ void HttpHandler::uploadFile(const std::string& contentType, size_t pos_boundary
 }
 
 void HttpHandler::POST() {
-	_response.status_code = "200";
-	_response.status_phrase = "OK";
+	_response.status_code = "201";
+	_response.status_phrase = "Created";
 
 	std::string contentType;
 	if (!findHeader("Content-Type", contentType))
@@ -231,7 +226,6 @@ void HttpHandler::POST() {
 
 	}
 
-
 	#if 0
 	_response.version = _request.version;
 	_response.status_code = "302";
@@ -240,13 +234,20 @@ void HttpHandler::POST() {
 	//addFileToResponse(DEFAULT_PAGE);
 	_response.map_headers["Location"] = "http://localhost:8080/index.html";
 	#endif
-	//_response.map_headers["Content-Type"] = getContentType(DEFAULT_PAGE);
-	//_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+
 }
 
 
 void HttpHandler::DELETE() {
-	;
+	_response.status_code = "204";
+	_response.status_phrase = "No Content";
+
+	std::string file_path = UPLOAD_PATH + _request.url.substr(1);
+	std::string decoded_file_path = Utils::urlDecode(file_path);
+	if (!Utils::pathToFileExist(decoded_file_path))
+		return error(404);
+	if (std::remove(decoded_file_path.c_str()) != 0)
+		return error(403);
 }
 
 void HttpHandler::constructStringResponse() {

@@ -8,13 +8,13 @@ CGIExecutor::CGIExecutor(char** env) : _env(env) {
 
 void CGIExecutor::run(const HttpMessage &request, int client_fd) {
 	std::string REQUEST_METHOD = "REQUEST_METHOD=" + request.method;
-	std::string QUERY_STRING = "QUERY_STRING=" + request.path.substr(request.path.find("?") + 1);
+	std::string QUERY_STRING = "QUERY_STRING=" + request.url.substr(request.url.find("?") + 1);
 
 	if  (request.body_length) {
 		std::string CONTENT_LENGTH = "CONTENT_LENGTH=" + request.map_headers.at("Content-Length");
 		putenv(const_cast<char*>(CONTENT_LENGTH.c_str()));
 	}
-	std::string SCRIPT_NAME = request.path.substr(0, request.path.find("?"));
+	std::string SCRIPT_NAME = request.url.substr(0, request.url.find("?"));
 
 	std::string SCRIPT_FILENAME = ROOT_PATH + SCRIPT_NAME;
 

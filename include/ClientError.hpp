@@ -14,6 +14,7 @@ public:
 
 	void errorProcess(int error);
 	void notFound();
+	void forbidden();
 	void badRequest();
 	void methodNotAllowed();
 	void timeout();

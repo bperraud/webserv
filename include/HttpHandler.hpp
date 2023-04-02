@@ -24,6 +24,8 @@ enum Type {
 
 #define ROOT_PATH "./website"
 #define DEFAULT_PAGE "./website/index.html"
+#define UPLOAD_PATH "./website/upload/"
+
 
 #if 0
 Recipients of an invalid request-line SHOULD respond with either a
@@ -33,7 +35,7 @@ Recipients of an invalid request-line SHOULD respond with either a
 
 struct HttpMessage {
     std::string method;
-    std::string path;
+    std::string url;
     std::string version;
     std::map<std::string, std::string> map_headers;
     bool has_body;
@@ -61,7 +63,7 @@ private:
 	HttpResponse		_response;
 	bool				_close_keep_alive;
 	int					_type;
-	char				_lastFour[4];
+	char				_last_4_char[4];
 
 	ssize_t				_left_to_read;
 	std::map<std::string, std::string> _MIME_TYPES;
@@ -121,10 +123,10 @@ public:
 		_request_body_stream.seekp(0, std::ios_base::beg);
 		_response_body_stream.str(std::string());
 		_response_header_stream.str(std::string());
-		_lastFour[0] = '\0';
+		_last_4_char[0] = '\0';
 	}
 
-	void	copyLastFour(char *buffer, ssize_t nbytes);
+	void	copyLast4Char(char *buffer, ssize_t nbytes);
 
 	ssize_t getLeftToRead() const {
 		return _left_to_read;

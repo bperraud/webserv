@@ -3,6 +3,7 @@
 
 ClientError::ClientError(HttpResponse& response, std::stringstream& stream) : ErrorHandler(response, stream) {
 	_error_map[400] = &ClientError::badRequest;
+	_error_map[403] = &ClientError::forbidden;
 	_error_map[404] = &ClientError::notFound;
 	_error_map[405] = &ClientError::methodNotAllowed;
 	_error_map[408] = &ClientError::timeout;
@@ -24,6 +25,12 @@ void ClientError::badRequest() {
 	_response.status_code = "400";
 	_response.status_phrase = "Bad Request";
 	_body_stream << "<html><body><h1>400 Bad Request</h1></body></html>";
+}
+
+void ClientError::forbidden() {
+	_response.status_code = "403";
+	_response.status_phrase = "Forbidden";
+	_body_stream << "<html><body><h1>403 Forbidden</h1></body></html>";
 }
 
 void ClientError::notFound() {

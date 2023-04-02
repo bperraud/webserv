@@ -8,6 +8,7 @@
 #include <dirent.h> //closedir()
 #include <iostream>
 #include <unistd.h>
+#include <iomanip> // setfill()
 
 class Utils {
 
@@ -21,9 +22,10 @@ public:
 	static bool 		isDirectory(const std::string& path);
 	static std::string	intToString(int value);
 
+	static std::string 	urlDecode(const std::string &url);
 	static void			loadFile(const std::string &fileName, std::basic_iostream<char> &stream) ;
 
-	static std::ofstream*	createOrEraseFile(const char* filename);
+	static std::ofstream*	createOrEraseFile(std::string fileName);
 
 	static bool				hasExecutePermissions(const char* filepath);
     ~Utils();

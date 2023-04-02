@@ -238,7 +238,7 @@ int	ServerManager::readFromClient(int client_fd){
 	HttpHandler *client = _client_map[client_fd];
 
 	ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
-	client->copyLastFour(buffer, nbytes);
+	client->copyLast4Char(buffer, nbytes);
 	if (nbytes == -1) {
 		perror("recv()");
 		closeClientConnection(client_fd);

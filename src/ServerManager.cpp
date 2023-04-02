@@ -55,11 +55,6 @@ void ServerManager::setNonBlockingMode(int socket) {
 	}
 }
 
-void ServerManager::setTimeoutSocket() {
-
-}
-
-
 
 #if (defined (LINUX) || defined (__linux__))
 void ServerManager::handleNewConnections() {
@@ -85,7 +80,7 @@ void ServerManager::handleNewConnections() {
 
 	while (1) {
 		std::cout << "waiting..." << std::endl;
-		int n_ready = epoll_wait(_epoll_fd, events, MAX_EVENTS, -1);
+		int n_ready = epoll_wait(_epoll_fd, events, MAX_EVENTS, WAIT_TIMEOUT_SECS * 1000);
 		// if any of the file descriptors match the interest then epoll_wait can return without blocking.
 		if (n_ready == -1) {
 			perror("epoll_wait");
@@ -111,7 +106,7 @@ void ServerManager::handleNewConnections() {
 					perror("epoll_ctl EPOLL_CTL_ADD");
 					exit(EXIT_FAILURE);
 				}
-				_client_map.insert(std::make_pair(newsockfd, new HttpHandler(TIMEOUT_MSECS)));
+				_client_map.insert(std::make_pair(newsockfd, new HttpHandler(TIMEOUT_SECS)));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
 			else if ( events[i].events & EPOLLIN ) {
@@ -123,7 +118,17 @@ void ServerManager::handleNewConnections() {
 			}
 		}
 
-
+		for (map_iterator_type it = _client_map.begin(); it != _client_map.end();) {
+			if (it->second->hasTimeOut()) {
+				int fd = it->first;
+				map_iterator_type to_delete = it;
+				++it;
+				closeClientConnection(fd, to_delete);
+			}
+			else {
+				++it;
+			}
+		}
 	}
 }
 #else
@@ -141,8 +146,12 @@ void ServerManager::handleNewConnections() {
 	}
 	struct kevent events[MAX_EVENTS];
 	while (1) {
+		struct timespec timeout;
+		timeout.tv_sec = WAIT_TIMEOUT_SECS;
+		timeout.tv_nsec = 0;
+
 		std::cout << "waiting..." << std::endl;
-		int n_ready = kevent(_kqueue_fd, NULL, 0, events, MAX_EVENTS, -1);
+		int n_ready = kevent(_kqueue_fd, NULL, 0, events, MAX_EVENTS, &timeout);
 		if (n_ready == -1) {
 			perror("kevent");
 			exit(EXIT_FAILURE);
@@ -168,7 +177,7 @@ void ServerManager::handleNewConnections() {
 					perror("kevent");
 					exit(EXIT_FAILURE);
 				}
-				_client_map.insert(std::make_pair(newsockfd, new HttpHandler(TIMEOUT_MSECS)));
+				_client_map.insert(std::make_pair(newsockfd, new HttpHandler(TIMEOUT_SECS)));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
 			else if (_events[i].filter ==  EVFILT_READ) {
@@ -185,7 +194,9 @@ void ServerManager::handleReadEvent(int client_fd) {
 
 		HttpHandler *client = _client_map[client_fd];
 
-		#if 0
+		client->stopTimer();
+
+		#if 1
 		std::cout << "Header :" << std::endl;
 		std::cout << client->getRequest() << std::endl;
 		std::cout << "Message body :" << std::endl;
@@ -240,6 +251,29 @@ void ServerManager::closeClientConnection(int client_fd) {
 	_client_map.erase(client_fd);
 	close(client_fd);
 	printf("connection closed on client %d\n", client_fd);
+	return ;
+}
+
+#if (defined (LINUX) || defined (__linux__))
+void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem) {
+	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) == -1) {
+		perror("epoll_ctl EPOLL_CTL_DEL");
+		exit(EXIT_FAILURE);
+	}
+#else
+void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem) {
+    struct kevent event;
+    EV_SET(&event, client_fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+    if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1) {
+        perror("kevent");
+        exit(EXIT_FAILURE);
+    }
+#endif
+	delete _client_map[client_fd];
+	_client_map.erase(elem);
+	close(client_fd);
+	printf("connection closed on client %d\n", client_fd);
+	return ;
 }
 
 void ServerManager::connectionCloseMode(int client_fd) {
@@ -252,6 +286,7 @@ int	ServerManager::readFromClient(int client_fd){
 	HttpHandler *client = _client_map[client_fd];
 
 	ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
+	client->startTimer();
 	client->copyLast4Char(buffer, nbytes);
 	if (nbytes == -1) {
 		perror("recv()");
@@ -296,7 +331,7 @@ int ServerManager::writeToClient(int client_fd, const std::string &str) {
 
 ServerManager::~ServerManager() {
 	close(_listen_fd);
-	for (std::map<int, HttpHandler*>::const_iterator it = _client_map.begin(); it != _client_map.end(); it++) {
+	for (map_iterator_type it = _client_map.begin(); it != _client_map.end(); it++) {
 		delete it->second;
 	}
 }

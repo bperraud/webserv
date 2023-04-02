@@ -2,18 +2,19 @@
 #define TIMER_HPP
 
 #include <iostream>
-#include <time.h>
+#include <sys/time.h>
 
 class Timer {
 
 private:
-	int 	_timeout_seconds;
-	clock_t _last_read;
-	bool	_running;
+	int 			_timeout_seconds;
+	struct timeval	_last_read;
+	bool			_running;
 
 public:
     Timer(int _timeout_seconds);
 	void start();
+	void stop();
 	bool hasTimeOut();
     ~Timer();
 };

@@ -82,6 +82,17 @@ public:
 	void	writeToStream(char *buffer, ssize_t nbytes) ;
 	int		writeToBody(char *buffer, ssize_t nbytes);
 
+	void	startTimer() {
+		_timer.start();
+	}
+
+	void	stopTimer() {
+		_timer.stop();
+	}
+
+	bool	hasTimeOut() {
+		return _timer.hasTimeOut();
+	}
 
 	void error(int error);
 

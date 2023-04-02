@@ -31,16 +31,18 @@
 # define PORT 8080
 # define BUFFER_SIZE 1024
 # define MAX_EVENTS 4096
-# define TIMEOUT_MSECS 5000
+# define TIMEOUT_SECS 5
+# define WAIT_TIMEOUT_SECS 1
+
+typedef std::map<int, HttpHandler*> map_type;
+typedef std::map<int, HttpHandler*>::iterator map_iterator_type;
 
 class ServerManager {
 
 private:
-	std::map<int, HttpHandler*> _client_map;
-
-    int		_listen_fd;
-
-	int		_tfd;
+	map_type	_client_map;
+    int			_listen_fd;
+	int			_tfd;
 
 	CGIExecutor		_cgi_executor;
 	#if (defined (LINUX) || defined (__linux__))
@@ -60,21 +62,17 @@ public:
 	void setNonBlockingMode(int socket);
 	void setupSocket();
 
-
-	void setTimeoutSocket();
-
 	int	readFromClient(int client_fd);
 	int	writeToClient(int client_fd, const std::string &str);
 
-	void connectionCloseMode(int client_fd);
 
 	void handleReadEvent(int client_fd);
-
 	void handleNewConnections();
 
-    void sendDirectoryListing(int client_fd, const std::string &path);
-    void sendErrorResponse(int client_fd, int status_code);
+
+	void connectionCloseMode(int client_fd);
     void closeClientConnection(int client_fd);
+	void closeClientConnection(int client_fd, map_iterator_type elem);
 };
 
 #endif

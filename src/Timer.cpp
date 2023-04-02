@@ -1,7 +1,7 @@
 #include "Timer.hpp"
 
-Timer::Timer(int timeout_seconds) : _timeout_seconds(timeout_seconds), _last_read(0), _running(false){
-
+Timer::Timer(int timeout_seconds) : _timeout_seconds(timeout_seconds), _running(false){
+	start();
 }
 
 Timer::~Timer() {
@@ -9,16 +9,23 @@ Timer::~Timer() {
 }
 
 void Timer::start() {
-	_running = true;
-	_last_read = clock();
+    gettimeofday(&_last_read, NULL);
+    _running = true;
+}
+
+void Timer::stop() {
+	_running = false;
 }
 
 bool Timer::hasTimeOut() {
-	if (_running) {
-		if ((clock() - _last_read) / CLOCKS_PER_SEC > _timeout_seconds) {
-			_running = false;
-			return true;
-		}
-	}
-	return false;
+    if (_running) {
+        struct timeval now;
+        gettimeofday(&now, NULL);
+        double elapsed_seconds = (now.tv_sec - _last_read.tv_sec) + (now.tv_usec - _last_read.tv_usec) / 1000000.0;
+        if (elapsed_seconds > _timeout_seconds) {
+            _running = false;
+            return true;
+        }
+    }
+    return false;
 }

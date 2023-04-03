@@ -17,8 +17,9 @@
 
 int main(int argc, char **argv, char ** envp)
 {
-	if (argc != 2)
+	if (argc != 1)
 	{
+		Config config("configuration/config.json");
 		std::cout << "Usage: ./webserv <config_file>" << std::endl;
 		return 1;
 	}

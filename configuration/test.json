@@ -1,0 +1,5 @@
+{
+	"root": "website/upload",
+	"methods": ["GET", "DELETE"],
+	"autoindex": true
+}

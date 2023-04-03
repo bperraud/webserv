@@ -47,6 +47,12 @@ private:
 	struct sockaddr_in	_host_addr;
 	int					_host_addrlen;
 
+	int					_max_body_size;
+
+	bool				_auto_index;
+
+	//server_names_type	_server_names;
+
 	CGIExecutor			_cgi_executor;
 
 	#if (defined (LINUX) || defined (__linux__))

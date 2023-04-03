@@ -1,0 +1,55 @@
+[
+	{
+	  "listen": ["0.0.0.0", 80],
+	  "max_body_size": 200000,
+	  "routes": {
+		"/": {
+		  "root": "website",
+		  "index": "index.html",
+		  "methods": ["GET"]
+		},
+		"/form/add": {
+		  "root": "website",
+		  "handler": "website/cgi/add.py",
+		  "methods": ["GET"],
+		  "cgi": {
+			".py": "/usr/bin/python3"
+		  }
+		},
+		"/form/upload": {
+		  "root": "website/upload",
+		  "handler": "extensions/upload.py",
+		  "methods": ["POST"],
+		  "cgi": {
+			".py": "/usr/bin/python3"
+		  }
+		},
+		"/upload": {
+		  "root": "website/upload",
+		  "methods": ["GET", "DELETE"],
+		  "autoindex": true
+		},
+		"/hello": {
+		  "root": "website/hello",
+		  "autoindex": true,
+		  "methods": ["GET"],
+		  "cgi": {
+			".py": "/usr/bin/python3",
+			".php": "/usr/bin/php-cgi",
+			".js": "/usr/local/bin/node",
+			".rb": "/usr/bin/ruby",
+			".sh": "/bin/sh",
+			".lua": "/usr/bin/lua"
+		  }
+		},
+		"/cookies": {
+		  "root": "website",
+		  "methods": ["GET"],
+		  "handler": "website/cgi/cookies.py",
+		  "cgi": {
+			".py": "/usr/bin/python3"
+		  }
+		}
+	  }
+	}
+]

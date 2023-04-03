@@ -41,15 +41,10 @@ class ServerManager {
 private:
 	map_type			_client_map;
     int					_listen_fd;
-	int					_tfd;
 	int					_PORT;
 	std::string			_host;
 	struct sockaddr_in	_host_addr;
 	int					_host_addrlen;
-
-	int					_max_body_size;
-
-	bool				_auto_index;
 
 	//server_names_type	_server_names;
 

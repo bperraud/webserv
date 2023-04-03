@@ -17,10 +17,15 @@
 
 int main(int argc, char **argv, char ** envp)
 {
-	if (argc != 1)
+	if (argc != 2)
+	{
+		std::cout << "Usage: ./webserv <config_file>" << std::endl;
 		return 1;
+	}
 
 	Config config(argv[1]);
+
+	return 0;
 	CGIExecutor cgi(envp);
 	ServerManager serverManager(config, cgi);
 

@@ -4,6 +4,8 @@
 
 #include <map>
 #include <string>
+#include <iostream>
+#include <fstream>
 
 enum e_routes {
 	ROOT,
@@ -19,16 +21,22 @@ struct routes {
 	std::string methods[3];
 	std::string cgi;
 	bool		auto_index;
-}
+};
 
 class Config {
 
 private:
-	std::map<int, routes> _routes;
-	std::string _server_name;
+	std::map<int, routes>	_routes;
+	std::string				_server_name;
+	int						_PORT;
+	std::string				_host;
+	int						_max_body_size;
 
 public:
-    Config(char * configFile);
+    Config(char *configFile);
+
+	int parseFile(char *configFile);
+
     ~Config();
 };
 

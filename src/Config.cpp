@@ -6,7 +6,6 @@ Config::Config(char *configFile) {
 }
 
 Config::~Config() {
-
 }
 
 int Config::parseFile(char *configFile) {
@@ -21,9 +20,9 @@ int Config::parseFile(char *configFile) {
     oss << infile.rdbuf(); // read file contents into stringstream
 
 	std::string str = oss.str();
-	json_value parse_object = parse_value(str);
+	json_value p_object = parse_object(str);
 
-	std::cout << "json object: " << parse_object << std::endl;
+	std::cout << "json object: " << p_object << std::endl;
 
 	infile.close();
 
@@ -60,6 +59,10 @@ json_value Config::parse_object(std::string& str) {
         if (!str.empty() && str[0] == ',') {
             str.erase(0, 1);  // consume the ','
         }
+
+		while (str.find_first_of(" \t\n\r") == 0) {
+			str.erase(0, 1);
+		}
     }
     if (str.empty() || str[0] != '}') {
         throw std::runtime_error("Expected '}'");
@@ -97,6 +100,11 @@ json_value Config::parse_array(std::string& str) {
 // Returns the parsed value
 // Throws an exception if the string is not a valid JSON value
 json_value Config::parse_value(std::string& str) {
+
+	while (str.find_first_of(" \t\n\r") == 0) {
+		str.erase(0, 1);
+	}
+
     json_value value;
     if (str.empty()) {
         throw std::runtime_error("Unexpected end of string");
@@ -150,7 +158,7 @@ json_value Config::parse_value(std::string& str) {
 			value.type = null;
 			break;
 		}
-		default: {
+		case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9': case '-': {
 			// Parse an integer
 			value.type = integer;
 			size_t end_number = str.find_first_not_of("-0123456789");
@@ -178,6 +186,12 @@ json_value Config::parse_value(std::string& str) {
 			str.erase(0, end_number);
 			break;
 		}
+		default :
+		{
+			std::cout << "Unexpected character: " << str[0] << std::endl;
+			throw std::runtime_error("Unexpected character");
+			break;
+		}
 	}
 	return value;
 }
@@ -199,7 +213,7 @@ std::ostream &operator<<(std::ostream &os, const json_value obj) {
 		case array: {
 			os << '[';
 			bool first = true;
-			for (std::vector<json_value>::const_iterator ite = obj.array_value.begin(); ite != obj.array_value.end();) {
+			for (std::vector<json_value>::const_iterator ite = obj.array_value.begin(); ite != obj.array_value.end(); ite++) {
 				if (!first) {
 					os << ", ";
 				}
@@ -212,7 +226,7 @@ std::ostream &operator<<(std::ostream &os, const json_value obj) {
 		case object: {
 			os << '{';
 			bool first = true;
-			for (std::map<std::string, json_value>::const_iterator it = obj.object_value.begin(); it != obj.object_value.end();) {
+			for (std::map<std::string, json_value>::const_iterator it = obj.object_value.begin(); it != obj.object_value.end(); it++) {
 				if (!first) {
 					os << ", ";
 				}

@@ -82,7 +82,12 @@
 	"cinttypes": "cpp",
 	"typeinfo": "cpp",
 	"cerrno": "cpp",
-	"map": "cpp"
+	"map": "cpp",
+	"compare": "cpp",
+	"concepts": "cpp",
+	"ctime": "cpp",
+	"iomanip": "cpp",
+	"numbers": "cpp"
 },
 "C_Cpp.errorSquiggles": "disabled"
 }

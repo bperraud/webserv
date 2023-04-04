@@ -59,24 +59,24 @@ public:
     ServerManager(ServerConfig config, CGIExecutor cgi);
     ~ServerManager();
 
-    void run();
+    void	run();
 
-	void setNonBlockingMode(int socket);
-	void setupSocket();
+	void	setNonBlockingMode(int socket);
+	void	setupSocket();
 
-	int	readFromClient(int client_fd);
-	int	writeToClient(int client_fd, const std::string &str);
+	int		readFromClient(int client_fd);
+	void	writeToClient(int client_fd, const std::string &str);
 
 
-	void handleReadEvent(int client_fd);
-	void handleWriteEvent(int client_fd);
-	void handleNewConnections();
+	void	handleReadEvent(int client_fd);
+	void	handleWriteEvent(int client_fd);
+	void	handleNewConnections();
 
-	void timeoutCheck();
+	void	timeoutCheck();
 
-	void connectionCloseMode(int client_fd);
-    void closeClientConnection(int client_fd);
-	void closeClientConnection(int client_fd, map_iterator_type elem);
+	void	connectionCloseMode(int client_fd);
+    void	closeClientConnection(int client_fd);
+	void	closeClientConnection(int client_fd, map_iterator_type elem);
 };
 
 #endif

@@ -196,9 +196,7 @@ void ServerManager::handleWriteEvent(int client_fd) {
 	HttpHandler *client = _client_map[client_fd];
 	if (client->isReadyToWrite())
 	{
-		//while (writeToClient(client_fd, client->getResponseHeader()));
 		writeToClient(client_fd, client->getResponseHeader());
-		//while (writeToClient(client_fd, client->getResponseBody()));
 		writeToClient(client_fd, client->getResponseBody());
 		client->resetStream();
 		connectionCloseMode(client_fd);
@@ -287,20 +285,17 @@ int	ServerManager::readFromClient(int client_fd){
 	return 1;
 }
 
-int ServerManager::writeToClient(int client_fd, const std::string &str) {
+void ServerManager::writeToClient(int client_fd, const std::string &str) {
 	ssize_t nbytes = send(client_fd, str.c_str(), str.length(), 0);
 	if (nbytes == -1)
 		throw std::runtime_error("send()");
 	else if ((size_t) nbytes == str.length()) {
 		std::cout << "finished writing " << client_fd << std::endl;
-		return 0;
 	}
 	else {
 		std::cout << "writing " << nbytes << " bytes to client " << client_fd << std::endl;
 		writeToClient(client_fd, str.substr(nbytes));
-		return 1;
 	}
-	return 1;
 }
 
 ServerManager::~ServerManager() {

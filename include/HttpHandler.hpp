@@ -85,20 +85,20 @@ public:
 		_timer.start();
 	}
 
-	bool	isReadyToWrite() const {
-		return _ready_to_write;
-	}
-
-	void	setReadyToWrite(bool ready) {
-		_ready_to_write = ready;
-	}
-
 	void	stopTimer() {
 		_timer.stop();
 	}
 
 	bool	hasTimeOut() {
 		return _timer.hasTimeOut();
+	}
+
+	bool	isReadyToWrite() const {
+		return _ready_to_write;
+	}
+
+	void	setReadyToWrite(bool ready) {
+		_ready_to_write = ready;
 	}
 
 	void error(int error) ;

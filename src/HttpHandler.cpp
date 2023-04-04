@@ -232,7 +232,6 @@ void HttpHandler::POST() {
 
 }
 
-
 void HttpHandler::DELETE() {
 	_response.status_code = "204";
 	_response.status_phrase = "No Content";

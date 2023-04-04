@@ -1,14 +1,18 @@
-#include "Config.hpp"
+#include "JsonParser.hpp"
 
 
-Config::Config(char *configFile) {
+JsonParser::JsonParser(char *configFile) {
 	parseFile(configFile);
 }
 
-Config::~Config() {
+JsonParser::~JsonParser() {
 }
 
-int Config::parseFile(char *configFile) {
+json_value JsonParser::getJsonObject() const {
+	return _json_config;
+}
+
+int JsonParser::parseFile(char *configFile) {
 	std::ifstream infile(configFile);
 	if (!infile.is_open()) { // check if the file was opened successfully
 		std::cout << "Unable to open file" << std::endl; // handle the error
@@ -21,18 +25,18 @@ int Config::parseFile(char *configFile) {
         throw std::runtime_error("Expected '['");
     }
 	str.erase(0, 1);  // consume the '['
-	json_value p_object = parse_object(str);
+	_json_config = parse_object(str);
 	if (str.empty() || str[0] != ']') {
         throw std::runtime_error("Expected ']'");
     }
 	str.erase(0, 1);  // consume the ']'
-	std::cout << "json object: " << p_object << std::endl;
+	std::cout << "json object: " << _json_config << std::endl;
 	infile.close();
 	return 0;
 }
 
 // Helper function to trim whitespace from a string
-std::string Config::trim(const std::string& str) {
+std::string JsonParser::trim(const std::string& str) {
     size_t start = str.find_first_not_of(" \t\n\r");
     size_t end = str.find_last_not_of(" \t\n\r");
     if (start == std::string::npos || end == std::string::npos) {
@@ -46,7 +50,7 @@ std::string Config::trim(const std::string& str) {
 // and consumes the characters corresponding to the object
 // Returns the parsed object
 // Throws an exception if the string is not a valid JSON object
-json_value Config::parse_object(std::string& str) {
+json_value JsonParser::parse_object(std::string& str) {
 	str = trim(str);
     json_value j_object;
     j_object.type = object;
@@ -78,7 +82,7 @@ json_value Config::parse_object(std::string& str) {
 // and consumes the characters corresponding to the array
 // Returns the parsed array
 // Throws an exception if the string is not a valid JSON array
-json_value Config::parse_array(std::string& str) {
+json_value JsonParser::parse_array(std::string& str) {
     json_value j_array;
     j_array.type = array;
     str.erase(0, 1);  // consume the '['
@@ -100,7 +104,7 @@ json_value Config::parse_array(std::string& str) {
 // and consumes the characters corresponding to the value
 // Returns the parsed value
 // Throws an exception if the string is not a valid JSON value
-json_value Config::parse_value(std::string& str) {
+json_value JsonParser::parse_value(std::string& str) {
 	str = trim(str);
     json_value value;
     if (str.empty()) {

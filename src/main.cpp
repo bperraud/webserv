@@ -11,7 +11,8 @@
 /* ************************************************************************** */
 
 #include <iostream>
-#include "Config.hpp"
+#include "JsonParser.hpp"
+#include "ServerConfig.hpp"
 #include "ServerManager.hpp"
 #include "CGIExecutor.hpp"
 
@@ -23,11 +24,13 @@ int main(int argc, char **argv, char ** envp)
 		return 1;
 	}
 
-	Config config(argv[1]);
+	JsonParser parser(argv[1]);
 
-	//return 0;
+	ServerConfig config(parser.getJsonObject());
+
+	return 0;
 	CGIExecutor cgi(envp);
-	ServerManager serverManager(config, cgi);
+	ServerManager serverManager(cgi);
 
 	serverManager.run();
 

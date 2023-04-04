@@ -1,6 +1,5 @@
-#ifndef CONFIG_HPP
-#define CONFIG_HPP
-
+#ifndef JSONPARSER_HPP
+#define JSONPARSER_HPP
 
 #include <map>
 #include <string>
@@ -8,14 +7,6 @@
 #include <fstream>
 #include <vector>
 #include <sstream> 	//stringstream
-
-enum e_routes {
-	ROOT,
-	INDEX,
-	METHODS,
-	AUTO_INDEX,
-	CGI
-};
 
 // Define the possible types of JSON values
 enum json_type {
@@ -37,34 +28,24 @@ struct json_value {
     std::map<std::string, json_value> 			object_value;
 };
 
-struct routes {
-	std::string root;
-	std::string index;
-	std::string methods[3];
-	std::string cgi;
-	bool		auto_index;
-};
-
-class Config {
+class JsonParser {
 
 private:
-	std::map<int, routes>	_routes;
-	std::string				_server_name;
-	int						_PORT;
-	std::string				_host;
-	int						_max_body_size;
+	json_value 	_json_config;
 
 public:
-    Config(char *configFile);
+    JsonParser(char *JsonParserFile);
 
-	int parseFile(char *configFile);
+	int parseFile(char *JsonParserFile);
 
 	std::string trim(const std::string& str);
 	json_value parse_value(std::string& str);
 	json_value parse_array(std::string& str);
 	json_value parse_object(std::string& str);;
 
-    ~Config();
+	json_value getJsonObject() const;
+
+    ~JsonParser();
 };
 
 std::ostream &operator<<(std::ostream &os, const json_value obj);

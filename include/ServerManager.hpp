@@ -1,7 +1,6 @@
 #ifndef SERVERMANAGER_HPP
 #define SERVERMANAGER_HPP
 
-#include "Config.hpp"
 #include "HttpHandler.hpp"
 #include "CGIExecutor.hpp"
 
@@ -57,7 +56,7 @@ private:
 	#endif
 
 public:
-    ServerManager(Config config, CGIExecutor cgi);
+    ServerManager(CGIExecutor cgi);
     ~ServerManager();
 
     void run();

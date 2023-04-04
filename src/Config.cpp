@@ -20,7 +20,16 @@ int Config::parseFile(char *configFile) {
     oss << infile.rdbuf(); // read file contents into stringstream
 
 	std::string str = oss.str();
+
+	if (str.empty() || str[0] != '[') {
+        throw std::runtime_error("Expected '['");
+    }
+	str.erase(0, 1);  // consume the '['
 	json_value p_object = parse_object(str);
+	if (str.empty() || str[0] != ']') {
+        throw std::runtime_error("Expected ']'");
+    }
+	str.erase(0, 1);  // consume the ']'
 
 	std::cout << "json object: " << p_object << std::endl;
 
@@ -45,6 +54,7 @@ std::string Config::trim(const std::string& str) {
 // Returns the parsed object
 // Throws an exception if the string is not a valid JSON object
 json_value Config::parse_object(std::string& str) {
+	str = trim(str);
     json_value j_object;
     j_object.type = object;
     str.erase(0, 1);  // consume the '{'
@@ -59,15 +69,13 @@ json_value Config::parse_object(std::string& str) {
         if (!str.empty() && str[0] == ',') {
             str.erase(0, 1);  // consume the ','
         }
-
-		while (str.find_first_of(" \t\n\r") == 0) {
-			str.erase(0, 1);
-		}
+		str = trim(str);
     }
     if (str.empty() || str[0] != '}') {
         throw std::runtime_error("Expected '}'");
     }
     str.erase(0, 1);  // consume the '}'
+	str = trim(str);
     return j_object;
 }
 
@@ -100,11 +108,7 @@ json_value Config::parse_array(std::string& str) {
 // Returns the parsed value
 // Throws an exception if the string is not a valid JSON value
 json_value Config::parse_value(std::string& str) {
-
-	while (str.find_first_of(" \t\n\r") == 0) {
-		str.erase(0, 1);
-	}
-
+	str = trim(str);
     json_value value;
     if (str.empty()) {
         throw std::runtime_error("Unexpected end of string");

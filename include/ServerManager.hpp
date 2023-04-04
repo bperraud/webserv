@@ -72,6 +72,7 @@ public:
 	void handleReadEvent(int client_fd);
 	void handleNewConnections();
 
+	void timeoutCheck();
 
 	void connectionCloseMode(int client_fd);
     void closeClientConnection(int client_fd);

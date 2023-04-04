@@ -76,10 +76,8 @@ void CGIExecutor::execute(char *path, int input_fd, int output_fd) const {
 		dup2(output_fd, STDOUT_FILENO);
 		//close(input_fd);
 		close(output_fd);
-		if (execve(path, argv, _env) < 0) {
-			std::cerr << "Failed to execute CGI: " << strerror(errno) << std::endl;
-			exit(EXIT_FAILURE);
-		}
+		if (execve(path, argv, _env) < 0)
+			throw std::runtime_error("Failed to execute CGI: ");
 	} else {
 		// parent process
 		int status;

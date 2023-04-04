@@ -46,6 +46,19 @@ void ServerManager::setNonBlockingMode(int socket) {
 	}
 }
 
+void ServerManager::timeoutCheck() {
+	for (map_iterator_type it = _client_map.begin(); it != _client_map.end();) {
+		if (it->second->hasTimeOut()) {
+			int fd = it->first;
+			map_iterator_type to_delete = it;
+			++it;
+			closeClientConnection(fd, to_delete);
+		}
+		else {
+			++it;
+		}
+	}
+}
 
 #if (defined (LINUX) || defined (__linux__))
 void ServerManager::handleNewConnections() {
@@ -78,8 +91,6 @@ void ServerManager::handleNewConnections() {
 				if (newsockfd < 0)
 					throw std::runtime_error("accept()");
 				setNonBlockingMode(newsockfd);
-				//setTimeoutSocket();
-
 				event.data.fd = newsockfd;
 				event.events = EPOLLIN ;
 				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1)
@@ -96,17 +107,7 @@ void ServerManager::handleNewConnections() {
 			}
 		}
 
-		for (map_iterator_type it = _client_map.begin(); it != _client_map.end();) {
-			if (it->second->hasTimeOut()) {
-				int fd = it->first;
-				map_iterator_type to_delete = it;
-				++it;
-				closeClientConnection(fd, to_delete);
-			}
-			else {
-				++it;
-			}
-		}
+		timeoutCheck();
 	}
 }
 #else
@@ -153,6 +154,7 @@ void ServerManager::handleNewConnections() {
 				handleReadEvent(fd);
 			}
 		}
+		timeoutCheck();
 	}
 }
 #endif
@@ -183,7 +185,6 @@ void ServerManager::handleReadEvent(int client_fd) {
 		}
 		else{
 
-
 		#if 0
 		std::cout << "Response Header :" << std::endl;
 		std::cout << client->getResponseHeader() << std::endl;
@@ -208,10 +209,8 @@ void ServerManager::closeClientConnection(int client_fd) {
 void ServerManager::closeClientConnection(int client_fd) {
     struct kevent event;
     EV_SET(&event, client_fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-    if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1) {
-        perror("kevent");
-        exit(EXIT_FAILURE);
-    }
+    if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1)
+		throw std::runtime_error("kevent");
 #endif
 	delete _client_map[client_fd];
 	_client_map.erase(client_fd);

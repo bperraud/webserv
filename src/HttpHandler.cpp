@@ -54,7 +54,6 @@ int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 void HttpHandler::resetStream() {
 	delete _readStream;
 	_readStream = new std::stringstream();
-
 	_request_body_stream.str(std::string());
 	_request_body_stream.seekp(0, std::ios_base::beg);
 	_response_body_stream.str(std::string());

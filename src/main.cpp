@@ -19,7 +19,7 @@ int main(int argc, char **argv, char ** envp)
 {
 	if (argc != 2)
 	{
-		std::cout << "Usage: ./webserv <config_file>" << std::endl;
+		std::cerr << "Usage: ./webserv <config_file>" << std::endl;
 		return 1;
 	}
 

@@ -9,18 +9,14 @@ Config::~Config() {
 }
 
 int Config::parseFile(char *configFile) {
-
 	std::ifstream infile(configFile);
-
 	if (!infile.is_open()) { // check if the file was opened successfully
 		std::cout << "Unable to open file" << std::endl; // handle the error
 		return 1;
 	}
 	std::ostringstream oss;
     oss << infile.rdbuf(); // read file contents into stringstream
-
 	std::string str = oss.str();
-
 	if (str.empty() || str[0] != '[') {
         throw std::runtime_error("Expected '['");
     }
@@ -30,11 +26,8 @@ int Config::parseFile(char *configFile) {
         throw std::runtime_error("Expected ']'");
     }
 	str.erase(0, 1);  // consume the ']'
-
 	std::cout << "json object: " << p_object << std::endl;
-
 	infile.close();
-
 	return 0;
 }
 

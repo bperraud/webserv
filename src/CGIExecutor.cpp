@@ -62,7 +62,7 @@ void CGIExecutor::readCgiOutput(char *path) {
     else
     {
         // Error handling for failed popen() call
-        std::cerr << "Failed to execute CGI script\n";
+        throw std::runtime_error("Failed to execute CGI script\n");
     }
 }
 
@@ -72,10 +72,8 @@ void CGIExecutor::execute(char *path, int input_fd, int output_fd) const {
 
 	char* argv[] = {path, NULL};
 	int pid = fork();
-	if (pid < 0) {
-		std::cerr << "Failed to fork process: " << strerror(errno) << std::endl;
-		return;
-	}
+	if (pid < 0)
+		throw std::runtime_error("Failed to fork process: ");
 	if (pid == 0) {
 		// child process
 		//dup2(input_fd, STDIN_FILENO);

@@ -34,14 +34,12 @@ void	ServerManager::setupSocket() {
 	setNonBlockingMode(_listen_fd);
 	if (listen(_listen_fd, SOMAXCONN) < 0)
 		throw std::runtime_error("listen failed");
-	printf("server listening for connections...\n");
+	std::cout << "server listening for connections... " << std::endl;
 }
 
 void ServerManager::setNonBlockingMode(int socket) {
-	if (fcntl(socket, F_SETFL, O_NONBLOCK) < 0) {
-		perror("Failed to set socket to non-blocking mode");
-		close(socket);
-	}
+	if (fcntl(socket, F_SETFL, O_NONBLOCK) < 0)
+		throw std::runtime_error("Failed to set socket to non-blocking mode");
 }
 
 void ServerManager::timeoutCheck() {
@@ -73,7 +71,7 @@ void ServerManager::handleNewConnections() {
 	// the file descriptors that have been registered with epoll_ctl()
 
 	while (1) {
-		std::cout << "waiting..." << std::endl;
+		//std::cout << "waiting..." << std::endl;
 		int n_ready = epoll_wait(_epoll_fd, events, MAX_EVENTS, WAIT_TIMEOUT_SECS * 1000);
 		// if any of the file descriptors match the interest then epoll_wait can return without blocking.
 		if (n_ready == -1)
@@ -89,7 +87,8 @@ void ServerManager::handleNewConnections() {
 					throw std::runtime_error("accept()");
 				setNonBlockingMode(newsockfd);
 				event.data.fd = newsockfd;
-				event.events = EPOLLIN ;
+				//event.events = EPOLLIN ;
+				event.events = EPOLLIN | EPOLLOUT;;
 				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) < 0)
 					throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
 				_client_map.insert(std::make_pair(newsockfd, new HttpHandler(TIMEOUT_SECS)));
@@ -99,8 +98,8 @@ void ServerManager::handleNewConnections() {
 				handleReadEvent(fd);
 			}
 
-			else {
-				;
+			else if ( events[i].events & EPOLLOUT ) {
+				handleWriteEvent(fd);
 			}
 		}
 		timeoutCheck();
@@ -144,7 +143,7 @@ void ServerManager::handleNewConnections() {
 				_client_map.insert(std::make_pair(newsockfd, new HttpHandler(TIMEOUT_SECS)));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
-			else if (_events[i].filter ==  EVFILT_READ) {
+			else if (_events[i].filter == EVFILT_READ) {
 			// else
 				handleReadEvent(fd);
 			}
@@ -187,14 +186,28 @@ void ServerManager::handleReadEvent(int client_fd) {
 		std::cout << client->getResponseBody() << std::endl;
 		#endif
 
-		writeToClient(client_fd, client->getResponseHeader());
-		writeToClient(client_fd, client->getResponseBody());
+		//writeToClient(client_fd, client->getResponseHeader());
+		//writeToClient(client_fd, client->getResponseBody());
 
 		}
-		client->resetStream();
-		connectionCloseMode(client_fd);
+		//client->resetStream();
+		//connectionCloseMode(client_fd);
 	}
 }
+
+void ServerManager::handleWriteEvent(int client_fd) {
+	if (_client_map[client_fd]->getResponseHeader().empty() == false)
+	{
+		writeToClient(client_fd, _client_map[client_fd]->getResponseHeader());
+		if (_client_map[client_fd]->getResponseBody().empty() == false)
+		{
+			writeToClient(client_fd, _client_map[client_fd]->getResponseBody());
+			_client_map[client_fd]->resetStream();
+			connectionCloseMode(client_fd);
+		}
+	}
+}
+
 
 #if (defined (LINUX) || defined (__linux__))
 void ServerManager::closeClientConnection(int client_fd) {
@@ -210,7 +223,7 @@ void ServerManager::closeClientConnection(int client_fd) {
 	delete _client_map[client_fd];
 	_client_map.erase(client_fd);
 	close(client_fd);
-	printf("connection closed on client %d\n", client_fd);
+	std::cout << "connection closed on client " << client_fd << std::endl;
 	return ;
 }
 
@@ -228,7 +241,7 @@ void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem)
 	delete _client_map[client_fd];
 	_client_map.erase(elem);
 	close(client_fd);
-	printf("connection closed on client %d\n", client_fd);
+	std::cout << "connection closed on client " << client_fd << std::endl;
 	return ;
 }
 
@@ -239,22 +252,19 @@ void ServerManager::connectionCloseMode(int client_fd) {
 
 int	ServerManager::readFromClient(int client_fd){
 	char buffer[BUFFER_SIZE + 4];
-	HttpHandler *client = _client_map[client_fd];
 
-	ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
+	HttpHandler *client = _client_map[client_fd];
+	const ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
 	client->startTimer();
 	client->copyLast4Char(buffer, nbytes);
-	if (nbytes == -1) {
-		perror("recv()");
-		closeClientConnection(client_fd);
-		return 1;
-	}
+	if (nbytes == -1)
+		throw std::runtime_error("recv()");
 	else if (nbytes == 0) {
 		closeClientConnection(client_fd);
 		return 1;
 	}
 	else {
-		printf("finished reading data from client %d\n", client_fd);
+		std::cout << "finished reading data from client " << client_fd << std::endl;
 		ssize_t body_left_to_read = client->getLeftToRead();
 		if (body_left_to_read > 0)
 		{
@@ -281,7 +291,7 @@ int ServerManager::writeToClient(int client_fd, const std::string &str) {
 	if (nbytes == -1)
 		throw std::runtime_error("send()");
 	else if ((size_t) nbytes == str.length()) {
-		printf("finished writing %d\n", client_fd);
+		std::cout << "finished writing " << client_fd << std::endl;
 	}
 	return 0;
 }

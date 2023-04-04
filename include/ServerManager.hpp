@@ -50,11 +50,11 @@ private:
 
 	CGIExecutor			_cgi_executor;
 
-	#if (defined (LINUX) || defined (__linux__))
+#if (defined (LINUX) || defined (__linux__))
 	int		_epoll_fd;
-	#else
+#else
 	int		_kqueue_fd;
-	#endif
+#endif
 
 public:
     ServerManager(ServerConfig config, CGIExecutor cgi);
@@ -70,6 +70,7 @@ public:
 
 
 	void handleReadEvent(int client_fd);
+	void handleWriteEvent(int client_fd);
 	void handleNewConnections();
 
 	void timeoutCheck();

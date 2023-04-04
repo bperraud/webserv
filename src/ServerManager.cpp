@@ -137,15 +137,23 @@ void ServerManager::handleNewConnections() {
 				l.l_onoff = 1;
 				l.l_linger = 0; // no timeout for closing socket
 				setsockopt(newsockfd, SOL_SOCKET, SO_LINGER, &l, sizeof(l));
-				EV_SET(&event, newsockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-				if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
+				//EV_SET(&event, newsockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+				//if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
+				//	throw std::runtime_error("kevent");
+				struct kevent event[2];
+				EV_SET( event, _listen_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+				EV_SET( event + 1, _listen_fd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+				if (kevent(_kqueue_fd, event, 2, NULL, 0, NULL) < 0) {
 					throw std::runtime_error("kevent");
+				}
 				_client_map.insert(std::make_pair(newsockfd, new HttpHandler(TIMEOUT_SECS)));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
 			else if (_events[i].filter == EVFILT_READ) {
-			// else
 				handleReadEvent(fd);
+			}
+			else if (_events[i].filter == EVFILT_WRITE) {
+				handleWriteEvent(fd);
 			}
 		}
 		timeoutCheck();
@@ -215,10 +223,17 @@ void ServerManager::closeClientConnection(int client_fd) {
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_DEL");
 #else
 void ServerManager::closeClientConnection(int client_fd) {
-    struct kevent event;
-    EV_SET(&event, client_fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-    if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
-		throw std::runtime_error("kevent");
+    //struct kevent event;
+    //EV_SET(&event, client_fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+    //if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
+    //    throw std::runtime_error("kevent");
+
+	struct kevent events[2];
+    EV_SET( events, client_fd, EVFILT_READ, EV_DELETE, 0, 0, 0 );
+    EV_SET( events + 1, client_fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0 );
+    if ( kevent( _kqueue_fd, events, 2, NULL, 0, NULL ) < 0) {
+        throw std::runtime_error( "kevent" );
+    }
 #endif
 	delete _client_map[client_fd];
 	_client_map.erase(client_fd);
@@ -233,10 +248,17 @@ void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem)
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_DEL");
 #else
 void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem) {
-    struct kevent event;
-    EV_SET(&event, client_fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-    if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
-        throw std::runtime_error("kevent");
+    //struct kevent event;
+    //EV_SET(&event, client_fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
+    //if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
+    //    throw std::runtime_error("kevent");
+
+	struct kevent events[2];
+    EV_SET( events, client_fd, EVFILT_READ, EV_DELETE, 0, 0, 0 );
+    EV_SET( events + 1, client_fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0 );
+    if ( kevent( _kqueue_fd, events, 2, NULL, 0, NULL ) < 0) {
+        throw std::runtime_error( "kevent" );
+    }
 #endif
 	delete _client_map[client_fd];
 	_client_map.erase(elem);

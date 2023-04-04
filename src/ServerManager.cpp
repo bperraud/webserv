@@ -198,16 +198,13 @@ void ServerManager::handleReadEvent(int client_fd) {
 
 void ServerManager::handleWriteEvent(int client_fd) {
 	HttpHandler *client = _client_map[client_fd];
-	if (client->getResponseHeader().empty() == false)
+	if (client->isReadyToWrite())
 	{
 		writeToClient(client_fd, client->getResponseHeader());
-		if (client->getResponseBody().empty() == false)
-		{
-			writeToClient(client_fd, client->getResponseBody());
-			client->resetStream();
-			connectionCloseMode(client_fd);
-			client->setReadyToWrite(false);
-		}
+		writeToClient(client_fd, client->getResponseBody());
+		client->resetStream();
+		connectionCloseMode(client_fd);
+		client->setReadyToWrite(false);
 	}
 }
 

@@ -36,7 +36,7 @@ private:
 public:
     JsonParser(char *JsonParserFile);
 
-	int parseFile(char *JsonParserFile);
+	int parseJsonString(std::string& str);
 
 	std::string trim(const std::string& str);
 	json_value parse_value(std::string& str);

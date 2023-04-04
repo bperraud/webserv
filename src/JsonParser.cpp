@@ -2,7 +2,15 @@
 
 
 JsonParser::JsonParser(char *configFile) {
-	parseFile(configFile);
+
+	std::ifstream infile(configFile);
+	if (!infile.is_open())
+		throw std::runtime_error("Unable to open file");
+	std::ostringstream oss;
+    oss << infile.rdbuf(); // read file contents into stringstream
+	std::string str = oss.str();
+	infile.close();
+	parseJsonString(str);
 }
 
 JsonParser::~JsonParser() {
@@ -12,24 +20,10 @@ std::vector<json_value> JsonParser::getJsonVector() const {
 	return _json_object_vector;
 }
 
-int JsonParser::parseFile(char *configFile) {
-	std::ifstream infile(configFile);
-	if (!infile.is_open()) { // check if the file was opened successfully
-		std::cout << "Unable to open file" << std::endl; // handle the error
-		return 1;
-	}
-	std::ostringstream oss;
-    oss << infile.rdbuf(); // read file contents into stringstream
-	std::string str = oss.str();
-
-
-
-	// start parsing
-	if (str.empty() || str[0] != '[') {
+int JsonParser::parseJsonString(std::string &str) {
+	if (str.empty() || str[0] != '[')
         throw std::runtime_error("Expected '['");
-    }
 	str.erase(0, 1);  // consume the '['
-
 	while (!str.empty() && str[0] != '}') {
 		_json_object_vector.push_back(parse_object(str));
 		if (str[0] == ']') {
@@ -44,7 +38,6 @@ int JsonParser::parseFile(char *configFile) {
 	for (std::vector<json_value>::iterator it = _json_object_vector.begin(); it != _json_object_vector.end(); it++) {
 		std::cout << *it << std::endl;
 	}
-	infile.close();
 	return 0;
 }
 
@@ -71,9 +64,8 @@ json_value JsonParser::parse_object(std::string& str) {
     while (!str.empty() && str[0] != '}') {
         // Parse a key-value pair
         std::string key = parse_value(str).string_value;
-        if (str.empty() || str[0] != ':') {
+        if (str.empty() || str[0] != ':')
             throw std::runtime_error("Expected ':'");
-        }
         str.erase(0, 1);  // consume the ':'
         j_object.object_value[key] = parse_value(str);
         if (!str.empty() && str[0] == ',') {
@@ -81,9 +73,8 @@ json_value JsonParser::parse_object(std::string& str) {
         }
 		str = trim(str);
     }
-    if (str.empty() || str[0] != '}') {
+    if (str.empty() || str[0] != '}')
         throw std::runtime_error("Expected '}'");
-    }
     str.erase(0, 1);  // consume the '}'
 	str = trim(str);
     return j_object;
@@ -105,9 +96,8 @@ json_value JsonParser::parse_array(std::string& str) {
             str.erase(0, 1);  // consume the ','
         }
     }
-    if (str.empty() || str[0] != ']') {
+    if (str.empty() || str[0] != ']')
         throw std::runtime_error("Expected ']'");
-    }
     str.erase(0, 1);  // consume the ']'
     return j_array;
 }
@@ -120,9 +110,8 @@ json_value JsonParser::parse_array(std::string& str) {
 json_value JsonParser::parse_value(std::string& str) {
 	str = trim(str);
     json_value value;
-    if (str.empty()) {
+    if (str.empty())
         throw std::runtime_error("Unexpected end of string");
-    }
     switch (str[0]) {
         case '{': {
             value = parse_object(str);
@@ -202,7 +191,7 @@ json_value JsonParser::parse_value(std::string& str) {
 		}
 		default :
 		{
-			std::cout << "Unexpected character: " << str[0] << std::endl;
+			std::cerr << "Unexpected character: " << str[0] << std::endl;
 			throw std::runtime_error("Unexpected character");
 			break;
 		}

@@ -200,8 +200,8 @@ void ServerManager::handleWriteEvent(int client_fd) {
 	HttpHandler *client = _client_map[client_fd];
 	if (client->isReadyToWrite())
 	{
-		writeToClient(client_fd, client->getResponseHeader());
-		writeToClient(client_fd, client->getResponseBody());
+		while (writeToClient(client_fd, client->getResponseHeader()));
+		while (writeToClient(client_fd, client->getResponseBody()));
 		client->resetStream();
 		connectionCloseMode(client_fd);
 		client->setReadyToWrite(false);
@@ -300,13 +300,23 @@ int	ServerManager::readFromClient(int client_fd){
 }
 
 int ServerManager::writeToClient(int client_fd, const std::string &str) {
-	ssize_t nbytes = send(client_fd, str.c_str(), str.length(), 0);
+
+	ssize_t ptr = _client_map[client_fd]->getOffsetStr();
+
+	ssize_t nbytes = send(client_fd, str.c_str() + ptr, str.length(), 0);
 	if (nbytes == -1)
 		throw std::runtime_error("send()");
 	else if ((size_t) nbytes == str.length()) {
 		std::cout << "finished writing " << client_fd << std::endl;
+		_client_map[client_fd]->setOffsetStr(0);
+		return 0;
 	}
-	return 0;
+	else {
+		std::cout << "writing " << nbytes << " bytes to client " << client_fd << std::endl;
+		_client_map[client_fd]->setOffsetStr(nbytes);
+		return 1;
+	}
+	return 1;
 }
 
 ServerManager::~ServerManager() {

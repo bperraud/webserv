@@ -3,7 +3,7 @@
 
 HttpHandler::HttpHandler(int timeout_seconds) : _timer(timeout_seconds),
 	_readStream(new std::stringstream()),  _close_keep_alive(false),
-	_left_to_read(0), _MIME_TYPES(), _cgiMode(false), _ready_to_write(false){
+	_left_to_read(0), _MIME_TYPES(), _cgiMode(false), _ready_to_write(false), _offset_str(0){
 	_last_4_char[0] = '\0';
 	_MIME_TYPES["html"] = "text/html";
     _MIME_TYPES["css"] = "text/css";

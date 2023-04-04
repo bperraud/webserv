@@ -62,8 +62,8 @@ private:
 	std::map<std::string, std::string> _MIME_TYPES;
 
 	bool				_cgiMode;
-
 	bool				_ready_to_write;
+	ssize_t				_offset_str;
 
 	HttpHandler &operator=(HttpHandler const &other) {
 		if (this != &other) {
@@ -85,6 +85,15 @@ public:
 	void	startTimer() {
 		_timer.start();
 	}
+
+	ssize_t	getOffsetStr() const {
+		return _offset_str;
+	}
+
+	void	setOffsetStr(ssize_t offset) {
+		_offset_str = offset;
+	}
+
 	bool	isReadyToWrite() const {
 		return _ready_to_write;
 	}

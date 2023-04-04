@@ -21,8 +21,8 @@ enum json_type {
 // Define a struct to hold a JSON value
 struct json_value {
     json_type 									type;
-    bool 										boolean_value ;
-    double 										number_value ;
+    bool 										boolean_value;
+    int 										number_value;
     std::string									string_value;
     std::vector<json_value>						array_value;
     std::map<std::string, json_value> 			object_value;

@@ -38,4 +38,6 @@ public:
     ~ServerConfig();
 };
 
+std::ostream& operator<<(std::ostream& os, const server& s);
+
 #endif

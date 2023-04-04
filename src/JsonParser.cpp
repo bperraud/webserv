@@ -34,7 +34,7 @@ int JsonParser::parseJsonString(std::string &str) {
 		str.erase(0, 1);  // consume the ','
 	}
 	for (std::vector<json_value>::iterator it = _json_object_vector.begin(); it != _json_object_vector.end(); it++) {
-		std::cout << *it << std::endl;
+		;//std::cout << *it << std::endl;
 	}
 	return 0;
 }
@@ -183,7 +183,7 @@ json_value JsonParser::parse_value(std::string& str) {
 			if (negative) {
 				number = -number;
 			}
-			value.number_value = static_cast<double>(number);
+			value.number_value = number;
 			str.erase(0, end_number);
 			break;
 		}

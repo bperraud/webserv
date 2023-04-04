@@ -3,7 +3,7 @@
 
 #include "JsonParser.hpp"
 
-#include <vector>
+#include <list>
 
 enum e_routes {
 	ROOT,
@@ -30,11 +30,13 @@ struct server {
 class ServerConfig {
 
 private:
-	std::vector<server>	_server_vector;
+	std::list<server>	_server_list;
 
 public:
-    ServerConfig(const std::vector<json_value> &_json_object_vector);
+    ServerConfig(const JsonParser &parser);
 	server parseJsonObject(const json_value &json_object);
+
+	std::list<server> getServerList() const;
     ~ServerConfig();
 };
 

@@ -3,6 +3,7 @@
 
 #include "HttpHandler.hpp"
 #include "CGIExecutor.hpp"
+#include "ServerConfig.hpp"
 
 #include <iostream>
 #include <errno.h>		// errno
@@ -56,7 +57,7 @@ private:
 	#endif
 
 public:
-    ServerManager(CGIExecutor cgi);
+    ServerManager(ServerConfig config, CGIExecutor cgi);
     ~ServerManager();
 
     void run();

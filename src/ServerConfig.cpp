@@ -1,10 +1,11 @@
 #include "ServerConfig.hpp"
 
-ServerConfig::ServerConfig(const std::vector<json_value> &_json_object_vector) {
+ServerConfig::ServerConfig(const JsonParser &parser) {
 	std::vector<json_value>::const_iterator it;
-	for (it = _json_object_vector.begin(); it != _json_object_vector.end(); it++) {
+	std::vector<json_value> json_object_vector = parser.getJsonVector();
+	for (it = json_object_vector.begin(); it != json_object_vector.end(); it++) {
 		server s = parseJsonObject(*it);
-		_server_vector.push_back(s);
+		_server_list.push_back(s);
 		std::cout << "server : " << s << std::endl;
 	}
 }
@@ -69,17 +70,17 @@ server ServerConfig::parseJsonObject(const json_value &json_object) {
 }
 
 std::ostream& operator<<(std::ostream& os, const server& s) {
-    os << "Host: " << s.host << std::endl;
-    os << "Port: " << s.PORT << std::endl;
-    os << "Max Body Size: " << s.max_body_size << std::endl;
-    os << "Routes: " << std::endl;
+    os << "host: " << s.host << std::endl;
+    os << "port: " << s.PORT << std::endl;
+    os << "max body size: " << s.max_body_size << std::endl;
+    os << "routes: " << std::endl;
     std::map<std::string, routes>::const_iterator routes_it;
     std::map<std::string, std::string>::const_iterator cgi_it;
     for (routes_it = s.routes_map.begin(); routes_it != s.routes_map.end(); ++routes_it) {
-        os << "    Route: " << routes_it->first << std::endl;
+        os << "    route: " << routes_it->first << std::endl;
         const routes& r = routes_it->second;
-        os << "        Root: " << r.root << std::endl;
-        os << "        Methods: ";
+        os << "        root: " << r.root << std::endl;
+        os << "        methods: ";
         for (int i = 0; i < 3; i++) {
             if (!r.methods[i].empty()) {
                 os << r.methods[i] << " ";
@@ -90,7 +91,7 @@ std::ostream& operator<<(std::ostream& os, const server& s) {
         for (cgi_it = r.cgi.begin(); cgi_it != r.cgi.end(); ++cgi_it) {
             os << "            " << cgi_it->first << ": " << cgi_it->second << std::endl;
         }
-        os << "        Auto Index: " << std::boolalpha << r.auto_index << std::endl;
+        os << "        auto index: " << std::boolalpha << r.auto_index << std::endl;
     }
     return os;
 }

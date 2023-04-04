@@ -1,8 +1,8 @@
 #include "ServerManager.hpp"
 
 
-ServerManager::ServerManager(CGIExecutor cgi) : _cgi_executor(cgi) {
-	//(void) config;
+ServerManager::ServerManager(ServerConfig config, CGIExecutor cgi) : _cgi_executor(cgi) {
+	(void)config;
 	_PORT = 8080;
 	_host = "0.0.0.0";
 }

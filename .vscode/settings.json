@@ -87,7 +87,8 @@
 	"concepts": "cpp",
 	"ctime": "cpp",
 	"iomanip": "cpp",
-	"numbers": "cpp"
+	"numbers": "cpp",
+	"list": "cpp"
 },
 "C_Cpp.errorSquiggles": "disabled"
 }

@@ -80,7 +80,7 @@ void HttpHandler::parseRequest() {
 	_left_to_read = _request.body_length;
 }
 
-std::string HttpHandler::getContentType(const std::string& path) {
+std::string HttpHandler::getContentType(const std::string& path) const {
     std::string::size_type dot_pos = path.find_last_of('.');
     if (dot_pos == std::string::npos) {
         // No extension found, assume plain text
@@ -122,7 +122,7 @@ void HttpHandler::createHttpResponse() {
 	constructStringResponse();
 }
 
-bool HttpHandler::isCGI(const std::string &path) {
+bool HttpHandler::isCGI(const std::string &path) const {
 	return path.substr(0, std::strlen("/cgi-bin/")).compare("/cgi-bin/") == 0;
 }
 

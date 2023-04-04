@@ -19,8 +19,6 @@ void	ServerManager::setupSocket() {
 	memset((char *)&_host_addr, 0, sizeof(_host_addr));
 	int _host_addrlen = sizeof(_host_addr);
 	_host_addr.sin_family = AF_INET;				// AF_INET for IPv4 Internet protocols
-	//_host_addr.sin_addr.s_addr = htonl(INADDR_ANY); // INADDR_ANY = any address = 0.0.0.0
-
 	_host_addr.sin_addr.s_addr = inet_addr(_host.c_str());
 	_host_addr.sin_port = htons(_PORT);
 	int enable_reuseaddr = 1;
@@ -34,7 +32,6 @@ void	ServerManager::setupSocket() {
 	if (bind(_listen_fd, (struct sockaddr *) &_host_addr, _host_addrlen) < 0)
 		throw std::runtime_error("bind failed");
 	setNonBlockingMode(_listen_fd);
-	// SOMAXCONN = maximum number of pending connections queued up before connections are refused
 	if (listen(_listen_fd, SOMAXCONN) < 0)
 		throw std::runtime_error("listen failed");
 	printf("server listening for connections...\n");
@@ -55,9 +52,8 @@ void ServerManager::timeoutCheck() {
 			++it;
 			closeClientConnection(fd, to_delete);
 		}
-		else {
+		else
 			++it;
-		}
 	}
 }
 
@@ -107,7 +103,6 @@ void ServerManager::handleNewConnections() {
 				;
 			}
 		}
-
 		timeoutCheck();
 	}
 }
@@ -125,7 +120,6 @@ void ServerManager::handleNewConnections() {
 		struct timespec timeout;
 		timeout.tv_sec = WAIT_TIMEOUT_SECS;
 		timeout.tv_nsec = 0;
-
 		std::cout << "waiting..." << std::endl;
 		int n_ready = kevent(_kqueue_fd, NULL, 0, events, MAX_EVENTS, &timeout);
 		if (n_ready == -1)

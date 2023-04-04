@@ -194,12 +194,7 @@ void ServerManager::handleReadEvent(int client_fd) {
 		std::cout << client->getResponseBody() << std::endl;
 		#endif
 
-		//writeToClient(client_fd, client->getResponseHeader());
-		//writeToClient(client_fd, client->getResponseBody());
-
 		}
-		//client->resetStream();
-		//connectionCloseMode(client_fd);
 	}
 }
 
@@ -215,7 +210,6 @@ void ServerManager::handleWriteEvent(int client_fd) {
 		}
 	}
 }
-
 
 #if (defined (LINUX) || defined (__linux__))
 void ServerManager::closeClientConnection(int client_fd) {

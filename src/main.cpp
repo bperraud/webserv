@@ -26,7 +26,7 @@ int main(int argc, char **argv, char ** envp)
 
 	JsonParser parser(argv[1]);
 
-	ServerConfig config(parser.getJsonObject());
+	ServerConfig config(parser.getJsonVector());
 
 	return 0;
 	CGIExecutor cgi(envp);

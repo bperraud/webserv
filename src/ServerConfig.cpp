@@ -1,7 +1,8 @@
 #include "ServerConfig.hpp"
 
-ServerConfig::ServerConfig(const json_value &json_object) {
-	parseJsonObject(json_object);
+ServerConfig::ServerConfig(const std::vector<json_value> &json_vector) {
+
+	//parseJsonObject(json_object);
 }
 
 

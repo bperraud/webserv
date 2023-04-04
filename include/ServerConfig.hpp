@@ -33,7 +33,7 @@ private:
 	std::vector<server>	_server_vector;
 
 public:
-    ServerConfig(const json_value &json_object);
+    ServerConfig(const std::vector<json_value> &json_vector);
 	void parseJsonObject(const json_value &json_object);
     ~ServerConfig();
 };

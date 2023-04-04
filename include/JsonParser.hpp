@@ -31,7 +31,7 @@ struct json_value {
 class JsonParser {
 
 private:
-	json_value 	_json_config;
+	std::vector<json_value> 	_json_object_vector;
 
 public:
     JsonParser(char *JsonParserFile);
@@ -43,7 +43,7 @@ public:
 	json_value parse_array(std::string& str);
 	json_value parse_object(std::string& str);;
 
-	json_value getJsonObject() const;
+	std::vector<json_value> getJsonVector() const;
 
     ~JsonParser();
 };

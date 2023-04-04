@@ -8,8 +8,8 @@ JsonParser::JsonParser(char *configFile) {
 JsonParser::~JsonParser() {
 }
 
-json_value JsonParser::getJsonObject() const {
-	return _json_config;
+std::vector<json_value> JsonParser::getJsonVector() const {
+	return _json_object_vector;
 }
 
 int JsonParser::parseFile(char *configFile) {
@@ -21,16 +21,29 @@ int JsonParser::parseFile(char *configFile) {
 	std::ostringstream oss;
     oss << infile.rdbuf(); // read file contents into stringstream
 	std::string str = oss.str();
+
+
+
+	// start parsing
 	if (str.empty() || str[0] != '[') {
         throw std::runtime_error("Expected '['");
     }
 	str.erase(0, 1);  // consume the '['
-	_json_config = parse_object(str);
-	if (str.empty() || str[0] != ']') {
-        throw std::runtime_error("Expected ']'");
-    }
-	str.erase(0, 1);  // consume the ']'
-	std::cout << "json object: " << _json_config << std::endl;
+
+	while (!str.empty() && str[0] != '}') {
+		_json_object_vector.push_back(parse_object(str));
+		if (str[0] == ']') {
+			str.erase(0, 1);  // consume the ']'
+        	break;
+    	}
+		if (str.empty() || str[0] != ',') {
+			throw std::runtime_error("Expected ','");
+		}
+		str.erase(0, 1);  // consume the ','
+	}
+	for (std::vector<json_value>::iterator it = _json_object_vector.begin(); it != _json_object_vector.end(); it++) {
+		std::cout << *it << std::endl;
+	}
 	infile.close();
 	return 0;
 }

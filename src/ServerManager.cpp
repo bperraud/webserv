@@ -182,6 +182,7 @@ void ServerManager::handleReadEvent(int client_fd) {
 		}
 		else{
 
+		std::cout <<client->getResponseBody().length() << std::endl;
 		#if 0
 		std::cout << "Response Header :" << std::endl;
 		std::cout << client->getResponseHeader() << std::endl;

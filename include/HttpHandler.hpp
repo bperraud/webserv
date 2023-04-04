@@ -49,7 +49,6 @@ private:
 	Timer				_timer;
 
 	std::stringstream	*_readStream;
-
 	std::stringstream   _request_body_stream;
 	std::stringstream   _response_header_stream;
 	std::stringstream   _response_body_stream;
@@ -94,25 +93,25 @@ public:
 		return _timer.hasTimeOut();
 	}
 
-	void error(int error);
+	void error(int error) ;
 
 	bool	isCGIMode() const {
 		return _cgiMode;
 	}
 
-	HttpMessage getStructRequest() {
+	HttpMessage getStructRequest() const {
 		return _request;
 	}
 
-	std::string		getRequest() {
+	std::string		getRequest() const  {
 		return _readStream->str();
 	}
 
-	std::string		getBody() {
+	std::string		getBody() const {
 		return _request_body_stream.str();
 	}
 
-	std::string		getRequestMethod() {
+	std::string		getRequestMethod() const {
 		return _request.method;
 	}
 
@@ -133,11 +132,11 @@ public:
 		return _left_to_read;
 	}
 
-	std::string getResponseHeader() {
+	std::string getResponseHeader() const {
 		return _response_header_stream.str();
 	}
 
-	std::string getResponseBody() {
+	std::string getResponseBody() const {
 		return _response_body_stream.str();
 	}
 
@@ -150,17 +149,12 @@ public:
 	void POST();
 	void DELETE();
 
-	bool isCGI(const std::string &path);
+	bool isCGI(const std::string &path) const ;
 	void constructStringResponse();
 
 	void uploadFile(const std::string& contentType, size_t pos_boundary);
 
-	std::string getContentType(const std::string& path);
+	std::string getContentType(const std::string& path) const;
 };
 
 #endif
-
-// no body ? end with \r\n\r\n
-// GET and HEAD : no body
-// POST and PUT), the presence of the Content-Length header or
-// the Transfer-Encoding header indicates the length of the request body

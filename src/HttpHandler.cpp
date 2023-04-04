@@ -17,14 +17,9 @@ HttpHandler::HttpHandler(int timeout_seconds = 5) : _timer(timeout_seconds), _re
 	_MIME_TYPES["pdf"] = "application/pdf";
 	_MIME_TYPES["mp3"] = "audio/mpeg";
 	_MIME_TYPES["mp4"] = "video/mp4";
-	_MIME_TYPES["mpeg"] = "video/mpeg";
 	_MIME_TYPES["mov"] = "video/quicktime";
-	_MIME_TYPES["zip"] = "application/zip";
-	_MIME_TYPES["gz"] = "application/gzip";
-	_MIME_TYPES["tar"] = "application/x-tar";
 	_MIME_TYPES["xml"] = "application/xml";
 	_MIME_TYPES["wav"] = "audio/x-wav";
-	_MIME_TYPES["bmp"] = "image/bmp";
 	_MIME_TYPES["webp"] = "image/webp";
 	_MIME_TYPES["doc"] = "application/msword";
 	_MIME_TYPES["php"] = "text/html";
@@ -85,7 +80,7 @@ void HttpHandler::parseRequest() {
 	_left_to_read = _request.body_length;
 }
 
-std::string HttpHandler::getContentType(const std::string& path) {
+std::string HttpHandler::getContentType(const std::string& path) const {
     std::string::size_type dot_pos = path.find_last_of('.');
     if (dot_pos == std::string::npos) {
         // No extension found, assume plain text
@@ -127,7 +122,7 @@ void HttpHandler::createHttpResponse() {
 	constructStringResponse();
 }
 
-bool HttpHandler::isCGI(const std::string &path) {
+bool HttpHandler::isCGI(const std::string &path) const {
 	return path.substr(0, std::strlen("/cgi-bin/")).compare("/cgi-bin/") == 0;
 }
 
@@ -236,7 +231,6 @@ void HttpHandler::POST() {
 	#endif
 
 }
-
 
 void HttpHandler::DELETE() {
 	_response.status_code = "204";

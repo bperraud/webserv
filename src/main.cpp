@@ -11,16 +11,21 @@
 /* ************************************************************************** */
 
 #include <iostream>
-#include "Config.hpp"
+#include "JsonParser.hpp"
+#include "ServerConfig.hpp"
 #include "ServerManager.hpp"
 #include "CGIExecutor.hpp"
 
 int main(int argc, char **argv, char ** envp)
 {
-	if (argc != 1)
+	if (argc != 2)
+	{
+		std::cerr << "Usage: ./webserv <config_file>" << std::endl;
 		return 1;
+	}
 
-	Config config(argv[1]);
+	JsonParser parser(argv[1]);
+	ServerConfig config(parser);
 	CGIExecutor cgi(envp);
 	ServerManager serverManager(config, cgi);
 

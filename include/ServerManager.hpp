@@ -1,9 +1,9 @@
 #ifndef SERVERMANAGER_HPP
 #define SERVERMANAGER_HPP
 
-#include "Config.hpp"
 #include "HttpHandler.hpp"
 #include "CGIExecutor.hpp"
+#include "ServerConfig.hpp"
 
 #include <iostream>
 #include <errno.h>		// errno
@@ -28,11 +28,10 @@
 #include <fcntl.h>		// fcntl
 #include <netinet/tcp.h>	// TCP_NODELAY
 
-# define PORT 8080
 # define BUFFER_SIZE 1024
 # define MAX_EVENTS 4096
 # define TIMEOUT_SECS 5
-# define WAIT_TIMEOUT_SECS 1
+# define WAIT_TIMEOUT_SECS 2
 
 typedef std::map<int, HttpHandler*> map_type;
 typedef std::map<int, HttpHandler*>::iterator map_iterator_type;
@@ -40,21 +39,25 @@ typedef std::map<int, HttpHandler*>::iterator map_iterator_type;
 class ServerManager {
 
 private:
-	map_type	_client_map;
-    int			_listen_fd;
-	int			_tfd;
+	map_type			_client_map;
+    int					_listen_fd;
+	int					_PORT;
+	std::string			_host;
+	struct sockaddr_in	_host_addr;
+	int					_host_addrlen;
 
-	CGIExecutor		_cgi_executor;
+	//server_names_type	_server_names;
+
+	CGIExecutor			_cgi_executor;
+
 	#if (defined (LINUX) || defined (__linux__))
 	int		_epoll_fd;
 	#else
 	int		_kqueue_fd;
 	#endif
-	struct sockaddr_in _host_addr;
-	int		_host_addrlen;
 
 public:
-    ServerManager(Config config, CGIExecutor cgi);
+    ServerManager(ServerConfig config, CGIExecutor cgi);
     ~ServerManager();
 
     void run();
@@ -69,6 +72,7 @@ public:
 	void handleReadEvent(int client_fd);
 	void handleNewConnections();
 
+	void timeoutCheck();
 
 	void connectionCloseMode(int client_fd);
     void closeClientConnection(int client_fd);

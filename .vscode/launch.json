@@ -10,8 +10,9 @@
 		"stopAtEntry": false,
 		"cwd": "${workspaceFolder}",
 		"environment": [],
-		"externalConsole": false,
+		"externalConsole": true,
 		"MIMode": "gdb",
+		"miDebuggerPath": "/usr/bin/gdb",
 		"setupCommands": [
 		  {
 			"description": "Enable pretty-printing for gdb",
@@ -24,25 +25,33 @@
 			"ignoreFailures": true
 		  }
 		]
-	   },
-    {
-      "name": "C/C++ Runner: Debug Session",
-      "type": "cppdbg",
-      "request": "launch",
-      "args": [],
-      "stopAtEntry": false,
-      "externalConsole": true,
-      "cwd": "d:/74ben/Documents/Programmation/CLionProjects/19/webserv/src",
-      "program": "d:/74ben/Documents/Programmation/CLionProjects/19/webserv/src/build/Debug/outDebug",
-      "MIMode": "gdb",
-      "miDebuggerPath": "gdb",
-      "setupCommands": [
-        {
-          "description": "Enable pretty-printing for gdb",
-          "text": "-enable-pretty-printing",
-          "ignoreFailures": true
-        }
-      ]
-    }
-  ]
-}
+	  },
+	  {
+		"type": "lldb",
+		"request": "launch",
+		"name": "Debug",
+		"program": "${workspaceFolder}/webserv",
+		"args": [],
+		"cwd": "${workspaceFolder}"
+	  },
+	  {
+		"name": "C/C++ Runner: Debug Session",
+		"type": "cppdbg",
+		"request": "launch",
+		"args": [],
+		"stopAtEntry": false,
+		"externalConsole": false,
+		"cwd": "${workspaceFolder}",
+		"program": "${workspaceFolder}/build/Debug/outDebug",
+		"MIMode": "gdb",
+		"miDebuggerPath": "gdb",
+		"setupCommands": [
+		  {
+			"description": "Enable pretty-printing for gdb",
+			"text": "-enable-pretty-printing",
+			"ignoreFailures": true
+		  }
+		]
+	  }
+	]
+  }

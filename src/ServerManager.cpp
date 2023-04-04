@@ -306,7 +306,7 @@ int ServerManager::writeToClient(int client_fd, const std::string &str) {
 	ssize_t nbytes = send(client_fd, str.c_str() + ptr, str.length() - ptr, 0);
 	if (nbytes == -1)
 		throw std::runtime_error("send()");
-	else if ((size_t) nbytes == str.length()) {
+	else if ((size_t) nbytes == str.length() - ptr) {
 		std::cout << "finished writing " << client_fd << std::endl;
 		_client_map[client_fd]->setOffsetStr(0);
 		return 0;

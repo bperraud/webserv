@@ -13,7 +13,8 @@ void ServerManager::run() {
 }
 
 void	ServerManager::setupSocket() {
-	if ((_listen_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+	_listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (_listen_fd < 0)
 		throw std::runtime_error("cannot create socket");
 	memset((char *)&_host_addr, 0, sizeof(_host_addr));
 	int _host_addrlen = sizeof(_host_addr);
@@ -93,7 +94,7 @@ void ServerManager::handleNewConnections() {
 				setNonBlockingMode(newsockfd);
 				event.data.fd = newsockfd;
 				event.events = EPOLLIN ;
-				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) == -1)
+				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) < 0)
 					throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
 				_client_map.insert(std::make_pair(newsockfd, new HttpHandler(TIMEOUT_SECS)));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
@@ -117,7 +118,7 @@ void ServerManager::handleNewConnections() {
 		throw std::runtime_error("kqueue");
 	struct kevent event;
 	EV_SET(&event, _listen_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1)
+	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
 		throw std::runtime_error("kevent");
 	struct kevent events[MAX_EVENTS];
 	while (1) {
@@ -144,7 +145,7 @@ void ServerManager::handleNewConnections() {
 				l.l_linger = 0; // no timeout for closing socket
 				setsockopt(newsockfd, SOL_SOCKET, SO_LINGER, &l, sizeof(l));
 				EV_SET(&event, newsockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-				if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1)
+				if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
 					throw std::runtime_error("kevent");
 				_client_map.insert(std::make_pair(newsockfd, new HttpHandler(TIMEOUT_SECS)));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
@@ -203,13 +204,13 @@ void ServerManager::handleReadEvent(int client_fd) {
 
 #if (defined (LINUX) || defined (__linux__))
 void ServerManager::closeClientConnection(int client_fd) {
-	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) == -1)
+	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_DEL");
 #else
 void ServerManager::closeClientConnection(int client_fd) {
     struct kevent event;
     EV_SET(&event, client_fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-    if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1)
+    if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
 		throw std::runtime_error("kevent");
 #endif
 	delete _client_map[client_fd];
@@ -221,13 +222,13 @@ void ServerManager::closeClientConnection(int client_fd) {
 
 #if (defined (LINUX) || defined (__linux__))
 void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem) {
-	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) == -1)
+	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_DEL");
 #else
 void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem) {
     struct kevent event;
     EV_SET(&event, client_fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-    if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1)
+    if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
         throw std::runtime_error("kevent");
 #endif
 	delete _client_map[client_fd];
@@ -260,9 +261,11 @@ int	ServerManager::readFromClient(int client_fd){
 	}
 	else {
 		printf("finished reading data from client %d\n", client_fd);
-		if (client->getLeftToRead())
+		ssize_t body_left_to_read = client->getLeftToRead();
+		if (body_left_to_read > 0)
 		{
-			return (client->writeToBody(buffer + 4, nbytes) != 0);
+			body_left_to_read = client->writeToBody(buffer + 4, nbytes);
+			return (body_left_to_read > 0);
 		}
 		size_t pos_end_header = ((std::string)buffer).find(CRLF);
 		if (pos_end_header == std::string::npos) {
@@ -272,7 +275,8 @@ int	ServerManager::readFromClient(int client_fd){
 		else {
 			client->writeToStream(buffer + 4, pos_end_header);
 			client->parseRequest();
-			return (client->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header) != 0);
+			body_left_to_read = client->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header);
+			return (body_left_to_read > 0);
 		}
 	}
 	return 1;

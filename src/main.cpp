@@ -25,7 +25,7 @@ int main(int argc, char **argv, char ** envp)
 
 	Config config(argv[1]);
 
-	return 0;
+	//return 0;
 	CGIExecutor cgi(envp);
 	ServerManager serverManager(config, cgi);
 

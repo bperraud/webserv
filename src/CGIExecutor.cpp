@@ -7,6 +7,9 @@ CGIExecutor::CGIExecutor(char** env) : _env(env) {
 
 
 void CGIExecutor::run(const HttpMessage &request, int client_fd) {
+
+	(void)client_fd;
+
 	std::string REQUEST_METHOD = "REQUEST_METHOD=" + request.method;
 	std::string QUERY_STRING = "QUERY_STRING=" + request.url.substr(request.url.find("?") + 1);
 
@@ -64,6 +67,9 @@ void CGIExecutor::readCgiOutput(char *path) {
 }
 
 void CGIExecutor::execute(char *path, int input_fd, int output_fd) const {
+	(void)input_fd;
+	(void)output_fd;
+
 	char* argv[] = {path, NULL};
 	int pid = fork();
 	if (pid < 0) {

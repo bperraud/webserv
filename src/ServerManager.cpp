@@ -119,7 +119,6 @@ void ServerManager::handleNewConnections() {
 		struct timespec timeout;
 		timeout.tv_sec = WAIT_TIMEOUT_SECS;
 		timeout.tv_nsec = 0;
-		std::cout << "waiting..." << std::endl;
 		int n_ready = kevent(_kqueue_fd, NULL, 0, events, MAX_EVENTS, &timeout);
 		if (n_ready == -1)
 			throw std::runtime_error("kevent");
@@ -131,8 +130,7 @@ void ServerManager::handleNewConnections() {
 				int newsockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
 				if (newsockfd < 0)
 					throw std::runtime_error("accept()");
-				setNonBlockingMode(newsockfd);
-				// set SO_LINGER socket option with a short timeout value
+				setNonBlockingMode(newsockfd); // set SO_LINGER socket option with a short timeout value
 				struct linger l;
 				l.l_onoff = 1;
 				l.l_linger = 0; // no timeout for closing socket
@@ -141,18 +139,18 @@ void ServerManager::handleNewConnections() {
 				//if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
 				//	throw std::runtime_error("kevent");
 				struct kevent event[2];
-				EV_SET( event, _listen_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-				EV_SET( event + 1, _listen_fd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+				EV_SET( event, newsockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+				EV_SET( event + 1, newsockfd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
 				if (kevent(_kqueue_fd, event, 2, NULL, 0, NULL) < 0) {
 					throw std::runtime_error("kevent");
 				}
 				_client_map.insert(std::make_pair(newsockfd, new HttpHandler(TIMEOUT_SECS)));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
-			else if (_events[i].filter == EVFILT_READ) {
+			else if (events[i].filter == EVFILT_READ) {
 				handleReadEvent(fd);
 			}
-			else if (_events[i].filter == EVFILT_WRITE) {
+			else if (events[i].filter == EVFILT_WRITE) {
 				handleWriteEvent(fd);
 			}
 		}
@@ -168,7 +166,7 @@ void ServerManager::handleReadEvent(int client_fd) {
 
 		client->stopTimer();
 
-		#if 1
+		#if 0
 		std::cout << "Header :" << std::endl;
 		std::cout << client->getRequest() << std::endl;
 		std::cout << "Message body :" << std::endl;

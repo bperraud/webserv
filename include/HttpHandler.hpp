@@ -56,7 +56,6 @@ private:
 	HttpMessage			_request;
 	HttpResponse		_response;
 	bool				_close_keep_alive;
-	int					_type;
 	char				_last_4_char[4];
 
 	ssize_t				_left_to_read;

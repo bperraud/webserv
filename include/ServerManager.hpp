@@ -44,7 +44,6 @@ private:
 	int					_PORT;
 	std::string			_host;
 	struct sockaddr_in	_host_addr;
-	int					_host_addrlen;
 
 	//server_names_type	_server_names;
 

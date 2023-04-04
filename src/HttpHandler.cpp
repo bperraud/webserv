@@ -1,7 +1,9 @@
 #include "HttpHandler.hpp"
 
 
-HttpHandler::HttpHandler(int timeout_seconds) : _timer(timeout_seconds), _readStream(new std::stringstream()),  _close_keep_alive(false), _left_to_read(0), _MIME_TYPES(), _cgiMode(false){
+HttpHandler::HttpHandler(int timeout_seconds) : _timer(timeout_seconds),
+	_readStream(new std::stringstream()),  _close_keep_alive(false),
+	_left_to_read(0), _MIME_TYPES(), _cgiMode(false), _ready_to_write(false){
 	_last_4_char[0] = '\0';
 	_MIME_TYPES["html"] = "text/html";
     _MIME_TYPES["css"] = "text/css";
@@ -47,6 +49,17 @@ int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	_request_body_stream.write(buffer, nbytes);
 	_left_to_read -= nbytes;
 	return _left_to_read;
+}
+
+void HttpHandler::resetStream() {
+	delete _readStream;
+	_readStream = new std::stringstream();
+
+	_request_body_stream.str(std::string());
+	_request_body_stream.seekp(0, std::ios_base::beg);
+	_response_body_stream.str(std::string());
+	_response_header_stream.str(std::string());
+	_last_4_char[0] = '\0';
 }
 
 bool HttpHandler::isKeepAlive() const {

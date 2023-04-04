@@ -135,12 +135,9 @@ void ServerManager::handleNewConnections() {
 				l.l_onoff = 1;
 				l.l_linger = 0; // no timeout for closing socket
 				setsockopt(newsockfd, SOL_SOCKET, SO_LINGER, &l, sizeof(l));
-				//EV_SET(&event, newsockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-				//if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
-				//	throw std::runtime_error("kevent");
 				struct kevent event[2];
-				EV_SET( event, newsockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-				EV_SET( event + 1, newsockfd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
+				EV_SET(event, newsockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+				EV_SET(event + 1, newsockfd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
 				if (kevent(_kqueue_fd, event, 2, NULL, 0, NULL) < 0) {
 					throw std::runtime_error("kevent");
 				}
@@ -193,18 +190,22 @@ void ServerManager::handleReadEvent(int client_fd) {
 		#endif
 
 		}
+
+		client->setReadyToWrite(true);
 	}
 }
 
 void ServerManager::handleWriteEvent(int client_fd) {
-	if (_client_map[client_fd]->getResponseHeader().empty() == false)
+	HttpHandler *client = _client_map[client_fd];
+	if (client->getResponseHeader().empty() == false)
 	{
-		writeToClient(client_fd, _client_map[client_fd]->getResponseHeader());
-		if (_client_map[client_fd]->getResponseBody().empty() == false)
+		writeToClient(client_fd, client->getResponseHeader());
+		if (client->getResponseBody().empty() == false)
 		{
-			writeToClient(client_fd, _client_map[client_fd]->getResponseBody());
-			_client_map[client_fd]->resetStream();
+			writeToClient(client_fd, client->getResponseBody());
+			client->resetStream();
 			connectionCloseMode(client_fd);
+			client->setReadyToWrite(false);
 		}
 	}
 }

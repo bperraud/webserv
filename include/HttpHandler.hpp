@@ -63,6 +63,8 @@ private:
 
 	bool				_cgiMode;
 
+	bool				_ready_to_write;
+
 	HttpHandler &operator=(HttpHandler const &other) {
 		if (this != &other) {
 			;
@@ -82,6 +84,13 @@ public:
 
 	void	startTimer() {
 		_timer.start();
+	}
+	bool	isReadyToWrite() const {
+		return _ready_to_write;
+	}
+
+	void	setReadyToWrite(bool ready) {
+		_ready_to_write = ready;
 	}
 
 	void	stopTimer() {
@@ -114,16 +123,7 @@ public:
 		return _request.method;
 	}
 
-	void	resetStream() {
-		delete _readStream;
-		_readStream = new std::stringstream();
-
-		_request_body_stream.str(std::string());
-		_request_body_stream.seekp(0, std::ios_base::beg);
-		_response_body_stream.str(std::string());
-		_response_header_stream.str(std::string());
-		_last_4_char[0] = '\0';
-	}
+	void	resetStream();
 
 	void	copyLast4Char(char *buffer, ssize_t nbytes);
 

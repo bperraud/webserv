@@ -63,7 +63,6 @@ private:
 
 	bool				_cgiMode;
 	bool				_ready_to_write;
-	ssize_t				_offset_str;
 
 	HttpHandler &operator=(HttpHandler const &other) {
 		if (this != &other) {
@@ -84,14 +83,6 @@ public:
 
 	void	startTimer() {
 		_timer.start();
-	}
-
-	ssize_t	getOffsetStr() const {
-		return _offset_str;
-	}
-
-	void	setOffsetStr(ssize_t offset) {
-		_offset_str = offset;
 	}
 
 	bool	isReadyToWrite() const {
@@ -126,10 +117,6 @@ public:
 
 	std::string		getBody() const {
 		return _request_body_stream.str();
-	}
-
-	std::string		getRequestMethod() const {
-		return _request.method;
 	}
 
 	void	resetStream();

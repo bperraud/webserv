@@ -158,9 +158,7 @@ void ServerManager::handleNewConnections() {
 
 void ServerManager::handleReadEvent(int client_fd) {
 	if (!readFromClient(client_fd)) {
-
 		HttpHandler *client = _client_map[client_fd];
-
 		client->stopTimer();
 
 		#if 0
@@ -182,7 +180,6 @@ void ServerManager::handleReadEvent(int client_fd) {
 		}
 		else{
 
-		std::cout <<client->getResponseBody().length() << std::endl;
 		#if 0
 		std::cout << "Response Header :" << std::endl;
 		std::cout << client->getResponseHeader() << std::endl;
@@ -191,7 +188,6 @@ void ServerManager::handleReadEvent(int client_fd) {
 		#endif
 
 		}
-
 		client->setReadyToWrite(true);
 	}
 }
@@ -200,8 +196,10 @@ void ServerManager::handleWriteEvent(int client_fd) {
 	HttpHandler *client = _client_map[client_fd];
 	if (client->isReadyToWrite())
 	{
-		while (writeToClient(client_fd, client->getResponseHeader()));
-		while (writeToClient(client_fd, client->getResponseBody()));
+		//while (writeToClient(client_fd, client->getResponseHeader()));
+		writeToClient(client_fd, client->getResponseHeader());
+		//while (writeToClient(client_fd, client->getResponseBody()));
+		writeToClient(client_fd, client->getResponseBody());
 		client->resetStream();
 		connectionCloseMode(client_fd);
 		client->setReadyToWrite(false);
@@ -214,11 +212,6 @@ void ServerManager::closeClientConnection(int client_fd) {
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_DEL");
 #else
 void ServerManager::closeClientConnection(int client_fd) {
-    //struct kevent event;
-    //EV_SET(&event, client_fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-    //if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
-    //    throw std::runtime_error("kevent");
-
 	struct kevent events[2];
     EV_SET( events, client_fd, EVFILT_READ, EV_DELETE, 0, 0, 0 );
     EV_SET( events + 1, client_fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0 );
@@ -239,11 +232,6 @@ void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem)
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_DEL");
 #else
 void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem) {
-    //struct kevent event;
-    //EV_SET(&event, client_fd, EVFILT_READ, EV_DELETE, 0, 0, NULL);
-    //if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
-    //    throw std::runtime_error("kevent");
-
 	struct kevent events[2];
     EV_SET( events, client_fd, EVFILT_READ, EV_DELETE, 0, 0, 0 );
     EV_SET( events + 1, client_fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0 );
@@ -300,20 +288,16 @@ int	ServerManager::readFromClient(int client_fd){
 }
 
 int ServerManager::writeToClient(int client_fd, const std::string &str) {
-
-	ssize_t ptr = _client_map[client_fd]->getOffsetStr();
-
-	ssize_t nbytes = send(client_fd, str.c_str() + ptr, str.length() - ptr, 0);
+	ssize_t nbytes = send(client_fd, str.c_str(), str.length(), 0);
 	if (nbytes == -1)
 		throw std::runtime_error("send()");
-	else if ((size_t) nbytes == str.length() - ptr) {
+	else if ((size_t) nbytes == str.length()) {
 		std::cout << "finished writing " << client_fd << std::endl;
-		_client_map[client_fd]->setOffsetStr(0);
 		return 0;
 	}
 	else {
 		std::cout << "writing " << nbytes << " bytes to client " << client_fd << std::endl;
-		_client_map[client_fd]->setOffsetStr(ptr + nbytes);
+		writeToClient(client_fd, str.substr(nbytes));
 		return 1;
 	}
 	return 1;

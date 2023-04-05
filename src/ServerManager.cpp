@@ -122,7 +122,7 @@ void ServerManager::eventManager() {
 
 #else
 void ServerManager::epollInit() {
-	int _kqueue_fd = kqueue();
+	_kqueue_fd = kqueue();
 	if (_kqueue_fd < 0)
 		throw std::runtime_error("kqueue");
 	struct kevent event;

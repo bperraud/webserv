@@ -125,13 +125,11 @@ void ServerManager::epollInit() {
 	int _kqueue_fd = kqueue();
 	if (_kqueue_fd < 0)
 		throw std::runtime_error("kqueue");
-	struct kevent event_list[_server_list.size()];
-	int i = 0;
+	struct kevent event;
 	for (std::list<server>::iterator serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
-		EV_SET(&event_list[i], serv->listen_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-		if (kevent(_kqueue_fd, &event_list[i], 1, NULL, 0, NULL) < 0)
+		EV_SET(&event, serv->listen_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+		if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
 			throw std::runtime_error("kevent EV_ADD");
-		i++;
 	}
 }
 
@@ -144,11 +142,11 @@ void ServerManager::handleNewConnection(int socket) {
 		throw std::runtime_error("accept()");
 	setNonBlockingMode(new_sockfd);
 	EV_SET(&event, new_sockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-	if (kevent(kq, &event, 1, NULL, 0, NULL) < 0)
-		throw std::runtime_error("kevent");
+	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
+		throw std::runtime_error("kevent add read");
 	EV_SET(&event, new_sockfd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-	if (kevent(kq, &event, 1, NULL, 0, NULL) < 0)
-		throw std::runtime_error("kevent");
+	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
+		throw std::runtime_error("kevent add write");
 	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS)));
 	std::cout << "new connection accepted for client on socket : " << new_sockfd << std::endl;
 }
@@ -161,7 +159,7 @@ void ServerManager::eventManager() {
 		timeout.tv_nsec = 0;
 		int n_ready = kevent(_kqueue_fd, NULL, 0, events, MAX_EVENTS, &timeout);
 		if (n_ready == -1)
-			throw std::runtime_error("kevent");
+			throw std::runtime_error("kevent wait");
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].ident;
 			if (isPartOfListenFd(fd)) {

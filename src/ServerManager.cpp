@@ -5,6 +5,14 @@ ServerManager::ServerManager(ServerConfig config, CGIExecutor cgi) : _cgi_execut
 	(void)config;
 	_PORT = 8080;
 	_host = "0.0.0.0";
+
+	std::list<server_info> server_list = config.getServerList();
+	for (std::list<server_info>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
+		std::cout << "server manager : " << *it << std::endl;
+		server serv(*it);
+		_server_list.push_back(serv);
+	}
+
 }
 
 void ServerManager::run() {
@@ -67,11 +75,7 @@ void ServerManager::handleNewConnections() {
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, _listen_fd, &event) < 0)
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
 	struct epoll_event events[MAX_EVENTS];
-	// events array is used to store events that occur on any of
-	// the file descriptors that have been registered with epoll_ctl()
-
 	while (1) {
-		//std::cout << "waiting..." << std::endl;
 		int n_ready = epoll_wait(_epoll_fd, events, MAX_EVENTS, WAIT_TIMEOUT_SECS * 1000);
 		// if any of the file descriptors match the interest then epoll_wait can return without blocking.
 		if (n_ready == -1)

@@ -36,16 +36,26 @@
 typedef std::map<int, HttpHandler*> map_type;
 typedef std::map<int, HttpHandler*>::iterator map_iterator_type;
 
+struct server : public server_info {
+	map_type			server_client_map;
+
+    server(const server_info& info) :
+        server_info(info), // Initialize base class with info
+        server_client_map(){
+	}
+};
+
 class ServerManager {
 
 private:
+
+	std::list<server>	_server_list;
+
 	map_type			_client_map;
     int					_listen_fd;
 	int					_PORT;
 	std::string			_host;
 	struct sockaddr_in	_host_addr;
-
-	//server_names_type	_server_names;
 
 	CGIExecutor			_cgi_executor;
 

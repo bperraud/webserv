@@ -6,7 +6,6 @@ ServerConfig::ServerConfig(const JsonParser &parser) {
 	for (it = json_object_vector.begin(); it != json_object_vector.end(); ++it) {
 		server_info server = parseJsonObject(*it);
 		_server_list.push_back(server);
-		std::cout << "server : " << server << std::endl;
 	}
 }
 

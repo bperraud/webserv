@@ -10,25 +10,53 @@ ServerManager::ServerManager(ServerConfig config, CGIExecutor cgi) : _cgi_execut
 	for (std::list<server_info>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		std::cout << "server manager : " << *it << std::endl;
 		server serv(*it);
+		setupSocket(serv);
 		_server_list.push_back(serv);
 	}
 
 }
 
 void ServerManager::run() {
-	setupSocket();
+	//setupSocket();
 	handleNewConnections();
 }
 
-void	ServerManager::setupSocket() {
-	_listen_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (_listen_fd < 0)
+void	ServerManager::setupSocket(server &serv) {
+	struct sockaddr_in host_addr;
+	serv.listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (serv.listen_fd == 0)
 		throw std::runtime_error("cannot create socket");
-	memset((char *)&_host_addr, 0, sizeof(_host_addr));
-	int _host_addrlen = sizeof(_host_addr);
-	_host_addr.sin_family = AF_INET;				// AF_INET for IPv4 Internet protocols
-	_host_addr.sin_addr.s_addr = inet_addr(_host.c_str());
-	_host_addr.sin_port = htons(_PORT);
+	memset((char *)&host_addr, 0, sizeof(host_addr));
+	int host_addrlen = sizeof(host_addr);
+	host_addr.sin_family = AF_INET; // AF_INET for IPv4 Internet protocols
+	host_addr.sin_addr.s_addr = inet_addr(serv.host.c_str());
+	host_addr.sin_port = htons(serv.PORT);
+	int enable_reuseaddr = 1;
+	if (setsockopt(serv.listen_fd, SOL_SOCKET, SO_REUSEADDR, &enable_reuseaddr, sizeof(int)) < 0)
+		throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
+	// disables the Nagle algorithm, which can improve performance for small messages,
+	//but can degrade performance for large messages or bulk data transfer.
+	int enable_nodelay = 1;
+	if (setsockopt(serv.listen_fd, IPPROTO_TCP, TCP_NODELAY, &enable_nodelay, sizeof(int)) < 0)
+		throw std::runtime_error("setsockopt(TCP_NODELAY) failed");
+	if (bind(serv.listen_fd, (struct sockaddr *) &host_addr, host_addrlen) < 0)
+		throw std::runtime_error("bind failed");
+	setNonBlockingMode(serv.listen_fd);
+	if (listen(serv.listen_fd, SOMAXCONN) < 0)
+		throw std::runtime_error("listen failed");
+	std::cout << "server listening for connections... " << std::endl;
+}
+
+void	ServerManager::setupSocket() {
+	struct sockaddr_in host_addr;
+	_listen_fd = socket(AF_INET, SOCK_STREAM, 0);
+	if (_listen_fd == 0)
+		throw std::runtime_error("cannot create socket");
+	memset((char *)&host_addr, 0, sizeof(host_addr));
+	int host_addrlen = sizeof(host_addr);
+	host_addr.sin_family = AF_INET; // AF_INET for IPv4 Internet protocols
+	host_addr.sin_addr.s_addr = inet_addr(_host.c_str());
+	host_addr.sin_port = htons(_PORT);
 	int enable_reuseaddr = 1;
 	if (setsockopt(_listen_fd, SOL_SOCKET, SO_REUSEADDR, &enable_reuseaddr, sizeof(int)) < 0)
 		throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
@@ -37,7 +65,7 @@ void	ServerManager::setupSocket() {
 	int enable_nodelay = 1;
 	if (setsockopt(_listen_fd, IPPROTO_TCP, TCP_NODELAY, &enable_nodelay, sizeof(int)) < 0)
 		throw std::runtime_error("setsockopt(TCP_NODELAY) failed");
-	if (bind(_listen_fd, (struct sockaddr *) &_host_addr, _host_addrlen) < 0)
+	if (bind(_listen_fd, (struct sockaddr *) &host_addr, host_addrlen) < 0)
 		throw std::runtime_error("bind failed");
 	setNonBlockingMode(_listen_fd);
 	if (listen(_listen_fd, SOMAXCONN) < 0)
@@ -91,7 +119,6 @@ void ServerManager::handleNewConnections() {
 					throw std::runtime_error("accept()");
 				setNonBlockingMode(newsockfd);
 				event.data.fd = newsockfd;
-				//event.events = EPOLLIN ;
 				event.events = EPOLLIN | EPOLLOUT;;
 				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, newsockfd, &event) < 0)
 					throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");

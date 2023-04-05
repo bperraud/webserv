@@ -18,6 +18,8 @@
 #include <netinet/in.h>
 #include <poll.h>
 #include <arpa/inet.h> 	// inet_ntoa
+#include <cassert>
+
 
 #if (defined (LINUX) || defined (__linux__))
 #include <sys/epoll.h>  // epoll
@@ -37,10 +39,11 @@ typedef std::map<int, HttpHandler*> map_type;
 typedef std::map<int, HttpHandler*>::iterator map_iterator_type;
 
 struct server : public server_info {
+	int					listen_fd;
 	map_type			server_client_map;
 
     server(const server_info& info) :
-        server_info(info), // Initialize base class with info
+        server_info(info),
         server_client_map(){
 	}
 };
@@ -55,7 +58,6 @@ private:
     int					_listen_fd;
 	int					_PORT;
 	std::string			_host;
-	struct sockaddr_in	_host_addr;
 
 	CGIExecutor			_cgi_executor;
 
@@ -73,6 +75,7 @@ public:
 
 	void	setNonBlockingMode(int socket);
 	void	setupSocket();
+	void	setupSocket(server &serv);
 
 	int		readFromClient(int client_fd);
 	void	writeToClient(int client_fd, const std::string &str);

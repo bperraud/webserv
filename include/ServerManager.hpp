@@ -40,25 +40,19 @@ typedef std::map<int, HttpHandler*>::iterator map_iterator_type;
 
 struct server : public server_info {
 	int					listen_fd;
-	map_type			server_client_map;
+	//map_type			server_client_map;
 
     server(const server_info& info) :
-        server_info(info),
-        server_client_map(){
-	}
+        server_info(info)
+        //server_client_map()
+	{ };
 };
 
 class ServerManager {
 
 private:
-
 	std::list<server>	_server_list;
-
 	map_type			_client_map;
-    int					_listen_fd;
-	int					_PORT;
-	std::string			_host;
-
 	CGIExecutor			_cgi_executor;
 
 #if (defined (LINUX) || defined (__linux__))
@@ -80,13 +74,14 @@ public:
 	int		readFromClient(int client_fd);
 	void	writeToClient(int client_fd, const std::string &str);
 
+	void	epollInit();
+	bool	isPartOfListenFd(int fd) const;
 
 	void	handleReadEvent(int client_fd);
 	void	handleWriteEvent(int client_fd);
 	void	handleNewConnections();
 
 	void	timeoutCheck();
-
 	void	connectionCloseMode(int client_fd);
     void	closeClientConnection(int client_fd);
 	void	closeClientConnection(int client_fd, map_iterator_type elem);

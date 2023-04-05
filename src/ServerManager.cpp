@@ -2,10 +2,6 @@
 
 
 ServerManager::ServerManager(ServerConfig config, CGIExecutor cgi) : _cgi_executor(cgi) {
-	(void)config;
-	_PORT = 8080;
-	_host = "0.0.0.0";
-
 	std::list<server_info> server_list = config.getServerList();
 	for (std::list<server_info>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		std::cout << "server manager : " << *it << std::endl;
@@ -13,12 +9,24 @@ ServerManager::ServerManager(ServerConfig config, CGIExecutor cgi) : _cgi_execut
 		setupSocket(serv);
 		_server_list.push_back(serv);
 	}
-
+	epollInit();
 }
 
 void ServerManager::run() {
-	//setupSocket();
 	handleNewConnections();
+}
+
+void ServerManager::epollInit() {
+	_epoll_fd = epoll_create1(0);
+	if (_epoll_fd < 0)
+		throw std::runtime_error("epoll_create1");
+	struct epoll_event event;
+	for (std::list<server>::iterator serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
+		event.data.fd = serv->listen_fd;
+		event.events = EPOLLIN;
+		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, serv->listen_fd, &event) < 0)
+			throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
+	}
 }
 
 void	ServerManager::setupSocket(server &serv) {
@@ -47,35 +55,9 @@ void	ServerManager::setupSocket(server &serv) {
 	std::cout << "server listening for connections... " << std::endl;
 }
 
-void	ServerManager::setupSocket() {
-	struct sockaddr_in host_addr;
-	_listen_fd = socket(AF_INET, SOCK_STREAM, 0);
-	if (_listen_fd == 0)
-		throw std::runtime_error("cannot create socket");
-	memset((char *)&host_addr, 0, sizeof(host_addr));
-	int host_addrlen = sizeof(host_addr);
-	host_addr.sin_family = AF_INET; // AF_INET for IPv4 Internet protocols
-	host_addr.sin_addr.s_addr = inet_addr(_host.c_str());
-	host_addr.sin_port = htons(_PORT);
-	int enable_reuseaddr = 1;
-	if (setsockopt(_listen_fd, SOL_SOCKET, SO_REUSEADDR, &enable_reuseaddr, sizeof(int)) < 0)
-		throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
-	// disables the Nagle algorithm, which can improve performance for small messages,
-	//but can degrade performance for large messages or bulk data transfer.
-	int enable_nodelay = 1;
-	if (setsockopt(_listen_fd, IPPROTO_TCP, TCP_NODELAY, &enable_nodelay, sizeof(int)) < 0)
-		throw std::runtime_error("setsockopt(TCP_NODELAY) failed");
-	if (bind(_listen_fd, (struct sockaddr *) &host_addr, host_addrlen) < 0)
-		throw std::runtime_error("bind failed");
-	setNonBlockingMode(_listen_fd);
-	if (listen(_listen_fd, SOMAXCONN) < 0)
-		throw std::runtime_error("listen failed");
-	std::cout << "server listening for connections... " << std::endl;
-}
-
 void ServerManager::setNonBlockingMode(int socket) {
 	if (fcntl(socket, F_SETFL, O_NONBLOCK) < 0)
-		throw std::runtime_error("Failed to set socket to non-blocking mode");
+		throw std::runtime_error("failed to set socket to non-blocking mode");
 }
 
 void ServerManager::timeoutCheck() {
@@ -91,30 +73,28 @@ void ServerManager::timeoutCheck() {
 	}
 }
 
+bool ServerManager::isPartOfListenFd(int fd) const {
+	for (std::list<server>::const_iterator serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
+		if (fd == serv->listen_fd)
+			return true;
+	}
+	return false;
+}
+
 #if (defined (LINUX) || defined (__linux__))
 void ServerManager::handleNewConnections() {
-	_epoll_fd = epoll_create1(0);
-	if (_epoll_fd < 0)
-		throw std::runtime_error("epoll_create1");
-	// Add the listen socket to the epoll interest list
 	struct epoll_event event;
-	event.data.fd = _listen_fd;
-	event.events = EPOLLIN;
-	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, _listen_fd, &event) < 0)
-		throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
-	struct epoll_event events[MAX_EVENTS];
+	std::vector<struct epoll_event> events(MAX_EVENTS);
 	while (1) {
-		int n_ready = epoll_wait(_epoll_fd, events, MAX_EVENTS, WAIT_TIMEOUT_SECS * 1000);
-		// if any of the file descriptors match the interest then epoll_wait can return without blocking.
+		int n_ready = epoll_wait(_epoll_fd, events.data(), MAX_EVENTS, WAIT_TIMEOUT_SECS * 1000);
 		if (n_ready == -1)
 			throw std::runtime_error("epoll_wait");
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
-			// If the listen socket is ready, accept a new connection and add it to the epoll interest list
-			if (fd == _listen_fd) {
+			if (isPartOfListenFd(fd)) {
 				struct sockaddr_in client_addr;
 				socklen_t client_addrlen = sizeof(client_addr);
-				int newsockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
+				int newsockfd = accept(fd, (struct sockaddr *)&client_addr, &client_addrlen);
 				if (newsockfd < 0)
 					throw std::runtime_error("accept()");
 				setNonBlockingMode(newsockfd);
@@ -125,11 +105,10 @@ void ServerManager::handleNewConnections() {
 				_client_map.insert(std::make_pair(newsockfd, new HttpHandler(TIMEOUT_SECS)));
 				std::cout << "new connection accepted for client on socket : " << newsockfd << std::endl;
 			}
-			else if ( events[i].events & EPOLLIN ) {
+			else if (events[i].events & EPOLLIN) {
 				handleReadEvent(fd);
 			}
-
-			else if ( events[i].events & EPOLLOUT ) {
+			else if (events[i].events & EPOLLOUT) {
 				handleWriteEvent(fd);
 			}
 		}
@@ -155,7 +134,7 @@ void ServerManager::handleNewConnections() {
 			throw std::runtime_error("kevent");
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].ident;
-			if (fd == _listen_fd) {
+			if (isPartOfListenFd(fd)) {
 				struct sockaddr_in client_addr;
 				socklen_t client_addrlen = sizeof(client_addr);
 				int newsockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
@@ -242,11 +221,11 @@ void ServerManager::closeClientConnection(int client_fd) {
 #else
 void ServerManager::closeClientConnection(int client_fd) {
 	struct kevent events[2];
-    EV_SET( events, client_fd, EVFILT_READ, EV_DELETE, 0, 0, 0 );
-    EV_SET( events + 1, client_fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0 );
-    if ( kevent( _kqueue_fd, events, 2, NULL, 0, NULL ) < 0) {
-        throw std::runtime_error( "kevent" );
-    }
+	EV_SET( events, client_fd, EVFILT_READ, EV_DELETE, 0, 0, 0 );
+	EV_SET( events + 1, client_fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0 );
+	if ( kevent( _kqueue_fd, events, 2, NULL, 0, NULL ) < 0) {
+		throw std::runtime_error( "kevent" );
+	}
 #endif
 	delete _client_map[client_fd];
 	_client_map.erase(client_fd);
@@ -262,11 +241,11 @@ void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem)
 #else
 void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem) {
 	struct kevent events[2];
-    EV_SET( events, client_fd, EVFILT_READ, EV_DELETE, 0, 0, 0 );
-    EV_SET( events + 1, client_fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0 );
-    if ( kevent( _kqueue_fd, events, 2, NULL, 0, NULL ) < 0) {
-        throw std::runtime_error( "kevent" );
-    }
+	EV_SET( events, client_fd, EVFILT_READ, EV_DELETE, 0, 0, 0 );
+	EV_SET( events + 1, client_fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0 );
+	if ( kevent( _kqueue_fd, events, 2, NULL, 0, NULL ) < 0) {
+		throw std::runtime_error( "kevent" );
+	}
 #endif
 	delete _client_map[client_fd];
 	_client_map.erase(elem);
@@ -330,7 +309,7 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 }
 
 ServerManager::~ServerManager() {
-	close(_listen_fd);
+	//close(_listen_fd);
 	for (map_iterator_type it = _client_map.begin(); it != _client_map.end(); it++) {
 		delete it->second;
 	}

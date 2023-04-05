@@ -13,20 +13,7 @@ ServerManager::ServerManager(ServerConfig config, CGIExecutor cgi) : _cgi_execut
 }
 
 void ServerManager::run() {
-	handleNewConnections();
-}
-
-void ServerManager::epollInit() {
-	_epoll_fd = epoll_create1(0);
-	if (_epoll_fd < 0)
-		throw std::runtime_error("epoll_create1");
-	struct epoll_event event;
-	for (std::list<server>::iterator serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
-		event.data.fd = serv->listen_fd;
-		event.events = EPOLLIN;
-		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, serv->listen_fd, &event) < 0)
-			throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
-	}
+	epollEventManager();
 }
 
 void	ServerManager::setupSocket(server &serv) {
@@ -82,8 +69,36 @@ bool ServerManager::isPartOfListenFd(int fd) const {
 }
 
 #if (defined (LINUX) || defined (__linux__))
-void ServerManager::handleNewConnections() {
+void ServerManager::epollInit() {
+	_epoll_fd = epoll_create1(0);
+	if (_epoll_fd < 0)
+		throw std::runtime_error("epoll_create1");
 	struct epoll_event event;
+	for (std::list<server>::iterator serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
+		event.data.fd = serv->listen_fd;
+		event.events = EPOLLIN;
+		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, serv->listen_fd, &event) < 0)
+			throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
+	}
+}
+
+void ServerManager::handleNewConnection(int socket) {
+	struct epoll_event event;
+	struct sockaddr_in client_addr;
+	socklen_t client_addrlen = sizeof(client_addr);
+	int new_sockfd = accept(socket, (struct sockaddr *)&client_addr, &client_addrlen);
+	if (new_sockfd < 0)
+		throw std::runtime_error("accept()");
+	setNonBlockingMode(new_sockfd);
+	event.data.fd = new_sockfd;
+	event.events = EPOLLIN | EPOLLOUT;;
+	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, new_sockfd, &event) < 0)
+		throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
+	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS)));
+	std::cout << "new connection accepted for client on socket : " << new_sockfd << std::endl;
+}
+
+void ServerManager::epollEventManager() {
 	std::vector<struct epoll_event> events(MAX_EVENTS);
 	while (1) {
 		int n_ready = epoll_wait(_epoll_fd, events.data(), MAX_EVENTS, WAIT_TIMEOUT_SECS * 1000);
@@ -92,18 +107,7 @@ void ServerManager::handleNewConnections() {
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
 			if (isPartOfListenFd(fd)) {
-				struct sockaddr_in client_addr;
-				socklen_t client_addrlen = sizeof(client_addr);
-				int new_sockfd = accept(fd, (struct sockaddr *)&client_addr, &client_addrlen);
-				if (new_sockfd < 0)
-					throw std::runtime_error("accept()");
-				setNonBlockingMode(new_sockfd);
-				event.data.fd = new_sockfd;
-				event.events = EPOLLIN | EPOLLOUT;;
-				if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, new_sockfd, &event) < 0)
-					throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
-				_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS)));
-				std::cout << "new connection accepted for client on socket : " << new_sockfd << std::endl;
+				handleNewConnection(fd);
 			}
 			else if (events[i].events & EPOLLIN) {
 				handleReadEvent(fd);
@@ -115,15 +119,46 @@ void ServerManager::handleNewConnections() {
 		timeoutCheck();
 	}
 }
+
 #else
-void ServerManager::handleNewConnections() {
-	_kqueue_fd = kqueue();
-	if (_kqueue_fd == -1)
-		throw std::runtime_error("kqueue");
-	struct kevent event;
-	EV_SET(&event, _listen_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
-		throw std::runtime_error("kevent");
+void ServerManager::epollInit() {
+	_epoll_fd = epoll_create1(0);
+	if (_epoll_fd < 0)
+		throw std::runtime_error("epoll_create1");
+	struct epoll_event event;
+	for (std::list<server>::iterator serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
+		event.data.fd = serv->listen_fd;
+		event.events = EPOLLIN;
+		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, serv->listen_fd, &event) < 0)
+			throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
+	}
+
+	//_kqueue_fd = kqueue();
+	//if (_kqueue_fd == -1)
+	//	throw std::runtime_error("kqueue");
+	//struct kevent event;
+	//EV_SET(&event, _listen_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+	//if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
+	//	throw std::runtime_error("kevent");
+}
+
+void ServerManager::handleNewConnection(int socket) {
+	struct epoll_event event;
+	struct sockaddr_in client_addr;
+	socklen_t client_addrlen = sizeof(client_addr);
+	int new_sockfd = accept(socket, (struct sockaddr *)&client_addr, &client_addrlen);
+	if (new_sockfd < 0)
+		throw std::runtime_error("accept()");
+	setNonBlockingMode(new_sockfd);
+	event.data.fd = new_sockfd;
+	event.events = EPOLLIN | EPOLLOUT;;
+	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, new_sockfd, &event) < 0)
+		throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
+	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS)));
+	std::cout << "new connection accepted for client on socket : " << new_sockfd << std::endl;
+}
+
+void ServerManager::epollEventManager() {
 	struct kevent events[MAX_EVENTS];
 	while (1) {
 		struct timespec timeout;
@@ -135,24 +170,7 @@ void ServerManager::handleNewConnections() {
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].ident;
 			if (isPartOfListenFd(fd)) {
-				struct sockaddr_in client_addr;
-				socklen_t client_addrlen = sizeof(client_addr);
-				int new_sockfd = accept(_listen_fd, (struct sockaddr *)&client_addr, &client_addrlen);
-				if (new_sockfd < 0)
-					throw std::runtime_error("accept()");
-				setNonBlockingMode(new_sockfd); // set SO_LINGER socket option with a short timeout value
-				struct linger l;
-				l.l_onoff = 1;
-				l.l_linger = 0; // no timeout for closing socket
-				setsockopt(new_sockfd, SOL_SOCKET, SO_LINGER, &l, sizeof(l));
-				struct kevent event[2];
-				EV_SET(event, new_sockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-				EV_SET(event + 1, new_sockfd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-				if (kevent(_kqueue_fd, event, 2, NULL, 0, NULL) < 0) {
-					throw std::runtime_error("kevent");
-				}
-				_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS)));
-				std::cout << "new connection accepted for client on socket : " << new_sockfd << std::endl;
+				handleNewConnection(fd);
 			}
 			else if (events[i].filter == EVFILT_READ) {
 				handleReadEvent(fd);

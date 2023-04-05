@@ -76,7 +76,7 @@ public:
 	void	handleWriteEvent(int client_fd);
 
 	void 	handleNewConnection(int listen_fd);
-	void	epollEventManager();
+	void	eventManager();
 
 	void	timeoutCheck();
 	void	connectionCloseMode(int client_fd);

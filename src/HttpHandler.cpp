@@ -51,7 +51,6 @@ int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 		_body_size_exceeded = true;
 		return 0;
 	}
-
 	_request_body_stream.write(buffer, nbytes);
 	_left_to_read -= nbytes;
 	return _left_to_read;
@@ -104,7 +103,6 @@ std::string HttpHandler::getContentType(const std::string& path) const {
         return "text/plain";
     }
     std::string ext = path.substr(dot_pos + 1);
-    // Look up the MIME type for the file extension
     std::map<std::string, std::string>::const_iterator it = _MIME_TYPES.find(ext);
     if (it == _MIME_TYPES.end()) {
         // Extension not found, assume plain text
@@ -224,36 +222,29 @@ void HttpHandler::uploadFile(const std::string& contentType, size_t pos_boundary
 	_response_body_stream << messageBody;
 	_response.map_headers["Content-Type"] = getContentType(fileName);
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+	_response.map_headers["Location"] = UPLOAD_PATH + fileName;
 }
 
 void HttpHandler::POST() {
-	_response.status_code = "201";
-	_response.status_phrase = "Created";
+	_response.status_code = "200";
+	_response.status_phrase = "OK";
 
 	std::string contentType;
 	if (!findHeader("Content-Type", contentType))
 		return error(400);
-
 	size_t pos_boundary = contentType.find("boundary=");
 	if (pos_boundary != std::string::npos) {	//multipart/form-data
 		uploadFile(contentType, pos_boundary);
-		return ;
+		_response.status_code = "201";
+		_response.status_phrase = "Created";
 	}
-
-	else if (_request.map_headers["Content-Type"].find("application/x-www-form-urlencoded") != std::string::npos) {
-		//application/x-www-form-urlencoded
-
+	else if (contentType.find("application/x-www-form-urlencoded") != std::string::npos) {
+		std::cout << "x form url: " << std::endl;
+		_response.map_headers["Content-Length"] = "0";
 	}
-
-	#if 0
-	_response.version = _request.version;
-	_response.status_code = "302";
-	_response.status_phrase = "Found";
-
-	//addFileToResponse(DEFAULT_PAGE);
-	_response.map_headers["Location"] = "http://localhost:8080/index.html";
-	#endif
-
+	else { // others
+		return error(501);
+	}
 }
 
 void HttpHandler::DELETE() {

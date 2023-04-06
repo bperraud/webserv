@@ -1,7 +1,7 @@
 [
 	{
 	  "listen": ["0.0.0.0", 8080],
-	  "max_body_size": 20,
+	  "max_body_size": 20000,
 	  "routes": {
 		"/": {
 		  "root": "website",

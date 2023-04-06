@@ -163,7 +163,7 @@ void ServerManager::eventManager() {
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].ident;
 			if (isPartOfListenFd(fd)) {
-				handleNewConnection(fd);
+				handleNewConnection(fd, _server_list.front());
 			}
 			else if (events[i].filter == EVFILT_READ) {
 				handleReadEvent(fd);

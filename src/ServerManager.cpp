@@ -82,7 +82,7 @@ void ServerManager::epollInit() {
 	}
 }
 
-void ServerManager::handleNewConnection(int socket) {
+void ServerManager::handleNewConnection(int socket, struct server_info serv) {
 	struct epoll_event event;
 	struct sockaddr_in client_addr;
 	socklen_t client_addrlen = sizeof(client_addr);
@@ -94,7 +94,7 @@ void ServerManager::handleNewConnection(int socket) {
 	event.events = EPOLLIN | EPOLLOUT;;
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, new_sockfd, &event) < 0)
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
-	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS)));
+	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, serv)));
 	std::cout << "new connection accepted for client on socket : " << new_sockfd << std::endl;
 }
 
@@ -107,7 +107,7 @@ void ServerManager::eventManager() {
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
 			if (isPartOfListenFd(fd)) {
-				handleNewConnection(fd);
+				handleNewConnection(fd, _server_list.front());
 			}
 			else if (events[i].events & EPOLLIN) {
 				handleReadEvent(fd);
@@ -133,7 +133,7 @@ void ServerManager::epollInit() {
 	}
 }
 
-void ServerManager::handleNewConnection(int socket) {
+void ServerManager::handleNewConnection(int socket, struct server_info serv) {
 	struct kevent event;
 	struct sockaddr_in client_addr;
 	socklen_t client_addrlen = sizeof(client_addr);
@@ -147,7 +147,7 @@ void ServerManager::handleNewConnection(int socket) {
 	EV_SET(&event, new_sockfd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
 	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
 		throw std::runtime_error("kevent add write");
-	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS)));
+	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, serv)));
 	std::cout << "new connection accepted for client on socket : " << new_sockfd << std::endl;
 }
 

@@ -18,6 +18,7 @@ public:
 	void badRequest();
 	void methodNotAllowed();
 	void timeout();
+	void payloadTooLarge();
     ~ClientError();
 };
 

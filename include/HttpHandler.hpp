@@ -1,7 +1,6 @@
 #ifndef HTTPHANDLER_HPP
 #define HTTPHANDLER_HPP
 
-#include "Utils.hpp"
 #include <string>
 #include <cstring>
 #include <iostream>
@@ -9,6 +8,8 @@
 #include <sstream>
 #include <map>
 
+#include "Utils.hpp"
+#include "ServerConfig.hpp"
 #include "ErrorHandler.hpp"
 #include "ServerError.hpp"
 #include "ClientError.hpp"
@@ -64,6 +65,10 @@ private:
 	bool				_cgiMode;
 	bool				_ready_to_write;
 
+	server_info			_server;
+
+	bool				_body_size_exceeded;
+
 	HttpHandler &operator=(HttpHandler const &other) {
 		if (this != &other) {
 			;
@@ -73,7 +78,7 @@ private:
 
 
 public:
-	HttpHandler(int timeout_seconds);
+	HttpHandler(int timeout_seconds, server_info serv);
 	~HttpHandler();
 
 	bool	isKeepAlive() const;

@@ -7,6 +7,7 @@ ClientError::ClientError(HttpResponse& response, std::stringstream& stream) : Er
 	_error_map[404] = &ClientError::notFound;
 	_error_map[405] = &ClientError::methodNotAllowed;
 	_error_map[408] = &ClientError::timeout;
+	_error_map[413] = &ClientError::payloadTooLarge;
 }
 
 ClientError::~ClientError() {
@@ -49,4 +50,10 @@ void ClientError::timeout() {
 	_response.status_code = "408";
 	_response.status_phrase = "Request Timeout";
 	_body_stream << "<html><body><h1>408 Request Timeout</h1></body></html>";
+}
+
+void ClientError::payloadTooLarge() {
+	_response.status_code = "413";
+	_response.status_phrase = "Payload Too Large";
+	_body_stream << "<html><body><h1>413 Payload Too Large</h1></body></html>";
 }

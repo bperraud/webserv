@@ -19,23 +19,26 @@ std::list<server_info> ServerConfig::getServerList() const {
 
 server_info ServerConfig::parseJsonObject(const json_value &json_object) {
 	server_info server;
+	server.max_body_size = 0;
+
 	std::map<std::string, routes> routes_map;
 	std::map<std::string, json_value>::const_iterator it;
 	std::map<std::string, json_value>::const_iterator sub_it;
-
 	for (it = json_object.object_value.begin(); it != json_object.object_value.end(); it++) {
-    std::string key = it->first;
-    const json_value& value = it->second;
-    if (key == "listen") {
-        if (value.array_value.size() >= 1) {
-            server.host = value.array_value[0].string_value;
-        }
-        if (value.array_value.size() >= 2) {
-            server.PORT = value.array_value[1].number_value;
-        }
-		} else if (key == "max_body_size") {
+    	std::string key = it->first;
+    	const json_value& value = it->second;
+    	if (key == "listen") {
+			if (value.array_value.size() >= 1) {
+				server.host = value.array_value[0].string_value;
+			}
+			if (value.array_value.size() >= 2) {
+				server.PORT = value.array_value[1].number_value;
+			}
+		}
+		else if (key == "max_body_size") {
 			server.max_body_size = value.number_value;
-		} else if (key == "routes") {
+		}
+		else if (key == "routes") {
 			for (sub_it = value.object_value.begin(); sub_it != value.object_value.end(); sub_it++) {
 				std::string route_key = sub_it->first;
 				const json_value& route_value = sub_it->second;

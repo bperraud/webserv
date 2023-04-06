@@ -75,7 +75,7 @@ public:
 	void	handleReadEvent(int client_fd);
 	void	handleWriteEvent(int client_fd);
 
-	void 	handleNewConnection(int listen_fd);
+	void 	handleNewConnection(int listen_fd, struct server_info serv);
 	void	eventManager();
 
 	void	timeoutCheck();

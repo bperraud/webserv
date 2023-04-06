@@ -1,9 +1,9 @@
 #include "HttpHandler.hpp"
 
 
-HttpHandler::HttpHandler(int timeout_seconds) : _timer(timeout_seconds),
+HttpHandler::HttpHandler(int timeout_seconds, server_info serv) : _timer(timeout_seconds),
 	_readStream(new std::stringstream()),  _close_keep_alive(false),
-	_left_to_read(0), _MIME_TYPES(), _cgiMode(false), _ready_to_write(false){
+	_left_to_read(0), _MIME_TYPES(), _cgiMode(false), _ready_to_write(false), _server(serv), _body_size_exceeded(false){
 	_last_4_char[0] = '\0';
 	_MIME_TYPES["html"] = "text/html";
     _MIME_TYPES["css"] = "text/css";
@@ -46,6 +46,12 @@ void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
 int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	if (!_left_to_read)
 		return 0;
+	if ( _server.max_body_size && _request_body_stream.tellp() + nbytes > _server.max_body_size) {
+		_left_to_read = 0;
+		_body_size_exceeded = true;
+		return 0;
+	}
+
 	_request_body_stream.write(buffer, nbytes);
 	_left_to_read -= nbytes;
 	return _left_to_read;
@@ -111,6 +117,13 @@ void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
 	_response.version = _request.version;
+	if (_body_size_exceeded) {
+		_body_size_exceeded = false;
+		resetStream();
+		error(413);
+		constructStringResponse();
+		return ;
+	}
 	for (index = 0; index < 4; index++)
 	{
 		if (type[index].compare(_request.method) == 0)
@@ -128,7 +141,7 @@ void HttpHandler::createHttpResponse() {
 			DELETE();
 			break;
 		default:
-			return error(405);
+			error(405);
 	}
 	constructStringResponse();
 }

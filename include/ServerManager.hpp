@@ -34,10 +34,10 @@
 # define TIMEOUT_SECS 5
 # define WAIT_TIMEOUT_SECS 2
 
-struct server : public server_info {
+struct server : public server_config {
 	int	listen_fd;
 
-    server(const server_info& info) : server_info(info) { };
+    server(const server_config& info) : server_config(info) { };
 };
 
 typedef std::map<int, HttpHandler*> map_type;
@@ -70,12 +70,12 @@ public:
 	void	writeToClient(int client_fd, const std::string &str);
 
 	void	epollInit();
-	bool	isPartOfListenFd(int fd) const;
+	const server*	isPartOfListenFd(int fd) const;
 
 	void	handleReadEvent(int client_fd);
 	void	handleWriteEvent(int client_fd);
 
-	void 	handleNewConnection(int listen_fd, struct server_info serv);
+	void 	handleNewConnection(int listen_fd, const server* serv);
 	void	eventManager();
 
 	void	timeoutCheck();

@@ -20,7 +20,7 @@ struct routes {
 	bool		auto_index;
 };
 
-struct server_info {
+struct server_config {
 	std::string host;
 	int			PORT;
 	int			max_body_size;
@@ -30,16 +30,16 @@ struct server_info {
 class ServerConfig {
 
 private:
-	std::list<server_info>	_server_list;
+	std::list<server_config>	_server_list;
 
 public:
     ServerConfig(const JsonParser &parser);
-	server_info parseJsonObject(const json_value &json_object);
+	server_config parseJsonObject(const json_value &json_object);
 
-	std::list<server_info> getServerList() const;
+	std::list<server_config> getServerList() const;
     ~ServerConfig();
 };
 
-std::ostream& operator<<(std::ostream& os, const server_info& s);
+std::ostream& operator<<(std::ostream& os, const server_config& s);
 
 #endif

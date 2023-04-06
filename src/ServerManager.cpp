@@ -2,8 +2,8 @@
 
 
 ServerManager::ServerManager(ServerConfig config, CGIExecutor cgi) : _cgi_executor(cgi) {
-	std::list<server_info> server_list = config.getServerList();
-	for (std::list<server_info>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
+	std::list<server_config> server_list = config.getServerList();
+	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		std::cout << "server manager : " << *it << std::endl;
 		server serv(*it);
 		setupSocket(serv);
@@ -60,12 +60,12 @@ void ServerManager::timeoutCheck() {
 	}
 }
 
-bool ServerManager::isPartOfListenFd(int fd) const {
+const server*	ServerManager::isPartOfListenFd(int fd) const {
 	for (server_iterator_type serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
 		if (fd == serv->listen_fd)
-			return true;
+			return serv.operator->();
 	}
-	return false;
+	return NULL;
 }
 
 #if (defined (LINUX) || defined (__linux__))
@@ -82,7 +82,7 @@ void ServerManager::epollInit() {
 	}
 }
 
-void ServerManager::handleNewConnection(int socket, struct server_info serv) {
+void ServerManager::handleNewConnection(int socket, const server *serv) {
 	struct epoll_event event;
 	struct sockaddr_in client_addr;
 	socklen_t client_addrlen = sizeof(client_addr);
@@ -106,8 +106,9 @@ void ServerManager::eventManager() {
 			throw std::runtime_error("epoll_wait");
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
-			if (isPartOfListenFd(fd)) {
-				handleNewConnection(fd, _server_list.front());
+			const server* serv = isPartOfListenFd(fd);
+			if (serv) {
+				handleNewConnection(fd, serv);
 			}
 			else if (events[i].events & EPOLLIN) {
 				handleReadEvent(fd);
@@ -119,8 +120,8 @@ void ServerManager::eventManager() {
 		timeoutCheck();
 	}
 }
-
 #else
+
 void ServerManager::epollInit() {
 	_kqueue_fd = kqueue();
 	if (_kqueue_fd < 0)
@@ -133,7 +134,7 @@ void ServerManager::epollInit() {
 	}
 }
 
-void ServerManager::handleNewConnection(int socket, struct server_info serv) {
+void ServerManager::handleNewConnection(int socket, const server *serv) {
 	struct kevent event;
 	struct sockaddr_in client_addr;
 	socklen_t client_addrlen = sizeof(client_addr);
@@ -162,8 +163,9 @@ void ServerManager::eventManager() {
 			throw std::runtime_error("kevent wait");
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].ident;
-			if (isPartOfListenFd(fd)) {
-				handleNewConnection(fd, _server_list.front());
+			const server* serv = isPartOfListenFd(fd);
+			if (serv) {
+				handleNewConnection(fd, serv);
 			}
 			else if (events[i].filter == EVFILT_READ) {
 				handleReadEvent(fd);
@@ -225,17 +227,17 @@ void ServerManager::handleWriteEvent(int client_fd) {
 	}
 }
 
-#if (defined (LINUX) || defined (__linux__))
+
 void ServerManager::closeClientConnection(int client_fd) {
+#if (defined (LINUX) || defined (__linux__))
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_DEL");
 #else
-void ServerManager::closeClientConnection(int client_fd) {
 	struct kevent events[2];
-	EV_SET( events, client_fd, EVFILT_READ, EV_DELETE, 0, 0, 0 );
-	EV_SET( events + 1, client_fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0 );
-	if ( kevent( _kqueue_fd, events, 2, NULL, 0, NULL ) < 0) {
-		throw std::runtime_error( "kevent" );
+	EV_SET(events, client_fd, EVFILT_READ, EV_DELETE, 0, 0, 0);
+	EV_SET(events + 1, client_fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0);
+	if (kevent(_kqueue_fd, events, 2, NULL, 0, NULL) < 0) {
+		throw std::runtime_error("kevent delete");
 	}
 #endif
 	delete _client_map[client_fd];
@@ -245,17 +247,16 @@ void ServerManager::closeClientConnection(int client_fd) {
 	return ;
 }
 
-#if (defined (LINUX) || defined (__linux__))
 void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem) {
+#if (defined (LINUX) || defined (__linux__))
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_DEL");
 #else
-void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem) {
 	struct kevent events[2];
-	EV_SET( events, client_fd, EVFILT_READ, EV_DELETE, 0, 0, 0 );
-	EV_SET( events + 1, client_fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0 );
-	if ( kevent( _kqueue_fd, events, 2, NULL, 0, NULL ) < 0) {
-		throw std::runtime_error( "kevent" );
+	EV_SET(events, client_fd, EVFILT_READ, EV_DELETE, 0, 0, 0);
+	EV_SET(events + 1, client_fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0);
+	if (kevent(_kqueue_fd, events, 2, NULL, 0, NULL ) < 0) {
+		throw std::runtime_error("kevent delete");
 	}
 #endif
 	delete _client_map[client_fd];

@@ -4,7 +4,7 @@ ServerConfig::ServerConfig(const JsonParser &parser) {
 	std::vector<json_value>::const_iterator it;
 	std::vector<json_value> json_object_vector = parser.getJsonVector();
 	for (it = json_object_vector.begin(); it != json_object_vector.end(); ++it) {
-		server_info server = parseJsonObject(*it);
+		server_config server = parseJsonObject(*it);
 		_server_list.push_back(server);
 	}
 }
@@ -13,12 +13,12 @@ ServerConfig::~ServerConfig() {
 
 }
 
-std::list<server_info> ServerConfig::getServerList() const {
+std::list<server_config> ServerConfig::getServerList() const {
 	return _server_list;
 }
 
-server_info ServerConfig::parseJsonObject(const json_value &json_object) {
-	server_info server;
+server_config ServerConfig::parseJsonObject(const json_value &json_object) {
+	server_config server;
 	server.max_body_size = 0;
 
 	std::map<std::string, routes> routes_map;
@@ -74,7 +74,7 @@ server_info ServerConfig::parseJsonObject(const json_value &json_object) {
 	return server;
 }
 
-std::ostream& operator<<(std::ostream& os, const server_info& s) {
+std::ostream& operator<<(std::ostream& os, const server_config& s) {
     os << "host: " << s.host << std::endl;
     os << "port: " << s.PORT << std::endl;
     os << "max body size: " << s.max_body_size << std::endl;

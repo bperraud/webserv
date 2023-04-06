@@ -65,7 +65,7 @@ private:
 	bool				_cgiMode;
 	bool				_ready_to_write;
 
-	server_info			_server;
+	server_config			_server;
 
 	bool				_body_size_exceeded;
 
@@ -78,7 +78,7 @@ private:
 
 
 public:
-	HttpHandler(int timeout_seconds, server_info serv);
+	HttpHandler(int timeout_seconds, const server_config* serv);
 	~HttpHandler();
 
 	bool	isKeepAlive() const;

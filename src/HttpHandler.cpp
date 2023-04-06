@@ -120,7 +120,7 @@ void HttpHandler::createHttpResponse() {
 		resetStream();
 		error(413);
 		constructStringResponse();
-		return ;
+		return;
 	}
 	for (index = 0; index < 4; index++)
 	{

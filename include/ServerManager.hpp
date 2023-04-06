@@ -22,7 +22,6 @@
 #include <fcntl.h>		 // fcntl
 #include <netinet/tcp.h> // TCP_NODELAY
 
-
 #if (defined (LINUX) || defined (__linux__))
 #include <sys/epoll.h>  // epoll
 #else

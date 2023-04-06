@@ -12,15 +12,12 @@ private:
 
 public:
     ServerError(HttpResponse& request, std::stringstream& body_stream);
-
+	~ServerError();
 	void errorProcess(int error);
-
 	void internalServerError();
 	void notImplemented();
 	void gatewayTimeout();
 	void HTTPVersion();
-
-	~ServerError();
 };
 
 #endif

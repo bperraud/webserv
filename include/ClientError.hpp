@@ -13,12 +13,12 @@ public:
     ClientError(HttpResponse& response, std::stringstream& body_stream);
 
 	void errorProcess(int error);
-	void notFound();
-	void forbidden();
-	void badRequest();
-	void methodNotAllowed();
-	void timeout();
-	void payloadTooLarge();
+	void badRequest(); 			// 400
+	void notFound(); 			// 404
+	void forbidden(); 			// 403
+	void methodNotAllowed(); 	// 405
+	void timeout(); 			// 408
+	void payloadTooLarge(); 	// 413
     ~ClientError();
 };
 

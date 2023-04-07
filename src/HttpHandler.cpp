@@ -111,36 +111,49 @@ std::string HttpHandler::getContentType(const std::string& path) const {
     return it->second;
 }
 
+//bool HttpHandler::isMethodAllowed(const std::string& method) const {
+//	std::vector<std::string>::const_iterator it = _server.routes..begin();
+//	for (; it != _server.allowed_methods.end(); ++it) {
+//		if (*it == method) {
+//			return true;
+//		}
+//	}
+//	return false;
+//}
+
 void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
 	_response.version = _request.version;
-	if (_body_size_exceeded) {
+	if (_server.routes_map.find(_request.url) == _server.routes_map.end())
+		error(404);
+	else if (_body_size_exceeded) {
 		_body_size_exceeded = false;
 		resetStream();
 		error(413);
-		constructStringResponse();
-		return;
 	}
-	for (index = 0; index < 4; index++)
-	{
-		if (type[index].compare(_request.method) == 0)
-			break;
+	else {
+		for (index = 0; index < 4; index++)
+		{
+			if (type[index].compare(_request.method) == 0)
+				break;
+		}
+		switch (index)
+		{
+			case 0:
+				GET();
+				break;
+			case 1:
+				POST();
+				break;
+			case 2:
+				DELETE();
+				break;
+			default:
+				error(405);
+		}
 	}
-	switch (index)
-	{
-		case 0:
-			GET();
-			break;
-		case 1:
-			POST();
-			break;
-		case 2:
-			DELETE();
-			break;
-		default:
-			error(405);
-	}
+
 	constructStringResponse();
 }
 

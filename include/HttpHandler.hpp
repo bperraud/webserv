@@ -65,7 +65,7 @@ private:
 	bool				_cgiMode;
 	bool				_ready_to_write;
 
-	server_config			_server;
+	server_config		_server;
 
 	bool				_body_size_exceeded;
 

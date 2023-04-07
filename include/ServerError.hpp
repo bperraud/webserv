@@ -14,10 +14,10 @@ public:
     ServerError(HttpResponse& request, std::stringstream& body_stream);
 	~ServerError();
 	void errorProcess(int error);
-	void internalServerError();
-	void notImplemented();
-	void gatewayTimeout();
-	void HTTPVersion();
+	void internalServerError(); // 500
+	void notImplemented(); 		// 501
+	void gatewayTimeout(); 		// 504
+	void HTTPVersion(); 		// 505
 };
 
 #endif

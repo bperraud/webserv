@@ -155,6 +155,7 @@ public:
 
 	bool isCGI(const std::string &path) const ;
 	void constructStringResponse();
+	bool isAllowedMethod(const std::string &method) const;
 
 	void findRoute(const std::string &url);
 

@@ -128,11 +128,22 @@ bool HttpHandler::correctPath(const std::string& path) const {
 void HttpHandler::findRoute(const std::string &url) {
 	std::map<std::string, routes>::iterator it = _server.routes_map.begin();
 	for (; it != _server.routes_map.end(); ++it) {
-		if (url.find(it->first) == 0) {
+		if (url.find(it->first) == 0 && it->first != "/" || url == "/" && it->first == "/") {
 			_active_root = &it->second;
 			break;
 		}
 	}
+}
+
+bool HttpHandler::isAllowedMethod(const std::string &method) const {
+	if (!_active_root)
+		return true;
+	return true;
+	for (size_t i = 0; i < _active_root->methods->length(); i++) {
+		if (_active_root->methods[i] == method)
+			return true;
+	}
+	return false;
 }
 
 void HttpHandler::createHttpResponse() {
@@ -141,8 +152,9 @@ void HttpHandler::createHttpResponse() {
 	_response.version = _request.version;
 
 	findRoute(_request.url);
-	if (!correctPath(_request.url) && !_active_root)
+	if (!correctPath(_request.url) && !_active_root) {
 		error(404);
+	}
 	else if (_body_size_exceeded) {
 		_body_size_exceeded = false;
 		resetStream();
@@ -151,6 +163,7 @@ void HttpHandler::createHttpResponse() {
 	else {
 		for (index = 0; index < 4; index++)
 		{
+			//if (type[index].compare(_request.method) == 0 && isAllowedMethod(_request.method))
 			if (type[index].compare(_request.method) == 0)
 				break;
 		}
@@ -191,25 +204,35 @@ void HttpHandler::GET() {
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
 
+	std::string url;
 	if (isCGI(_request.url))
 	{
 		_cgiMode = true;
 		return ;
 	}
-	if (_active_root)	// directory
-	{
-		if (_active_root->index != "")
+	if (_active_root) url = _active_root->root + _request.url; // routes
+	else
+		url = _request.url;
+	if (Utils::isDirectory(url)) { // directory
+
+		if (_active_root->auto_index == true)
 		{
-			_request.url = _active_root->root + _request.url + _active_root->index;
-			Utils::loadFile(_request.url, _response_body_stream);
-		}
-		else
 			;//directory listing
+		}
+		else {
+			if (_active_root->index == "") return error(404);	// no index file
+			url = url + _active_root->index;
+			_request.url = url;
+			std::cout << "URL" << url << std::endl;
+			Utils::loadFile(url, _response_body_stream);
+		}
+
 	}
-	else  {
+	else { // file
 		_request.url = ROOT_PATH + _request.url;
 		Utils::loadFile(_request.url, _response_body_stream);
 	}
+
 	std::string content_type = getContentType(_request.url);
 	if (content_type.empty())
 		return error(415);
@@ -272,7 +295,6 @@ void HttpHandler::POST() {
 		_response.status_phrase = "Created";
 	}
 	else if (contentType.find("application/x-www-form-urlencoded") != std::string::npos) {
-		std::cout << "x form url: " << std::endl;
 		_response.map_headers["Content-Length"] = "0";
 	}
 	else { // others

@@ -128,7 +128,7 @@ bool HttpHandler::correctPath(const std::string& path) const {
 void HttpHandler::findRoute(const std::string &url) {
 	std::map<std::string, routes>::iterator it = _server.routes_map.begin();
 	for (; it != _server.routes_map.end(); ++it) {
-		if (url.find(it->first) == 0 && it->first != "/" || url == "/" && it->first == "/") {
+		if ((url.find(it->first) == 0 && it->first != "/" )|| (url == "/" && it->first == "/")) {
 			_active_root = &it->second;
 			break;
 		}
@@ -138,7 +138,6 @@ void HttpHandler::findRoute(const std::string &url) {
 bool HttpHandler::isAllowedMethod(const std::string &method) const {
 	if (!_active_root)
 		return true;
-	return true;
 	for (size_t i = 0; i < _active_root->methods->length(); i++) {
 		if (_active_root->methods[i] == method)
 			return true;
@@ -152,6 +151,7 @@ void HttpHandler::createHttpResponse() {
 	_response.version = _request.version;
 
 	findRoute(_request.url);
+	if (_active_root) _request.url = _active_root->root + std::string(_request.url); // routes
 	if (!correctPath(_request.url) && !_active_root) {
 		error(404);
 	}
@@ -163,8 +163,7 @@ void HttpHandler::createHttpResponse() {
 	else {
 		for (index = 0; index < 4; index++)
 		{
-			//if (type[index].compare(_request.method) == 0 && isAllowedMethod(_request.method))
-			if (type[index].compare(_request.method) == 0)
+			if (type[index].compare(_request.method) == 0 && isAllowedMethod(_request.method))
 				break;
 		}
 		switch (index)
@@ -209,9 +208,8 @@ void HttpHandler::GET() {
 		_cgiMode = true;
 		return ;
 	}
-	if (_active_root) _request.url = _active_root->root + _request.url; // routes
 	if (Utils::isDirectory(_request.url)) { // directory
-
+		std::cout << "directory" << std::endl;
 		if (_active_root->auto_index == true)
 		{
 			;//directory listing
@@ -222,10 +220,12 @@ void HttpHandler::GET() {
 			Utils::loadFile(_request.url, _response_body_stream);
 		}
 	}
-	else { // file
+	else if (Utils::pathToFileExist(_request.url)) { // file
 		_request.url = ROOT_PATH + _request.url;
 		Utils::loadFile(_request.url, _response_body_stream);
 	}
+	else
+		return error(404);
 
 	std::string content_type = getContentType(_request.url);
 	if (content_type.empty())

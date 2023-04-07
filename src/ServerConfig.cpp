@@ -43,7 +43,14 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object) {
 				std::string route_key = sub_it->first;
 				const json_value& route_value = sub_it->second;
 				routes route;
+				route.handler = "";
+				route.index = "";
+				route.methods[0] = "";
+				route.methods[1] = "";
+				route.methods[2] = "";
+				route.root = "";
 				route.auto_index = false;
+
 				std::map<std::string, json_value>::const_iterator sub_sub_it;
 				for (sub_sub_it = route_value.object_value.begin(); sub_sub_it != route_value.object_value.end(); sub_sub_it++) {
 					std::string route_info_key = sub_sub_it->first;
@@ -63,6 +70,12 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object) {
 						}
 					} else if (route_info_key == "auto_index") {
 						route.auto_index = route_info_value.boolean_value;
+					}
+					else if (route_info_key == "index") {
+						route.index = route_info_value.string_value;
+					}
+					else if (route_info_key == "handler") {
+						route.handler = route_info_value.string_value;
 					}
 				}
 				routes_map[route_key] = route;
@@ -85,6 +98,8 @@ std::ostream& operator<<(std::ostream& os, const server_config& s) {
         os << "    route: " << routes_it->first << std::endl;
         const routes& r = routes_it->second;
         os << "        root: " << r.root << std::endl;
+		os << "        index: " << r.index << std::endl;
+		os << "        handler: " << r.handler << std::endl;
         os << "        methods: ";
         for (int i = 0; i < 3; i++) {
             if (!r.methods[i].empty()) {

@@ -16,6 +16,8 @@ enum e_routes {
 struct routes {
 	std::string root;
 	std::string methods[3];
+	std::string index;
+	std::string handler;
 	std::map<std::string, std::string> cgi;
 	bool		auto_index;
 };

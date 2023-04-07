@@ -149,6 +149,8 @@ public:
 	void POST();
 	void DELETE();
 
+	bool correctPath(std::string& path) const;
+
 	bool isCGI(const std::string &path) const ;
 	void constructStringResponse();
 

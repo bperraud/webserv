@@ -121,15 +121,21 @@ std::string HttpHandler::getContentType(const std::string& path) const {
 //	return false;
 //}
 
+bool HttpHandler::correctPath(std::string& path) const {
+	if (_server.routes_map.find(path) != _server.routes_map.end())
+		return true;
+	else {
+		return Utils::pathToFileExist(ROOT_PATH + path);
+	}
+}
+
 void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
 	_response.version = _request.version;
 
-	if ((Utils::isDirectory(_request.url) &&_server.routes_map.find(_request.url) == _server.routes_map.end())
-	 || (!Utils::isDirectory(_request.url) && !Utils::pathToFileExist(ROOT_PATH + _request.url))) {
-			error(404);
-	}
+	if (!correctPath(_request.url))
+		error(404);
 	else if (_body_size_exceeded) {
 		_body_size_exceeded = false;
 		resetStream();
@@ -177,34 +183,28 @@ void HttpHandler::GET() {
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
 
-
-	routes *route = &_server.routes_map[_request.url];
-
-
-
-	if (!_request.url.compare("/")) {
-		Utils::loadFile(DEFAULT_PAGE, _response_body_stream);
-		_response.map_headers["Content-Type"] = getContentType(DEFAULT_PAGE);
-		_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
-		return ;
-	}
-	else if (isCGI(_request.url))
+	if (isCGI(_request.url))
 	{
 		_cgiMode = true;
 		return ;
 	}
-
-	_request.url = ROOT_PATH + _request.url;
-	if ( Utils::isDirectory(_request.url))
+	if (_server.routes_map.find(_request.url) != _server.routes_map.end())	// directory
 	{
-		;//directory listing
+		routes *route = &_server.routes_map[_request.url];
+		if (route->index != "")
+		{
+			_request.url = route->root + _request.url + route->index;
+			Utils::loadFile(_request.url, _response_body_stream);
+		}
+		else
+			;//directory listing
 	}
-	else if (Utils::pathToFileExist(_request.url)) {
+	else  {
+		std::cout << "root path: " << ROOT_PATH + _request.url << std::endl;
+		_request.url = ROOT_PATH + _request.url;
 		Utils::loadFile(_request.url, _response_body_stream);
-		_response.map_headers["Content-Type"] = getContentType(_request.url);
 	}
-	else
-		return error(404);
+	_response.map_headers["Content-Type"] = getContentType(_request.url);
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
 }
 

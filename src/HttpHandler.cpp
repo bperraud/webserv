@@ -204,16 +204,13 @@ void HttpHandler::GET() {
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
 
-	std::string url;
 	if (isCGI(_request.url))
 	{
 		_cgiMode = true;
 		return ;
 	}
-	if (_active_root) url = _active_root->root + _request.url; // routes
-	else
-		url = _request.url;
-	if (Utils::isDirectory(url)) { // directory
+	if (_active_root) _request.url = _active_root->root + _request.url; // routes
+	if (Utils::isDirectory(_request.url)) { // directory
 
 		if (_active_root->auto_index == true)
 		{
@@ -221,12 +218,9 @@ void HttpHandler::GET() {
 		}
 		else {
 			if (_active_root->index == "") return error(404);	// no index file
-			url = url + _active_root->index;
-			_request.url = url;
-			std::cout << "URL" << url << std::endl;
-			Utils::loadFile(url, _response_body_stream);
+			_request.url += _active_root->index;
+			Utils::loadFile(_request.url, _response_body_stream);
 		}
-
 	}
 	else { // file
 		_request.url = ROOT_PATH + _request.url;

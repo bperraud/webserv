@@ -125,8 +125,11 @@ void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
 	_response.version = _request.version;
-	if (_server.routes_map.find(_request.url) == _server.routes_map.end())
-		error(404);
+
+	if ((Utils::isDirectory(_request.url) &&_server.routes_map.find(_request.url) == _server.routes_map.end())
+	 || (!Utils::isDirectory(_request.url) && !Utils::pathToFileExist(ROOT_PATH + _request.url))) {
+			error(404);
+	}
 	else if (_body_size_exceeded) {
 		_body_size_exceeded = false;
 		resetStream();
@@ -153,7 +156,6 @@ void HttpHandler::createHttpResponse() {
 				error(405);
 		}
 	}
-
 	constructStringResponse();
 }
 
@@ -174,6 +176,11 @@ void HttpHandler::error(int error) {
 void HttpHandler::GET() {
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
+
+
+	routes *route = &_server.routes_map[_request.url];
+
+
 
 	if (!_request.url.compare("/")) {
 		Utils::loadFile(DEFAULT_PAGE, _response_body_stream);

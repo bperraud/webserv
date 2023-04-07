@@ -2,6 +2,10 @@
 	{
 	  "listen": ["0.0.0.0", 8080],
 	  "max_body_size": 20000,
+	  "error_pages": {
+		"www/1.html": ["404"],
+		"www/2.html": ["405"]
+	  },
 	  "routes": {
 		"/": {
 		  "root": "website",

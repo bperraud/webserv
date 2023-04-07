@@ -69,6 +69,8 @@ private:
 
 	bool				_body_size_exceeded;
 
+	routes*				_active_root;
+
 	HttpHandler &operator=(HttpHandler const &other) {
 		if (this != &other) {
 			;
@@ -149,10 +151,12 @@ public:
 	void POST();
 	void DELETE();
 
-	bool correctPath(std::string& path) const;
+	bool correctPath(const std::string& path) const;
 
 	bool isCGI(const std::string &path) const ;
 	void constructStringResponse();
+
+	void findRoute(const std::string &url);
 
 	void uploadFile(const std::string& contentType, size_t pos_boundary);
 

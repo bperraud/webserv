@@ -8,6 +8,7 @@ ClientError::ClientError(HttpResponse& response, std::stringstream& stream) : Er
 	_error_map[405] = &ClientError::methodNotAllowed;
 	_error_map[408] = &ClientError::timeout;
 	_error_map[413] = &ClientError::payloadTooLarge;
+	_error_map[415] = &ClientError::unsupportedMediaType;
 }
 
 ClientError::~ClientError() {
@@ -56,4 +57,10 @@ void ClientError::payloadTooLarge() {
 	_response.status_code = "413";
 	_response.status_phrase = "Payload Too Large";
 	_body_stream << "<html><body><h1>413 Payload Too Large</h1></body></html>";
+}
+
+void ClientError::unsupportedMediaType() {
+	_response.status_code = "415";
+	_response.status_phrase = "Unsupported Media Type";
+	_body_stream << "<html><body><h1>415 Unsupported Media Type</h1></body></html>";
 }

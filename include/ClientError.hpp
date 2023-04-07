@@ -19,7 +19,8 @@ public:
 	void methodNotAllowed(); 	// 405
 	void timeout(); 			// 408
 	void payloadTooLarge(); 	// 413
-    ~ClientError();
+    void unsupportedMediaType();// 415
+	~ClientError();
 };
 
 #endif

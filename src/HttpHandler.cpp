@@ -3,7 +3,8 @@
 
 HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _timer(timeout_seconds),
 	_readStream(new std::stringstream()),  _close_keep_alive(false),
-	_left_to_read(0), _MIME_TYPES(), _cgiMode(false), _ready_to_write(false), _server(*serv), _body_size_exceeded(false){
+	_left_to_read(0), _MIME_TYPES(), _cgiMode(false), _ready_to_write(false), _server(*serv),
+	_body_size_exceeded(false), _active_root(NULL){
 	_last_4_char[0] = '\0';
 	_MIME_TYPES["html"] = "text/html";
     _MIME_TYPES["css"] = "text/css";
@@ -64,6 +65,7 @@ void HttpHandler::resetStream() {
 	_response_body_stream.str(std::string());
 	_response_header_stream.str(std::string());
 	_last_4_char[0] = '\0';
+	_active_root = NULL;
 }
 
 bool HttpHandler::isKeepAlive() const {
@@ -99,14 +101,12 @@ void HttpHandler::parseRequest() {
 std::string HttpHandler::getContentType(const std::string& path) const {
     std::string::size_type dot_pos = path.find_last_of('.');
     if (dot_pos == std::string::npos) {
-        // No extension found, assume plain text
         return "text/plain";
     }
     std::string ext = path.substr(dot_pos + 1);
     std::map<std::string, std::string>::const_iterator it = _MIME_TYPES.find(ext);
     if (it == _MIME_TYPES.end()) {
-        // Extension not found, assume plain text
-        return "text/plain";
+        return "";
     }
     return it->second;
 }
@@ -121,11 +121,17 @@ std::string HttpHandler::getContentType(const std::string& path) const {
 //	return false;
 //}
 
-bool HttpHandler::correctPath(std::string& path) const {
-	if (_server.routes_map.find(path) != _server.routes_map.end())
-		return true;
-	else {
-		return Utils::pathToFileExist(ROOT_PATH + path);
+bool HttpHandler::correctPath(const std::string& path) const {
+	return Utils::isDirectory(ROOT_PATH + path) || Utils::pathToFileExist(ROOT_PATH + path);
+}
+
+void HttpHandler::findRoute(const std::string &url) {
+	std::map<std::string, routes>::iterator it = _server.routes_map.begin();
+	for (; it != _server.routes_map.end(); ++it) {
+		if (url.find(it->first) == 0) {
+			_active_root = &it->second;
+			break;
+		}
 	}
 }
 
@@ -134,7 +140,8 @@ void HttpHandler::createHttpResponse() {
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
 	_response.version = _request.version;
 
-	if (!correctPath(_request.url))
+	findRoute(_request.url);
+	if (!correctPath(_request.url) && !_active_root)
 		error(404);
 	else if (_body_size_exceeded) {
 		_body_size_exceeded = false;
@@ -170,6 +177,7 @@ bool HttpHandler::isCGI(const std::string &path) const {
 }
 
 void HttpHandler::error(int error) {
+	resetStream();
 	ErrorHandler* error_handler;
 	if (error >= 500)
 		error_handler = new ServerError(_response, _response_body_stream);
@@ -188,23 +196,24 @@ void HttpHandler::GET() {
 		_cgiMode = true;
 		return ;
 	}
-	if (_server.routes_map.find(_request.url) != _server.routes_map.end())	// directory
+	if (_active_root)	// directory
 	{
-		routes *route = &_server.routes_map[_request.url];
-		if (route->index != "")
+		if (_active_root->index != "")
 		{
-			_request.url = route->root + _request.url + route->index;
+			_request.url = _active_root->root + _request.url + _active_root->index;
 			Utils::loadFile(_request.url, _response_body_stream);
 		}
 		else
 			;//directory listing
 	}
 	else  {
-		std::cout << "root path: " << ROOT_PATH + _request.url << std::endl;
 		_request.url = ROOT_PATH + _request.url;
 		Utils::loadFile(_request.url, _response_body_stream);
 	}
-	_response.map_headers["Content-Type"] = getContentType(_request.url);
+	std::string content_type = getContentType(_request.url);
+	if (content_type.empty())
+		return error(415);
+	_response.map_headers["Content-Type"] = content_type;
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
 }
 
@@ -240,7 +249,11 @@ void HttpHandler::uploadFile(const std::string& contentType, size_t pos_boundary
 	_response.status_code = "201";
 	_response.status_phrase = "Created";
 	_response_body_stream << messageBody;
-	_response.map_headers["Content-Type"] = getContentType(fileName);
+	std::string content_type = getContentType(_request.url);
+	if (content_type.empty())
+		return error(415);
+	else
+		_response.map_headers["Content-Type"] = content_type;
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
 	_response.map_headers["Location"] = UPLOAD_PATH + fileName;
 }

@@ -108,6 +108,7 @@ void HttpHandler::parseRequest() {
 std::string HttpHandler::getContentType(const std::string& path) const {
     std::string::size_type dot_pos = path.find_last_of('.');
     if (dot_pos == std::string::npos) { // no extension, assume directory
+	std::cout << "no extension, assume directory" << std::endl;
 		if (_active_route->autoindex)
 			return "text/html";
         return "text/plain";
@@ -304,7 +305,7 @@ void HttpHandler::uploadFile(const std::string& contentType, size_t pos_boundary
 	_response.status_code = "201";
 	_response.status_phrase = "Created";
 	_response_body_stream << messageBody;
-	std::string content_type = getContentType(_request.url);
+	std::string content_type = getContentType(fileName);
 	if (content_type.empty())
 		return error(415);
 	else

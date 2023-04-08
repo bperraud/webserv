@@ -204,7 +204,7 @@ void ServerManager::handleReadEvent(int client_fd) {
 		}
 		else{
 
-		#if 1
+		#if 0
 		std::cout << "Response Header :" << std::endl;
 		std::cout << client->getResponseHeader() << std::endl;
 		std::cout << "Response Message body :" << std::endl;

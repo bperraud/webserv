@@ -27,7 +27,7 @@ HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _time
 	_MIME_TYPES["php"] = "text/html";
 	_MIME_TYPES["py"] = "text/html";
 
-	_default_route.index = "index.html";
+	_default_route.index = "";
 	_default_route.autoindex = false;
 	_default_route.methods[0] = "GET";
 	_default_route.methods[1] = "DELETE";
@@ -133,7 +133,6 @@ void HttpHandler::findRoute(const std::string &url) {
 			return;
 		}
 	}
-	//std::cout << _active_route->root << std::endl;
 	_request.url = _active_route->root + _request.url;
 }
 
@@ -141,7 +140,6 @@ bool HttpHandler::isAllowedMethod(const std::string &method) const {
 	if (!_active_route)
 		return true;
 	for (size_t i = 0; i < _active_route->methods->length(); i++) {
-		std::cout << _active_route->methods[i] << std::endl;
 		if (_active_route->methods[i] == method)
 			return true;
 	}
@@ -153,7 +151,6 @@ void HttpHandler::createHttpResponse() {
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
 	_response.version = _request.version;
 
-	std::cout << _request.url << std::endl;
 	findRoute(_request.url);
 	if (!correctPath(_request.url) && !_active_route) {
 		error(404);
@@ -238,7 +235,6 @@ void HttpHandler::generate_directory_listing_html(const std::string& directory_p
         } else {
             // Link to a file
             std::string file_uri = _request.url.substr(_default_route.root.length()) + "/" + name;
-			std::cout << "file_uri : " << file_uri << std::endl;
             row = "<tr><td><a href=\"" + file_uri + "\">" + name + "</a></td><td>" + size_str + "</td></tr>";
         }
         _response_body_stream << row;
@@ -259,8 +255,6 @@ void HttpHandler::GET() {
 		_cgiMode = true;
 		return ;
 	}
-	std::cout << "_request.url : " << _request.url << std::endl;
-
 	if (Utils::isDirectory(_request.url)) { // directory
 		if (_active_route->autoindex == true)
 		{

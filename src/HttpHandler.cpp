@@ -32,7 +32,7 @@ HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _time
 	_default_route.methods[0] = "GET";
 	_default_route.methods[1] = "DELETE";
 	_default_route.methods[2] = "POST";
-	_default_route.root = "./website";
+	_default_route.root = "website";
 }
 
 HttpHandler::~HttpHandler() {
@@ -133,7 +133,7 @@ void HttpHandler::findRoute(const std::string &url) {
 			return;
 		}
 	}
-	std::cout << _active_route->root << std::endl;
+	//std::cout << _active_route->root << std::endl;
 	_request.url = _active_route->root + _request.url;
 }
 
@@ -237,7 +237,8 @@ void HttpHandler::generate_directory_listing_html(const std::string& directory_p
             row = "<tr><td><a href=\"" + name + "/\">" + name + "/</a></td><td>-</td></tr>";
         } else {
             // Link to a file
-            std::string file_uri = _request.url + "/" + name;
+            std::string file_uri = _request.url.substr(_default_route.root.length()) + "/" + name;
+			std::cout << "file_uri : " << file_uri << std::endl;
             row = "<tr><td><a href=\"" + file_uri + "\">" + name + "</a></td><td>" + size_str + "</td></tr>";
         }
         _response_body_stream << row;

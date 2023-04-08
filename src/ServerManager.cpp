@@ -187,6 +187,7 @@ void ServerManager::handleReadEvent(int client_fd) {
 		#if 1
 		std::cout << "Header :" << std::endl;
 		std::cout << client->getRequest() << std::endl;
+		#else
 		std::cout << "Message body :" << std::endl;
 		std::cout << client->getBody() << std::endl;
 		#endif

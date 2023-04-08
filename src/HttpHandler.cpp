@@ -4,7 +4,7 @@
 HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _timer(timeout_seconds),
 	_readStream(new std::stringstream()),  _close_keep_alive(false),
 	_left_to_read(0), _MIME_TYPES(), _cgiMode(false), _ready_to_write(false), _server(*serv),
-	_body_size_exceeded(false), _active_route(NULL), _default_route(){
+	_body_size_exceeded(false), _default_route(), _active_route(&_default_route){
 	_last_4_char[0] = '\0';
 	_MIME_TYPES["html"] = "text/html";
     _MIME_TYPES["css"] = "text/css";
@@ -133,6 +133,7 @@ void HttpHandler::findRoute(const std::string &url) {
 			return;
 		}
 	}
+	std::cout << _active_route->root << std::endl;
 	_request.url = _active_route->root + _request.url;
 }
 
@@ -152,8 +153,8 @@ void HttpHandler::createHttpResponse() {
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
 	_response.version = _request.version;
 
-	findRoute(_request.url);
 	std::cout << _request.url << std::endl;
+	findRoute(_request.url);
 	if (!correctPath(_request.url) && !_active_route) {
 		error(404);
 	}
@@ -221,7 +222,9 @@ void HttpHandler::generate_directory_listing_html(const std::string& directory_p
         if (entry->d_type == DT_REG) {
             struct stat st;
             if (stat(path.c_str(), &st) == 0) {
-                size_str = std::to_string(st.st_size) + " bytes";
+				std::stringstream ss;
+				ss << st.st_size;
+                size_str = ss.str() + " bytes";
             }
         } else {
             size_str = "-";

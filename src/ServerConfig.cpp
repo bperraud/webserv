@@ -49,7 +49,7 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object) {
 				route.methods[1] = "";
 				route.methods[2] = "";
 				route.root = "";
-				route.auto_index = false;
+				route.autoindex = false;
 
 				std::map<std::string, json_value>::const_iterator sub_sub_it;
 				for (sub_sub_it = route_value.object_value.begin(); sub_sub_it != route_value.object_value.end(); sub_sub_it++) {
@@ -68,8 +68,8 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object) {
 							const json_value& cgi_value = sub_sub_sub_it->second;
 							route.cgi[cgi_key] = cgi_value.string_value;
 						}
-					} else if (route_info_key == "auto_index") {
-						route.auto_index = route_info_value.boolean_value;
+					} else if (route_info_key == "autoindex") {
+						route.autoindex = route_info_value.boolean_value;
 					}
 					else if (route_info_key == "index") {
 						route.index = route_info_value.string_value;
@@ -111,7 +111,7 @@ std::ostream& operator<<(std::ostream& os, const server_config& s) {
         for (cgi_it = r.cgi.begin(); cgi_it != r.cgi.end(); ++cgi_it) {
             os << "            " << cgi_it->first << ": " << cgi_it->second << std::endl;
         }
-        os << "        auto index: " << std::boolalpha << r.auto_index << std::endl;
+        os << "        auto index: " << std::boolalpha << r.autoindex << std::endl;
     }
     return os;
 }

@@ -69,7 +69,8 @@ private:
 
 	bool				_body_size_exceeded;
 
-	routes*				_active_root;
+	routes*				_active_route;
+	routes				_default_route;
 
 	HttpHandler &operator=(HttpHandler const &other) {
 		if (this != &other) {

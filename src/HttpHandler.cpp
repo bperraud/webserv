@@ -4,7 +4,7 @@
 HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _timer(timeout_seconds),
 	_readStream(new std::stringstream()),  _close_keep_alive(false),
 	_left_to_read(0), _MIME_TYPES(), _cgiMode(false), _ready_to_write(false), _server(*serv),
-	_body_size_exceeded(false), _active_root(NULL){
+	_body_size_exceeded(false), _active_route(NULL), _default_route(){
 	_last_4_char[0] = '\0';
 	_MIME_TYPES["html"] = "text/html";
     _MIME_TYPES["css"] = "text/css";
@@ -26,6 +26,13 @@ HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _time
 	_MIME_TYPES["doc"] = "application/msword";
 	_MIME_TYPES["php"] = "text/html";
 	_MIME_TYPES["py"] = "text/html";
+
+	_default_route.index = "index.html";
+	_default_route.autoindex = false;
+	_default_route.methods[0] = "GET";
+	_default_route.methods[1] = "DELETE";
+	_default_route.methods[2] = "POST";
+	_default_route.root = "website/";
 }
 
 HttpHandler::~HttpHandler() {
@@ -65,7 +72,7 @@ void HttpHandler::resetStream() {
 	_response_body_stream.str(std::string());
 	_response_header_stream.str(std::string());
 	_last_4_char[0] = '\0';
-	_active_root = NULL;
+	_active_route = &_default_route;
 }
 
 bool HttpHandler::isKeepAlive() const {
@@ -129,17 +136,17 @@ void HttpHandler::findRoute(const std::string &url) {
 	std::map<std::string, routes>::iterator it = _server.routes_map.begin();
 	for (; it != _server.routes_map.end(); ++it) {
 		if ((url.find(it->first) == 0 && it->first != "/" )|| (url == "/" && it->first == "/")) {
-			_active_root = &it->second;
+			_active_route = &it->second;
 			break;
 		}
 	}
 }
 
 bool HttpHandler::isAllowedMethod(const std::string &method) const {
-	if (!_active_root)
+	if (!_active_route)
 		return true;
-	for (size_t i = 0; i < _active_root->methods->length(); i++) {
-		if (_active_root->methods[i] == method)
+	for (size_t i = 0; i < _active_route->methods->length(); i++) {
+		if (_active_route->methods[i] == method)
 			return true;
 	}
 	return false;
@@ -151,8 +158,8 @@ void HttpHandler::createHttpResponse() {
 	_response.version = _request.version;
 
 	findRoute(_request.url);
-	if (_active_root) _request.url = _active_root->root + std::string(_request.url); // routes
-	if (!correctPath(_request.url) && !_active_root) {
+	if (_active_route) _request.url = _active_route->root + std::string(_request.url); // routes
+	if (!correctPath(_request.url) && !_active_route) {
 		error(404);
 	}
 	else if (_body_size_exceeded) {
@@ -210,18 +217,18 @@ void HttpHandler::GET() {
 	}
 	if (Utils::isDirectory(_request.url)) { // directory
 		std::cout << "directory" << std::endl;
-		if (_active_root->auto_index == true)
+		if (_active_route->autoindex == true)
 		{
 			;//directory listing
 		}
 		else {
-			if (_active_root->index == "") return error(404);	// no index file
-			_request.url += _active_root->index;
+			if (_active_route->index == "") return error(404);	// no index file
+			_request.url += _active_route->index;
 			Utils::loadFile(_request.url, _response_body_stream);
 		}
 	}
 	else if (Utils::pathToFileExist(_request.url)) { // file
-		_request.url = ROOT_PATH + _request.url;
+		//_request.url = ROOT_PATH + _request.url;
 		Utils::loadFile(_request.url, _response_body_stream);
 	}
 	else

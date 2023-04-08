@@ -5,21 +5,13 @@
 
 #include <list>
 
-enum e_routes {
-	ROOT,
-	INDEX,
-	METHODS,
-	AUTO_INDEX,
-	CGI
-};
-
 struct routes {
 	std::string root;
 	std::string methods[3];
 	std::string index;
 	std::string handler;
 	std::map<std::string, std::string> cgi;
-	bool		auto_index;
+	bool		autoindex;
 };
 
 struct server_config {

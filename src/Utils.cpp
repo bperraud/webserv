@@ -18,6 +18,22 @@ bool Utils::hasExecutePermissions(const char* filepath) {
 	return access(filepath, X_OK) == 0;
 }
 
+int Utils::directoryListing(const std::string &directory_path) {
+	DIR *dir;
+    struct dirent *ent;
+
+    if ((dir = opendir(directory_path.c_str())) != NULL) {
+        while ((ent = readdir(dir)) != NULL) {
+            std::cout << ent->d_name << std::endl;
+        }
+        closedir (dir);
+    } else {
+        std::cerr << "Could not open directory." << std::endl;
+        return 1;
+    }
+    return 0;
+}
+
 std::string Utils::intToString(int value)
 {
 	std::ostringstream oss;

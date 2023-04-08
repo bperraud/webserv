@@ -9,6 +9,7 @@
 #include <iostream>
 #include <unistd.h>
 #include <iomanip> // setfill()
+#include <dirent.h>	// opendir()
 
 class Utils {
 
@@ -26,7 +27,7 @@ public:
 	static void			loadFile(const std::string &fileName, std::basic_iostream<char> &stream) ;
 
 	static std::ofstream*	createOrEraseFile(std::string fileName);
-
+	static int				directoryListing(const std::string &dir);
 	static bool				hasExecutePermissions(const char* filepath);
     ~Utils();
 };

@@ -7,6 +7,10 @@
 #include <fstream>
 #include <sstream>
 #include <map>
+#include <dirent.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+
 
 #include "Utils.hpp"
 #include "ServerConfig.hpp"
@@ -14,6 +18,7 @@
 #include "ServerError.hpp"
 #include "ClientError.hpp"
 #include "Timer.hpp"
+
 
 # define CRLF "\r\n\r\n"
 # define ROOT_PATH "./website"
@@ -161,7 +166,7 @@ public:
 	void findRoute(const std::string &url);
 
 	void uploadFile(const std::string& contentType, size_t pos_boundary);
-
+	void generate_directory_listing_html(const std::string& directory_path);
 	std::string getContentType(const std::string& path) const;
 };
 

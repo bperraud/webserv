@@ -32,7 +32,7 @@ HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _time
 	_default_route.methods[0] = "GET";
 	_default_route.methods[1] = "DELETE";
 	_default_route.methods[2] = "POST";
-	_default_route.root = "website";
+	_default_route.root = ROOT_PATH;
 }
 
 HttpHandler::~HttpHandler() {

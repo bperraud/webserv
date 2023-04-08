@@ -21,10 +21,7 @@
 
 
 # define CRLF "\r\n\r\n"
-# define ROOT_PATH "./website"
-# define DEFAULT_PAGE "./website/index.html"
-# define UPLOAD_PATH "./website/upload/"
-
+# define ROOT_PATH "website"
 
 #if 0
 Recipients of an invalid request-line SHOULD respond with either a

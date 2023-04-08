@@ -49,7 +49,7 @@
 	  deleteForm.addEventListener('submit', function(event) {
 		event.preventDefault();
 		const file = document.querySelector('#file-selector').files[0];
-		const fileUrl = 'http://localhost:8080/' + file.name;
+		const fileUrl = 'http://localhost:8080/upload/' + file.name;
 		const requestOptions = {
 		  method: 'DELETE'
 		};

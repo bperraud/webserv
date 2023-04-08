@@ -108,7 +108,6 @@ void HttpHandler::parseRequest() {
 std::string HttpHandler::getContentType(const std::string& path) const {
     std::string::size_type dot_pos = path.find_last_of('.');
     if (dot_pos == std::string::npos) { // no extension, assume directory
-	std::cout << "no extension, assume directory" << std::endl;
 		if (_active_route->autoindex)
 			return "text/html";
         return "text/plain";
@@ -284,7 +283,6 @@ bool HttpHandler::findHeader(const std::string &header, std::string &value) {
 
 void HttpHandler::uploadFile(const std::string& contentType, size_t pos_boundary) {
 	std::string messageBody = _request_body_stream.str();
-	std::string boundary = contentType.substr(pos_boundary + 9);
 	const size_t headerPrefixLength = strlen("filename=\"");
 	size_t pos1 = messageBody.find("filename=\"");
 	size_t pos2 = pos1 != std::string::npos ? messageBody.find("\"", pos1 + headerPrefixLength) : std::string::npos;
@@ -293,12 +291,14 @@ void HttpHandler::uploadFile(const std::string& contentType, size_t pos_boundary
 		return error(400);
 	}
 	size_t start = messageBody.find(CRLF);
-	size_t end = messageBody.find("\r\n--" + boundary + "--", start);
+	size_t end = messageBody.find("\r\n--" + contentType.substr(pos_boundary + 9) + "--", start);
 	if (start == std::string::npos || end == std::string::npos)
 		return error(400);
 	start += std::strlen(CRLF);
     messageBody =  messageBody.substr(start, end - start);
-	std::ofstream *outfile = Utils::createOrEraseFile(UPLOAD_PATH + fileName);
+
+	std::string path = _active_route->root + "/" + fileName;
+	std::ofstream *outfile = Utils::createOrEraseFile(path);
 	outfile->write(messageBody.c_str(), messageBody.length());
     outfile->close();
 	delete outfile;
@@ -306,12 +306,14 @@ void HttpHandler::uploadFile(const std::string& contentType, size_t pos_boundary
 	_response.status_phrase = "Created";
 	_response_body_stream << messageBody;
 	std::string content_type = getContentType(fileName);
+
+	// get request ?
 	if (content_type.empty())
 		return error(415);
 	else
 		_response.map_headers["Content-Type"] = content_type;
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
-	_response.map_headers["Location"] = UPLOAD_PATH + fileName;
+	_response.map_headers["Location"] = path;
 }
 
 void HttpHandler::POST() {
@@ -339,8 +341,7 @@ void HttpHandler::DELETE() {
 	_response.status_code = "204";
 	_response.status_phrase = "No Content";
 
-	std::string file_path = UPLOAD_PATH + _request.url.substr(1);
-	std::string decoded_file_path = Utils::urlDecode(file_path);
+	std::string decoded_file_path = Utils::urlDecode(_request.url);
 	if (!Utils::pathToFileExist(decoded_file_path))
 		return error(404);
 	if (std::remove(decoded_file_path.c_str()) != 0)

@@ -3,4 +3,3 @@ TODO :
   - missing config value
   - cgi
   - default error page
-  - directory listing

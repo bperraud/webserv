@@ -199,21 +199,17 @@ void HttpHandler::error(int error) {
 }
 
 void HttpHandler::generate_directory_listing_html(const std::string& directory_path) {
-    // Open the directory
     DIR* dir = opendir(directory_path.c_str());
     if (dir == NULL) {
         std::cerr << "Error: Failed to open directory " << directory_path << std::endl;
         return;
     }
-
-    // Generate the directory listing HTML
     _response_body_stream << "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><table>";
     _response_body_stream << "<tr><td><a href=\"../\">../</a></td><td>-</td></tr>"; // Link to parent directory
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL) {
         std::string name = entry->d_name;
         std::string path = directory_path + "/" + name;
-
         // Get the file size (if applicable)
         std::string size_str;
         if (entry->d_type == DT_REG) {
@@ -226,7 +222,6 @@ void HttpHandler::generate_directory_listing_html(const std::string& directory_p
         } else {
             size_str = "-";
         }
-
         // Format the directory entry as an HTML table row with a link to the file or subdirectory
         std::string row;
         if (entry->d_type == DT_DIR) {
@@ -240,8 +235,6 @@ void HttpHandler::generate_directory_listing_html(const std::string& directory_p
         _response_body_stream << row;
     }
     _response_body_stream << "</table></body></html>";
-
-    // Close the directory
     closedir(dir);
 }
 

@@ -120,18 +120,8 @@ std::string HttpHandler::getContentType(const std::string& path) const {
     return it->second;
 }
 
-//bool HttpHandler::isMethodAllowed(const std::string& method) const {
-//	std::vector<std::string>::const_iterator it = _server.routes..begin();
-//	for (; it != _server.allowed_methods.end(); ++it) {
-//		if (*it == method) {
-//			return true;
-//		}
-//	}
-//	return false;
-//}
-
 bool HttpHandler::correctPath(const std::string& path) const {
-	return Utils::isDirectory(ROOT_PATH + path) || Utils::pathToFileExist(ROOT_PATH + path);
+	return Utils::isDirectory(path) || Utils::pathToFileExist(path);
 }
 
 void HttpHandler::findRoute(const std::string &url) {
@@ -140,10 +130,10 @@ void HttpHandler::findRoute(const std::string &url) {
 		if ((url.find(it->first) == 0 && it->first != "/" )|| (url == "/" && it->first == "/")) {
 			_active_route = &it->second;
 			_request.url = _request.url.replace(url.find(it->first), it->first.length(), it->second.root);
-			std::cout << _request.url << std::endl;
-			break;
+			return;
 		}
 	}
+	_request.url = _active_route->root + _request.url;
 }
 
 bool HttpHandler::isAllowedMethod(const std::string &method) const {
@@ -169,7 +159,6 @@ void HttpHandler::createHttpResponse() {
 	}
 	else if (_body_size_exceeded) {
 		_body_size_exceeded = false;
-		resetStream();
 		error(413);
 	}
 	else {
@@ -218,8 +207,10 @@ void HttpHandler::generate_directory_listing_html(const std::string& directory_p
         std::cerr << "Error: Failed to open directory " << directory_path << std::endl;
         return;
     }
+
     // Generate the directory listing HTML
     _response_body_stream << "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><table>";
+    _response_body_stream << "<tr><td><a href=\"../\">../</a></td><td>-</td></tr>"; // Link to parent directory
     struct dirent* entry;
     while ((entry = readdir(dir)) != NULL) {
         std::string name = entry->d_name;
@@ -236,11 +227,20 @@ void HttpHandler::generate_directory_listing_html(const std::string& directory_p
             size_str = "-";
         }
 
-        // Format the directory entry as an HTML table row
-        std::string row = "<tr><td><a href=\"" + name + "\">" + name + "</a></td><td>" + size_str + "</td></tr>";
+        // Format the directory entry as an HTML table row with a link to the file or subdirectory
+        std::string row;
+        if (entry->d_type == DT_DIR) {
+            // Link to a subdirectory
+            row = "<tr><td><a href=\"" + name + "/\">" + name + "/</a></td><td>-</td></tr>";
+        } else {
+            // Link to a file
+            std::string file_uri = _request.url + "/" + name;
+            row = "<tr><td><a href=\"" + file_uri + "\">" + name + "</a></td><td>" + size_str + "</td></tr>";
+        }
         _response_body_stream << row;
     }
     _response_body_stream << "</table></body></html>";
+
     // Close the directory
     closedir(dir);
 }
@@ -255,6 +255,8 @@ void HttpHandler::GET() {
 		_cgiMode = true;
 		return ;
 	}
+	std::cout << "_request.url : " << _request.url << std::endl;
+
 	if (Utils::isDirectory(_request.url)) { // directory
 		if (_active_route->autoindex == true)
 		{

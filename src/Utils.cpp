@@ -1,6 +1,8 @@
 #include "Utils.hpp"
 
 bool Utils::pathToFileExist(const std::string& path) {
+	std::cout << " path " << path << std::endl;
+
 	std::ifstream file(path.c_str());
 	return (file.is_open());
 }

@@ -199,7 +199,7 @@ void HttpHandler::error(int error) {
 
 void HttpHandler::generate_directory_listing_html(const std::string& directory_path) {
     DIR* dir = opendir(directory_path.c_str());
-    if (dir == NULL) {
+    if (dir == NULL)
         return error(403);
     _response_body_stream << "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><table>";
     _response_body_stream << "<tr><td><a href=\"../\">../</a></td><td>-</td></tr>"; // Link to parent directory

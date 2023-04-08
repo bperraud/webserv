@@ -1,13 +1,15 @@
 #include "Utils.hpp"
 
-bool Utils::pathToFileExist(const std::string& path) {
+namespace Utils {
+
+bool pathToFileExist(const std::string& path) {
 	std::cout << " path " << path << std::endl;
 
 	std::ifstream file(path.c_str());
 	return (file.is_open());
 }
 
-bool Utils::isDirectory(const std::string& path) {
+bool isDirectory(const std::string& path) {
 	struct stat filestat;
 	if (stat(path.c_str(), &filestat) != 0)
 	{
@@ -16,11 +18,11 @@ bool Utils::isDirectory(const std::string& path) {
 	return S_ISDIR(filestat.st_mode);
 }
 
-bool Utils::hasExecutePermissions(const char* filepath) {
+bool hasExecutePermissions(const char* filepath) {
 	return access(filepath, X_OK) == 0;
 }
 
-int Utils::directoryListing(const std::string &directory_path) {
+int directoryListing(const std::string &directory_path) {
 	DIR *dir;
     struct dirent *ent;
 
@@ -36,19 +38,19 @@ int Utils::directoryListing(const std::string &directory_path) {
     return 0;
 }
 
-std::string Utils::intToString(int value)
+std::string intToString(int value)
 {
 	std::ostringstream oss;
 	oss << value;
 	return oss.str();
 }
 
-void Utils::loadFile(const std::string &fileName, std::basic_iostream<char> &stream) {
+void loadFile(const std::string &fileName, std::basic_iostream<char> &stream) {
 	std::ifstream input_file(fileName.c_str());
 	stream << input_file.rdbuf();
 }
 
-std::ofstream* Utils::createOrEraseFile(std::string fileName) {
+std::ofstream* createOrEraseFile(std::string fileName) {
 	// Check if file exists
 	const char* filename = fileName.c_str();
 	if (remove(filename) != 0) {
@@ -70,7 +72,7 @@ std::ofstream* Utils::createOrEraseFile(std::string fileName) {
 	}
 }
 
-std::string Utils::urlDecode(const std::string& encoded_url) {
+std::string urlDecode(const std::string& encoded_url) {
 	std::stringstream decoded_url;
 	decoded_url << std::hex << std::setfill('0');
 
@@ -93,3 +95,5 @@ std::string Utils::urlDecode(const std::string& encoded_url) {
 	}
 	return decoded_url.str();
 }
+
+}; // namespace Utils

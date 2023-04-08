@@ -9,11 +9,9 @@
 #include <sys/wait.h>
 #include <errno.h>		// errno
 #include <stdio.h>		// perror
-
-# include "fcntl.h" // open()
+#include "fcntl.h" 		// open()
 
 #include "HttpHandler.hpp"
-//#include "Utils.hpp"
 
 class CGIExecutor {
 private:

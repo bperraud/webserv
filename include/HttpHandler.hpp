@@ -11,7 +11,6 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
-
 #include "Utils.hpp"
 #include "ServerConfig.hpp"
 #include "ErrorHandler.hpp"
@@ -19,15 +18,8 @@
 #include "ClientError.hpp"
 #include "Timer.hpp"
 
-
 # define CRLF "\r\n\r\n"
 # define ROOT_PATH "website"
-
-#if 0
-Recipients of an invalid request-line SHOULD respond with either a
-   400 (Bad Request) error or a 301 (Moved Permanently) redirect with
-   the request-target properly encoded
-#endif
 
 struct HttpMessage {
     std::string method;

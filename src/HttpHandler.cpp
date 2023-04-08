@@ -112,8 +112,7 @@ std::string HttpHandler::getContentType(const std::string& path) const {
 			return "text/html";
         return "text/plain";
     }
-    std::string ext = path.substr(dot_pos + 1);
-    std::map<std::string, std::string>::const_iterator it = _MIME_TYPES.find(ext);
+    std::map<std::string, std::string>::const_iterator it = _MIME_TYPES.find(path.substr(dot_pos + 1));
     if (it == _MIME_TYPES.end()) {
         return "";
     }
@@ -201,9 +200,7 @@ void HttpHandler::error(int error) {
 void HttpHandler::generate_directory_listing_html(const std::string& directory_path) {
     DIR* dir = opendir(directory_path.c_str());
     if (dir == NULL) {
-        std::cerr << "Error: Failed to open directory " << directory_path << std::endl;
-        return;
-    }
+        return error(403);
     _response_body_stream << "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><table>";
     _response_body_stream << "<tr><td><a href=\"../\">../</a></td><td>-</td></tr>"; // Link to parent directory
     struct dirent* entry;
@@ -306,8 +303,6 @@ void HttpHandler::uploadFile(const std::string& contentType, size_t pos_boundary
 	_response.status_phrase = "Created";
 	_response_body_stream << messageBody;
 	std::string content_type = getContentType(fileName);
-
-	// get request ?
 	if (content_type.empty())
 		return error(415);
 	else

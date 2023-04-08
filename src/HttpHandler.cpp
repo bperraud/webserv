@@ -107,7 +107,9 @@ void HttpHandler::parseRequest() {
 
 std::string HttpHandler::getContentType(const std::string& path) const {
     std::string::size_type dot_pos = path.find_last_of('.');
-    if (dot_pos == std::string::npos) {
+    if (dot_pos == std::string::npos) { // no extension, assume directory
+		if (_active_route->autoindex)
+			return "text/html";
         return "text/plain";
     }
     std::string ext = path.substr(dot_pos + 1);
@@ -254,11 +256,9 @@ void HttpHandler::GET() {
 		return ;
 	}
 	if (Utils::isDirectory(_request.url)) { // directory
-		std::cout << "directory" << std::endl;
 		if (_active_route->autoindex == true)
 		{
 			generate_directory_listing_html(_request.url);
-			return;
 		}
 		else {
 			if (_active_route->index == "") return error(404);	// no index file
@@ -267,7 +267,6 @@ void HttpHandler::GET() {
 		}
 	}
 	else if (Utils::pathToFileExist(_request.url)) { // file
-		//_request.url = ROOT_PATH + _request.url;
 		Utils::loadFile(_request.url, _response_body_stream);
 	}
 	else

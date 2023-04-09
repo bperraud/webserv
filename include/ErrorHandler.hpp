@@ -12,9 +12,9 @@ protected:
 	HttpResponse&		_response;
 	std::stringstream&	_body_stream;
 	std::map<int, void(ErrorHandler::*)()> _error_map;
-
+	std::string			_error_page;
 public:
-	ErrorHandler(HttpResponse& response, std::stringstream& body_stream);
+	ErrorHandler(HttpResponse& response, std::stringstream& body_stream, const std::string &error_page);
 	ErrorHandler();
 	void errorProcess(int error);
 	virtual ~ErrorHandler() {};
@@ -23,7 +23,7 @@ public:
 class ClientError : public ErrorHandler {
 
 public:
-	ClientError(HttpResponse& response, std::stringstream& body_stream);
+	ClientError(HttpResponse& response, std::stringstream& body_stream, const std::string &error_page);
 	~ClientError();
 
 	void badRequest(); 			// 400
@@ -38,7 +38,7 @@ public:
 class ServerError : public ErrorHandler {
 
 public:
-	ServerError(HttpResponse& request, std::stringstream& body_stream);
+	ServerError(HttpResponse& request, std::stringstream& body_stream, const std::string &error_page);
 	~ServerError();
 
 	void internalServerError(); // 500

@@ -18,7 +18,7 @@
 #include "Timer.hpp"
 
 # define CRLF "\r\n\r\n"
-# define ROOT_PATH "website"
+# define ROOT_PATH "www"
 
 struct HttpMessage {
     std::string method;

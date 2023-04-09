@@ -38,6 +38,13 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object) {
 		else if (key == "max_body_size") {
 			server.max_body_size = value.number_value;
 		}
+		else if (key == "error_pages") {
+			for (sub_it = value.object_value.begin(); sub_it != value.object_value.end(); sub_it++) {
+				std::string error_key = sub_it->first;
+				const json_value& error_value = sub_it->second;
+				server.error_pages[error_key] = error_value.string_value;
+			}
+		}
 		else if (key == "routes") {
 			for (sub_it = value.object_value.begin(); sub_it != value.object_value.end(); sub_it++) {
 				std::string route_key = sub_it->first;
@@ -83,7 +90,6 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object) {
 			server.routes_map = routes_map;
 		}
 	}
-
 	return server;
 }
 
@@ -91,6 +97,11 @@ std::ostream& operator<<(std::ostream& os, const server_config& s) {
     os << "host: " << s.host << std::endl;
     os << "port: " << s.PORT << std::endl;
     os << "max body size: " << s.max_body_size << std::endl;
+	os << "error pages: " << std::endl;
+	std::map<std::string, std::string>::const_iterator error_it;
+	for (error_it = s.error_pages.begin(); error_it != s.error_pages.end(); ++error_it) {
+		os << "    " << error_it->first << ": " << error_it->second << std::endl;
+	}
     os << "routes: " << std::endl;
     std::map<std::string, routes>::const_iterator routes_it;
     std::map<std::string, std::string>::const_iterator cgi_it;

@@ -225,10 +225,13 @@ bool HttpHandler::isCGI(const std::string &path) const {
 void HttpHandler::error(int error) {
 	resetRequestContext();
 	ErrorHandler* error_handler;
+	std::string error_page;
+	if (_server.error_pages.find(Utils::intToString(error)) != _server.error_pages.end())
+		error_page = _server.error_pages[Utils::intToString(error)];
 	if (error >= 500)
-		error_handler = new ServerError(_response, _response_body_stream);
+		error_handler = new ServerError(_response, _response_body_stream, error_page);
 	else
-		error_handler = new ClientError(_response, _response_body_stream);
+		error_handler = new ClientError(_response, _response_body_stream, error_page);
 	error_handler->errorProcess(error);
 	delete error_handler;
 }

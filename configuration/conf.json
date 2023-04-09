@@ -3,25 +3,25 @@
 	  "listen": ["0.0.0.0", 8080],
 	  "max_body_size": 200000,
 	  "error_pages": {
-		"www/1.html": ["404"],
-		"www/2.html": ["405"]
+		"404": "www/404.html",
+		"405": "www/405.html"
 	  },
 	  "routes": {
 		"/": {
-		  "root": "website",
+		  "root": "www",
 		  "index": "index.html",
 		  "methods": ["GET"]
 		},
 		"/form/add": {
-		  "root": "website",
-		  "handler": "website/cgi/add.py",
+		  "root": "www",
+		  "handler": "www/cgi/add.py",
 		  "methods": ["GET"],
 		  "cgi": {
 			".py": "/usr/bin/python3"
 		  }
 		},
 		"/form/upload": {
-		  "root": "website/upload",
+		  "root": "www/upload",
 		  "handler": "extensions/upload.py",
 		  "methods": ["POST"],
 		  "cgi": {
@@ -29,12 +29,12 @@
 		  }
 		},
 		"/upload": {
-		  "root": "website/upload",
+		  "root": "www/upload",
 		  "methods": ["GET", "DELETE"],
 		  "autoindex": true
 		},
 		"/hello": {
-		  "root": "website/hello",
+		  "root": "www/hello",
 		  "autoindex": true,
 		  "methods": ["GET"],
 		  "cgi": {
@@ -47,9 +47,9 @@
 		  }
 		},
 		"/cookies": {
-		  "root": "website",
+		  "root": "www",
 		  "methods": ["GET"],
-		  "handler": "website/cgi/cookies.py",
+		  "handler": "www/cgi/cookies.py",
 		  "cgi": {
 			".py": "/usr/bin/python3"
 		  }

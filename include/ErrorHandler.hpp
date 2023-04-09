@@ -9,8 +9,8 @@ struct HttpResponse;
 class ErrorHandler {
 
 protected:
-    HttpResponse&		_response;
-    std::stringstream&	_body_stream;
+	HttpResponse&		_response;
+	std::stringstream&	_body_stream;
 	std::map<int, void(ErrorHandler::*)()> _error_map;
 
 public:
@@ -22,10 +22,8 @@ public:
 
 class ClientError : public ErrorHandler {
 
-private:
-
 public:
-    ClientError(HttpResponse& response, std::stringstream& body_stream);
+	ClientError(HttpResponse& response, std::stringstream& body_stream);
 	~ClientError();
 
 	void badRequest(); 			// 400
@@ -34,16 +32,15 @@ public:
 	void methodNotAllowed(); 	// 405
 	void timeout(); 			// 408
 	void payloadTooLarge(); 	// 413
-    void unsupportedMediaType();// 415
+	void unsupportedMediaType();// 415
 };
 
 class ServerError : public ErrorHandler {
 
-private:
-
 public:
-    ServerError(HttpResponse& request, std::stringstream& body_stream);
+	ServerError(HttpResponse& request, std::stringstream& body_stream);
 	~ServerError();
+
 	void internalServerError(); // 500
 	void notImplemented(); 		// 501
 	void gatewayTimeout(); 		// 504

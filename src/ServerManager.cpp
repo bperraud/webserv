@@ -1,7 +1,7 @@
 #include "ServerManager.hpp"
 
 
-ServerManager::ServerManager(ServerConfig config, CGIExecutor cgi) : _cgi_executor(cgi) {
+ServerManager::ServerManager(const ServerConfig &config, const CGIExecutor &cgi) : _cgi_executor(cgi) {
 	std::list<server_config> server_list = config.getServerList();
 	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		std::cout << "server manager : " << *it << std::endl;
@@ -222,7 +222,7 @@ void ServerManager::handleWriteEvent(int client_fd) {
 	{
 		writeToClient(client_fd, client->getResponseHeader());
 		writeToClient(client_fd, client->getResponseBody());
-		client->resetStream();
+		client->resetRequestContext();
 		connectionCloseMode(client_fd);
 		client->setReadyToWrite(false);
 	}

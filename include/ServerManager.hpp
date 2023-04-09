@@ -36,7 +36,7 @@
 struct server : public server_config {
 	int	listen_fd;
 
-    server(const server_config& info) : server_config(info) { };
+    server(const server_config& info) : server_config(info) {};
 };
 
 typedef std::map<int, HttpHandler*> map_type;
@@ -57,7 +57,7 @@ private:
 #endif
 
 public:
-    ServerManager(ServerConfig config, CGIExecutor cgi);
+    ServerManager(const ServerConfig &config, const CGIExecutor& cgi);
     ~ServerManager();
 
     void	run();

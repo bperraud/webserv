@@ -39,6 +39,63 @@ HttpHandler::~HttpHandler() {
 	delete _readStream;
 }
 
+// --------------------------------- GETTERS --------------------------------- //
+
+HttpMessage 	HttpHandler::getStructRequest() const { return _request;}
+std::string		HttpHandler::getRequest() const  { return _readStream->str();}
+std::string		HttpHandler::getBody() const { return _request_body_stream.str(); }
+ssize_t 		HttpHandler::getLeftToRead() const { return _left_to_read; }
+std::string 	HttpHandler::getResponseHeader() const { return _response_header_stream.str();}
+std::string 	HttpHandler::getResponseBody() const {return _response_body_stream.str();}
+bool 			HttpHandler::isKeepAlive() const { return _close_keep_alive; }
+bool			HttpHandler::isCGIMode() const { return _cgiMode; }
+bool			HttpHandler::isReadyToWrite() const { return _ready_to_write;}
+
+std::string HttpHandler::getContentType(const std::string& path) const {
+    std::string::size_type dot_pos = path.find_last_of('.');
+    if (dot_pos == std::string::npos) { // no extension, assume directory
+		if (_active_route->autoindex)
+			return "text/html";
+        return "text/plain";
+    }
+    std::map<std::string, std::string>::const_iterator it = _MIME_TYPES.find(path.substr(dot_pos + 1));
+    if (it == _MIME_TYPES.end()) {
+        return "";
+    }
+    return it->second;
+}
+
+bool HttpHandler::isAllowedMethod(const std::string &method) const {
+	for (size_t i = 0; i < _active_route->methods->length(); i++) {
+		if (_active_route->methods[i] == method)
+			return true;
+	}
+	return false;
+}
+
+// --------------------------------- SETTERS --------------------------------- //
+
+void	HttpHandler::setReadyToWrite(bool ready) {
+	_ready_to_write = ready;
+}
+
+// ---------------------------------- TIMER ---------------------------------- //
+
+void	HttpHandler::startTimer() {
+	_timer.start();
+}
+
+void	HttpHandler::stopTimer() {
+	_timer.stop();
+}
+
+bool	HttpHandler::hasTimeOut() {
+	return _timer.hasTimeOut();
+}
+
+// --------------------------------- METHODS --------------------------------- //
+
+
 void	HttpHandler::copyLast4Char(char *buffer, ssize_t nbytes) {
 	if (_last_4_char[0])
 		std::memcpy(buffer, _last_4_char, 4);
@@ -64,7 +121,7 @@ int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	return _left_to_read;
 }
 
-void HttpHandler::resetStream() {
+void HttpHandler::resetRequestContext() {
 	delete _readStream;
 	_readStream = new std::stringstream();
 	_request_body_stream.str(std::string());
@@ -73,10 +130,6 @@ void HttpHandler::resetStream() {
 	_response_header_stream.str(std::string());
 	_last_4_char[0] = '\0';
 	_active_route = &_default_route;
-}
-
-bool HttpHandler::isKeepAlive() const {
-	return _close_keep_alive;
 }
 
 void HttpHandler::parseRequest() {
@@ -105,25 +158,7 @@ void HttpHandler::parseRequest() {
 	_left_to_read = _request.body_length;
 }
 
-std::string HttpHandler::getContentType(const std::string& path) const {
-    std::string::size_type dot_pos = path.find_last_of('.');
-    if (dot_pos == std::string::npos) { // no extension, assume directory
-		if (_active_route->autoindex)
-			return "text/html";
-        return "text/plain";
-    }
-    std::map<std::string, std::string>::const_iterator it = _MIME_TYPES.find(path.substr(dot_pos + 1));
-    if (it == _MIME_TYPES.end()) {
-        return "";
-    }
-    return it->second;
-}
-
-bool HttpHandler::correctPath(const std::string& path) const {
-	return Utils::isDirectory(path) || Utils::pathToFileExist(path);
-}
-
-void HttpHandler::findRoute(const std::string &url) {
+void HttpHandler::setupRoute(const std::string &url) {
 	std::map<std::string, routes>::iterator it = _server.routes_map.begin();
 	for (; it != _server.routes_map.end(); ++it) {
 		if ((url.find(it->first) == 0 && it->first != "/" )|| (url == "/" && it->first == "/")) {
@@ -135,23 +170,13 @@ void HttpHandler::findRoute(const std::string &url) {
 	_request.url = _active_route->root + _request.url;
 }
 
-bool HttpHandler::isAllowedMethod(const std::string &method) const {
-	if (!_active_route)
-		return true;
-	for (size_t i = 0; i < _active_route->methods->length(); i++) {
-		if (_active_route->methods[i] == method)
-			return true;
-	}
-	return false;
-}
-
 void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
 	_response.version = _request.version;
 
-	findRoute(_request.url);
-	if (!correctPath(_request.url) && !_active_route) {
+	setupRoute(_request.url);
+	if (!Utils::correctPath(_request.url)) {
 		error(404);
 	}
 	else if (_body_size_exceeded) {
@@ -187,7 +212,7 @@ bool HttpHandler::isCGI(const std::string &path) const {
 }
 
 void HttpHandler::error(int error) {
-	resetStream();
+	resetRequestContext();
 	ErrorHandler* error_handler;
 	if (error >= 500)
 		error_handler = new ServerError(_response, _response_body_stream);
@@ -269,8 +294,8 @@ void HttpHandler::GET() {
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
 }
 
-bool HttpHandler::findHeader(const std::string &header, std::string &value) {
-	std::map<std::string, std::string>::iterator it = _request.map_headers.find(header);
+bool HttpHandler::findHeader(const std::string &header, std::string &value) const {
+	std::map<std::string, std::string>::const_iterator it = _request.map_headers.find(header);
 	if (it != _request.map_headers.end()) {
 		value = it->second;
 		return true;
@@ -315,16 +340,16 @@ void HttpHandler::POST() {
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
 
-	std::string contentType;
-	if (!findHeader("Content-Type", contentType))
+	std::string request_content_type;
+	if (!findHeader("Content-Type", request_content_type))
 		return error(400);
-	size_t pos_boundary = contentType.find("boundary=");
-	if (pos_boundary != std::string::npos) {	//multipart/form-data
-		uploadFile(contentType, pos_boundary);
+	size_t pos_boundary = request_content_type.find("boundary=");
+	if (pos_boundary != std::string::npos) { //multipart/form-data
+		uploadFile(request_content_type, pos_boundary);
 		_response.status_code = "201";
 		_response.status_phrase = "Created";
 	}
-	else if (contentType.find("application/x-www-form-urlencoded") != std::string::npos) {
+	else if (request_content_type.find("application/x-www-form-urlencoded") != std::string::npos) {
 		_response.map_headers["Content-Length"] = "0";
 	}
 	else { // others

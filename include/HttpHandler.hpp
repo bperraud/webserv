@@ -13,7 +13,6 @@
 
 #include "Utils.hpp"
 #include "ServerConfig.hpp"
-#include "ErrorHandler.hpp"
 #include "ServerError.hpp"
 #include "ClientError.hpp"
 #include "Timer.hpp"
@@ -79,84 +78,48 @@ public:
 	~HttpHandler();
 
 	bool	isKeepAlive() const;
+	HttpMessage getStructRequest() const;
+	std::string		getRequest() const;
+	std::string		getBody() const;
+	ssize_t getLeftToRead() const;
+	std::string getResponseHeader() const;
+	std::string getResponseBody() const;
+	std::string getContentType(const std::string& path) const;
+	bool isAllowedMethod(const std::string &method) const;
+	bool isCGI(const std::string &path) const ;
+	bool	isCGIMode() const;
+	bool	isReadyToWrite() const;
+
+	void	setReadyToWrite(bool ready);
+
 
 	void	writeToStream(char *buffer, ssize_t nbytes) ;
 	int		writeToBody(char *buffer, ssize_t nbytes);
 
-	void	startTimer() {
-		_timer.start();
-	}
-
-	void	stopTimer() {
-		_timer.stop();
-	}
-
-	bool	hasTimeOut() {
-		return _timer.hasTimeOut();
-	}
-
-	bool	isReadyToWrite() const {
-		return _ready_to_write;
-	}
-
-	void	setReadyToWrite(bool ready) {
-		_ready_to_write = ready;
-	}
+	void	startTimer();
+	void	stopTimer();
+	bool	hasTimeOut();
 
 	void error(int error) ;
 
-	bool	isCGIMode() const {
-		return _cgiMode;
-	}
-
-	HttpMessage getStructRequest() const {
-		return _request;
-	}
-
-	std::string		getRequest() const  {
-		return _readStream->str();
-	}
-
-	std::string		getBody() const {
-		return _request_body_stream.str();
-	}
-
-	void	resetStream();
-
+	void	resetRequestContext();
 	void	copyLast4Char(char *buffer, ssize_t nbytes);
-
-	ssize_t getLeftToRead() const {
-		return _left_to_read;
-	}
-
-	std::string getResponseHeader() const {
-		return _response_header_stream.str();
-	}
-
-	std::string getResponseBody() const {
-		return _response_body_stream.str();
-	}
 
 	void parseRequest();
 	void createHttpResponse();
 
-	bool findHeader(const std::string &header, std::string &value);
+	bool findHeader(const std::string &header, std::string &value) const;
 
 	void GET();
 	void POST();
 	void DELETE();
 
-	bool correctPath(const std::string& path) const;
-
-	bool isCGI(const std::string &path) const ;
 	void constructStringResponse();
-	bool isAllowedMethod(const std::string &method) const;
 
-	void findRoute(const std::string &url);
+	void setupRoute(const std::string &url);
 
 	void uploadFile(const std::string& contentType, size_t pos_boundary);
 	void generate_directory_listing_html(const std::string& directory_path);
-	std::string getContentType(const std::string& path) const;
 };
 
 #endif

@@ -2,7 +2,7 @@
 
 
 HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _timer(timeout_seconds),
-	_readStream(new std::stringstream()),  _close_keep_alive(false),
+	_readStream(),  _close_keep_alive(false),
 	_left_to_read(0), _MIME_TYPES(), _cgiMode(false), _ready_to_write(false), _server(*serv),
 	_body_size_exceeded(false), _default_route(), _active_route(&_default_route){
 	_last_4_char[0] = '\0';
@@ -36,13 +36,12 @@ HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _time
 }
 
 HttpHandler::~HttpHandler() {
-	delete _readStream;
 }
 
 // --------------------------------- GETTERS --------------------------------- //
 
 HttpMessage 	HttpHandler::getStructRequest() const { return _request;}
-std::string		HttpHandler::getRequest() const  { return _readStream->str();}
+std::string		HttpHandler::getRequest() const  { return _readStream.str();}
 std::string		HttpHandler::getBody() const { return _request_body_stream.str(); }
 ssize_t 		HttpHandler::getLeftToRead() const { return _left_to_read; }
 std::string 	HttpHandler::getResponseHeader() const { return _response_header_stream.str();}
@@ -105,7 +104,7 @@ void	HttpHandler::copyLast4Char(char *buffer, ssize_t nbytes) {
 }
 
 void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
-	_readStream->write(buffer, nbytes);
+	_readStream.write(buffer, nbytes);
 }
 
 int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
@@ -122,8 +121,9 @@ int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 }
 
 void HttpHandler::resetRequestContext() {
-	delete _readStream;
-	_readStream = new std::stringstream();
+	_readStream.str(std::string());
+	_readStream.seekp(0, std::ios_base::beg);
+
 	_request_body_stream.str(std::string());
 	_request_body_stream.seekp(0, std::ios_base::beg);
 	_response_body_stream.str(std::string());
@@ -134,10 +134,10 @@ void HttpHandler::resetRequestContext() {
 
 void HttpHandler::parseRequest() {
 	// Parse the start-line
-	*_readStream >> _request.method >> _request.url >> _request.version;
+	_readStream >> _request.method >> _request.url >> _request.version;
 	// Parse the headers into a hash table
 	std::string header_name, header_value;
-	while (getline(*_readStream, header_name, ':') && getline(*_readStream, header_value, '\r')) {
+	while (getline(_readStream, header_name, ':') && getline(_readStream, header_value, '\r')) {
 		// Remove any leading or trailing whitespace from the header value
 		header_value.erase(0, header_value.find_first_not_of(" \r\n\t"));
 		header_value.erase(header_value.find_last_not_of(" \r\n\t") + 1, header_value.length());

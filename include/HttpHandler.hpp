@@ -42,7 +42,7 @@ private:
 
 	Timer				_timer;
 
-	std::stringstream	*_readStream;
+	std::stringstream	_readStream;
 	std::stringstream   _request_body_stream;
 	std::stringstream   _response_header_stream;
 	std::stringstream   _response_body_stream;

@@ -23,6 +23,7 @@ int main(int argc, char **argv, char ** envp)
 		std::cerr << "Usage: ./webserv <config_file>" << std::endl;
 		return 1;
 	}
+	std::cout << "Server started" << std::endl;
 
 	JsonParser parser(argv[1]);
 	ServerConfig config(parser);

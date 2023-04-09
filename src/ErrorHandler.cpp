@@ -20,10 +20,6 @@ ClientError::ClientError(HttpResponse& response, std::stringstream& stream) : Er
 	_error_map[415] = static_cast<void (ErrorHandler::*)()>(&ClientError::unsupportedMediaType);
 }
 
-ServerError::~ServerError() {}
-
-ClientError::~ClientError() {}
-
 void ErrorHandler::errorProcess(int error) {
 	if (_error_map.find(error) == _error_map.end())
 		return ;
@@ -31,6 +27,10 @@ void ErrorHandler::errorProcess(int error) {
 	_response.map_headers["Content-Type"] = "text/html";
 	_response.map_headers["Content-Length"] = Utils::intToString(_body_stream.str().length());
 }
+
+// ----------------------------- ClientError -----------------------------
+
+ClientError::~ClientError() {}
 
 void ClientError::badRequest() {
 	_response.status_code = "400";
@@ -75,6 +75,8 @@ void ClientError::unsupportedMediaType() {
 }
 
 // ----------------------------- ServerError -----------------------------
+
+ServerError::~ServerError() {}
 
 void ServerError::internalServerError() {
 	_response.status_code = "500";

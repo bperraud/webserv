@@ -4,6 +4,5 @@ TODO :
   - cgi
   - default error page
   - leaks ?
-  - tests
   - cookies
   - location and date header

@@ -185,7 +185,7 @@ void ServerManager::handleReadEvent(int client_fd) {
 		client->stopTimer();
 
 		#if 1
-		std::cout << "Header :" << std::endl;
+		std::cout << "Header for client : " << client_fd << std::endl;
 		std::cout << client->getRequest() << std::endl;
 		#else
 		std::cout << "Message body :" << std::endl;
@@ -196,18 +196,14 @@ void ServerManager::handleReadEvent(int client_fd) {
 
 		if (client->isCGIMode())
 		{
-			std::cout << "Header :" << std::endl;
-			std::cout << client->getRequest() << std::endl;
-			std::cout << "Message body :" << std::endl;
-			std::cout << client->getBody() << std::endl;
 			_cgi_executor.run(client->getStructRequest(), client_fd);
 		}
 		else{
 
 		#if 0
-		std::cout << "Response Header :" << std::endl;
+		std::cout << "Response Header to client : " << client_fd << std::endl;
 		std::cout << client->getResponseHeader() << std::endl;
-		std::cout << "Response Message body :" << std::endl;
+		std::cout << "Response Message body to client : " << client_fd  << std::endl;
 		std::cout << client->getResponseBody() << std::endl;
 		#endif
 

@@ -94,6 +94,23 @@ bool	HttpHandler::hasTimeOut() {
 
 // --------------------------------- METHODS --------------------------------- //
 
+void HttpHandler::resetRequestContext() {
+	_readStream.str(std::string());
+	_readStream.seekp(0, std::ios_base::beg);
+	_readStream.clear();
+
+	_request_body_stream.str(std::string());
+	_request_body_stream.seekp(0, std::ios_base::beg);
+	_request_body_stream.clear();
+
+	_response_body_stream.str(std::string());
+	_response_body_stream.clear();
+	_response_header_stream.str(std::string());
+	_response_header_stream.clear();
+
+	_last_4_char[0] = '\0';
+	_active_route = &_default_route;
+}
 
 void	HttpHandler::copyLast4Char(char *buffer, ssize_t nbytes) {
 	if (_last_4_char[0])
@@ -105,6 +122,9 @@ void	HttpHandler::copyLast4Char(char *buffer, ssize_t nbytes) {
 
 void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
 	_readStream.write(buffer, nbytes);
+	if (_readStream.fail()) {
+		throw std::runtime_error("writing to _readStream");
+	}
 }
 
 int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
@@ -116,20 +136,11 @@ int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 		return 0;
 	}
 	_request_body_stream.write(buffer, nbytes);
+	if (_request_body_stream.fail()) {
+		throw std::runtime_error("writing to _request_body_stream");
+	}
 	_left_to_read -= nbytes;
 	return _left_to_read;
-}
-
-void HttpHandler::resetRequestContext() {
-	_readStream.str(std::string());
-	_readStream.seekp(0, std::ios_base::beg);
-
-	_request_body_stream.str(std::string());
-	_request_body_stream.seekp(0, std::ios_base::beg);
-	_response_body_stream.str(std::string());
-	_response_header_stream.str(std::string());
-	_last_4_char[0] = '\0';
-	_active_route = &_default_route;
 }
 
 void HttpHandler::parseRequest() {

@@ -13,8 +13,8 @@
 
 #include "Utils.hpp"
 #include "ServerConfig.hpp"
-#include "ServerError.hpp"
-#include "ClientError.hpp"
+#include "ErrorHandler.hpp"
+
 #include "Timer.hpp"
 
 # define CRLF "\r\n\r\n"

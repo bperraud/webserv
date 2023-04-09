@@ -7,6 +7,10 @@ def test_get():
 	assert(response.headers['content-type'] == 'text/html')
 	response = requests.get('http://localhost:8080/random')
 	assert(response.status_code == 404)
+	# large file
+	files = {'file': open('files/large_file.txt', 'rb')}
+	response = requests.post('http://localhost:8080/form/upload', files=files)
+	assert(response.status_code == 413)
 
 # Send a POST request with data
 def test_post():
@@ -18,7 +22,7 @@ def test_post():
 def test_delete():
 	response = requests.delete('http://localhost:8080/user/123')
 	assert(response.status_code == 404)
-	response = requests.delete('http://localhost:8080/cgi-bin/test')
+	response = requests.delete('http://localhost:8080/cgi-bin/add-cgi')
 	assert(response.status_code == 405)
 
 # Upload file -> GET file -> DELETE file

@@ -3,8 +3,7 @@
 
 ErrorHandler::ErrorHandler(HttpResponse& response, std::stringstream& body_stream, const std::string &error_page) :
 	_response(response), _body_stream(body_stream) , _error_map(), _error_page(error_page) {
-
-	}
+}
 
 ServerError::ServerError(HttpResponse& response, std::stringstream& body_stream, const std::string &error_page) : ErrorHandler(response, body_stream, error_page) {
 	_error_map[500] = static_cast<void (ErrorHandler::*)()>(&ServerError::internalServerError);
@@ -47,7 +46,7 @@ void ClientError::badRequest() {
 void ClientError::forbidden() {
 	_response.status_code = "403";
 	_response.status_phrase = "Forbidden";
-	_body_stream << "<html><body><h1>403 Forbidden</h1></body></html>";
+	if (_error_page.empty()) _body_stream << "<html><body><h1>403 Forbidden</h1></body></html>";
 }
 
 void ClientError::notFound() {

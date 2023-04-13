@@ -1,7 +1,7 @@
 #include "ServerManager.hpp"
 
 
-ServerManager::ServerManager(const ServerConfig &config, const CGIExecutor &cgi) : _cgi_executor(cgi) {
+ServerManager::ServerManager(const ServerConfig &config) {
 	std::list<server_config> server_list = config.getServerList();
 	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		std::cout << "server manager : " << *it << std::endl;
@@ -184,7 +184,7 @@ void ServerManager::handleReadEvent(int client_fd) {
 		HttpHandler *client = _client_map[client_fd];
 		client->stopTimer();
 
-		#if 1
+		#if 0
 		std::cout << "Header for client : " << client_fd << std::endl;
 		std::cout << client->getRequest() << std::endl;
 		#else
@@ -194,12 +194,6 @@ void ServerManager::handleReadEvent(int client_fd) {
 
 		client->createHttpResponse();
 
-		if (client->isCGIMode())
-		{
-			_cgi_executor.run(client->getStructRequest(), client_fd);
-		}
-		else{
-
 		#if 0
 		std::cout << "Response Header to client : " << client_fd << std::endl;
 		std::cout << client->getResponseHeader() << std::endl;
@@ -207,7 +201,7 @@ void ServerManager::handleReadEvent(int client_fd) {
 		std::cout << client->getResponseBody() << std::endl;
 		#endif
 
-		}
+
 		client->setReadyToWrite(true);
 	}
 }
@@ -318,6 +312,7 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 }
 
 ServerManager::~ServerManager() {
+	std::cout << "destrictor" << std::endl;
 	for (server_iterator_type serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
 		close(serv->listen_fd);
 	}

@@ -21,6 +21,8 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object) {
 	server_config server;
 	server.max_body_size = 0;
 
+	server.PORT = 8080;
+	server.host = "0.0.0.0";
 	std::map<std::string, routes> routes_map;
 	std::map<std::string, json_value>::const_iterator it;
 	std::map<std::string, json_value>::const_iterator sub_it;

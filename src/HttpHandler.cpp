@@ -3,7 +3,7 @@
 
 HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _timer(timeout_seconds),
 	_readStream(),  _close_keep_alive(false),
-	_left_to_read(0), _MIME_TYPES(), _cgiMode(false), _ready_to_write(false), _server(*serv),
+	_left_to_read(0), _MIME_TYPES(), _ready_to_write(false), _server(*serv),
 	_body_size_exceeded(false), _default_route(), _active_route(&_default_route){
 	_last_4_char[0] = '\0';
 	_MIME_TYPES["html"] = "text/html";
@@ -47,7 +47,6 @@ ssize_t 		HttpHandler::getLeftToRead() const { return _left_to_read; }
 std::string 	HttpHandler::getResponseHeader() const { return _response_header_stream.str();}
 std::string 	HttpHandler::getResponseBody() const {return _response_body_stream.str();}
 bool 			HttpHandler::isKeepAlive() const { return _close_keep_alive; }
-bool			HttpHandler::isCGIMode() const { return _cgiMode; }
 bool			HttpHandler::isReadyToWrite() const { return _ready_to_write;}
 
 std::string HttpHandler::getContentType(const std::string& path) const {
@@ -194,6 +193,10 @@ void HttpHandler::createHttpResponse() {
 		_body_size_exceeded = false;
 		error(413);
 	}
+	else if(!_active_route->handler.empty()) {
+		//cgi handler
+		//_cgi_executor.run(client->getStructRequest(), client_fd);
+	}
 	else {
 		for (index = 0; index < 4; index++)
 		{
@@ -216,10 +219,6 @@ void HttpHandler::createHttpResponse() {
 		}
 	}
 	constructStringResponse();
-}
-
-bool HttpHandler::isCGI(const std::string &path) const {
-	return path.substr(0, std::strlen("/cgi-bin/")).compare("/cgi-bin/") == 0;
 }
 
 void HttpHandler::error(int error) {
@@ -274,16 +273,10 @@ void HttpHandler::generate_directory_listing_html(const std::string& directory_p
     closedir(dir);
 }
 
-
 void HttpHandler::GET() {
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
 
-	if (isCGI(_request.url))
-	{
-		_cgiMode = true;
-		return ;
-	}
 	if (Utils::isDirectory(_request.url)) { // directory
 		if (_active_route->autoindex == true)
 		{

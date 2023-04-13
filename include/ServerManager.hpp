@@ -2,7 +2,6 @@
 #define SERVERMANAGER_HPP
 
 #include "HttpHandler.hpp"
-#include "CGIExecutor.hpp"
 #include "ServerConfig.hpp"
 
 #include <iostream>
@@ -48,7 +47,6 @@ class ServerManager {
 private:
 	std::list<server>	_server_list;
 	map_type			_client_map;
-	CGIExecutor			_cgi_executor;
 
 #if (defined (LINUX) || defined (__linux__))
 	int		_epoll_fd;
@@ -57,7 +55,7 @@ private:
 #endif
 
 public:
-    ServerManager(const ServerConfig &config, const CGIExecutor& cgi);
+    ServerManager(const ServerConfig &config);
     ~ServerManager();
 
     void	run();

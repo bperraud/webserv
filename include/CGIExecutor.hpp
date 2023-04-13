@@ -11,11 +11,11 @@
 #include <stdio.h>		// perror
 #include "fcntl.h" 		// open()
 
-#include "HttpHandler.hpp"
+struct HttpMessage;
 
 class CGIExecutor {
 private:
-	char**		_env;
+	char**	_env;
 
 public:
     // Constructor takes the path to the CGI binary as a parameter

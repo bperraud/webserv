@@ -14,7 +14,6 @@
 #include "JsonParser.hpp"
 #include "ServerConfig.hpp"
 #include "ServerManager.hpp"
-#include "CGIExecutor.hpp"
 
 int main(int argc, char **argv, char ** envp)
 {
@@ -27,8 +26,7 @@ int main(int argc, char **argv, char ** envp)
 
 	JsonParser parser(argv[1]);
 	ServerConfig config(parser);
-	CGIExecutor cgi(envp);
-	ServerManager serverManager(config, cgi);
+	ServerManager serverManager(config);
 
 	serverManager.run();
 

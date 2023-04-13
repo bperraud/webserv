@@ -32,6 +32,8 @@ std::string intToString(int value)
 }
 
 void loadFile(const std::string &fileName, std::basic_iostream<char> &stream) {
+
+	//std::cout << fileName << std::endl;
 	std::ifstream input_file(fileName.c_str());
 	stream << input_file.rdbuf();
 }
@@ -61,7 +63,6 @@ std::ofstream* createOrEraseFile(std::string fileName) {
 std::string urlDecode(const std::string& encoded_url) {
 	std::stringstream decoded_url;
 	decoded_url << std::hex << std::setfill('0');
-
 	for (size_t i = 0; i < encoded_url.length(); ++i) {
 		if (encoded_url[i] == '%') {
 			if (i + 2 < encoded_url.length()) {

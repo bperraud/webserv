@@ -1,4 +1,5 @@
 #include "CGIExecutor.hpp"
+#include "HttpHandler.hpp"
 
 
 CGIExecutor::CGIExecutor(char** env) : _env(env) {

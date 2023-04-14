@@ -14,7 +14,6 @@
 #include "Utils.hpp"
 #include "ServerConfig.hpp"
 #include "ErrorHandler.hpp"
-
 #include "Timer.hpp"
 
 # define CRLF "\r\n\r\n"
@@ -36,6 +35,7 @@ struct HttpResponse {
     std::map<std::string, std::string> map_headers;
 };
 
+
 class HttpHandler {
 
 private:
@@ -55,7 +55,6 @@ private:
 	ssize_t				_left_to_read;
 	std::map<std::string, std::string> _MIME_TYPES;
 
-	bool				_cgiMode;
 	bool				_ready_to_write;
 
 	server_config		_server;
@@ -86,8 +85,7 @@ public:
 	std::string getResponseBody() const;
 	std::string getContentType(const std::string& path) const;
 	bool isAllowedMethod(const std::string &method) const;
-	bool isCGI(const std::string &path) const ;
-	bool	isCGIMode() const;
+
 	bool	isReadyToWrite() const;
 
 	void	setReadyToWrite(bool ready);

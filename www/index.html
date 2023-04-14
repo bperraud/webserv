@@ -27,15 +27,15 @@
     <title>Addition Form</title>
   </head>
   <body>
-    <h1>Addition Form</h1>
-    <form action="/cgi-bin/add.cgi" method="get" target="_blank">
-      <label for="num1">Number 1:</label>
-      <input type="text" name="num1" id="num1"><br>
-      <label for="num2">Number 2:</label>
-      <input type="text" name="num2" id="num2"><br>
-      <input type="submit" value="Add">
-    </form>
-  </body>
+	<form action="form/add/add.cgi" method="POST" target="_blank">
+	 <fieldset>
+	   <legend>Enter two numbers to add</legend>
+	   <label>First Number: <input type="number" name="num1"></label><br/>
+	   <label>Second Number: <input type="number" name="num2"></label><br/>
+	 </fieldset>
+	 <button>Add</button>
+	</form>
+   </body>
   <body>
 	<h1>Delete file</h1>
 	<form id="delete-form">

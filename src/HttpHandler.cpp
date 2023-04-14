@@ -171,9 +171,12 @@ void HttpHandler::parseRequest() {
 void HttpHandler::setupRoute(const std::string &url) {
 	std::map<std::string, routes>::iterator it = _server.routes_map.begin();
 	for (; it != _server.routes_map.end(); ++it) {
-		if ((url.find(it->first) == 0 && it->first != "/" )|| (url == "/" && it->first == "/")) {
+		if ((url.find(it->first) == 0 && it->first != "/" ) || (url == "/" && it->first == "/")) {
 			_active_route = &it->second;
-			_request.url = _request.url.replace(url.find(it->first), it->first.length(), it->second.root);
+			if (_active_route->handler.empty())
+				_request.url = _request.url.replace(url.find(it->first), it->first.length(), it->second.root);
+			else
+				_request.url = _active_route->handler;
 			return;
 		}
 	}

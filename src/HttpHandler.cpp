@@ -194,7 +194,8 @@ void HttpHandler::createHttpResponse() {
 		error(413);
 	}
 	else if(!_active_route->handler.empty()) {
-		CGIExecutor::run(_request);
+		std::string extension = _request.url.substr(_request.url.find_last_of('.'));
+		CGIExecutor::run(_request, _active_route->handler, _active_route->cgi[extension]);
 	}
 	else {
 		for (index = 0; index < 4; index++)

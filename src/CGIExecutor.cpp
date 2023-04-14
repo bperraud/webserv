@@ -9,7 +9,11 @@ void CGIExecutor::setEnv(char **envp) {
 	_env = envp;
 }
 
-void CGIExecutor::_run(const HttpMessage &request) {
+int CGIExecutor::_run(const HttpMessage &request,const std::string& path, const std::string &interpreter) {
+
+	std::cout << "path : " << path << std::endl;
+	std::cout << "interpreter : " << interpreter << std::endl;
+
 	std::string REQUEST_METHOD = "REQUEST_METHOD=" + request.method;
 	std::string QUERY_STRING = "QUERY_STRING=" + request.url.substr(request.url.find("?") + 1);
 	if  (request.body_length) {
@@ -20,14 +24,16 @@ void CGIExecutor::_run(const HttpMessage &request) {
 	std::string SCRIPT_FILENAME = ROOT_PATH + SCRIPT_NAME;
 
 	if (!Utils::hasExecutePermissions(SCRIPT_FILENAME.c_str())) {
-		;//TODO: 403
+		return 403;
 	}
 
 	putenv(const_cast<char*>(REQUEST_METHOD.c_str()));
 	putenv(const_cast<char*>(QUERY_STRING.c_str()));
-	char path[SCRIPT_FILENAME.size() + 1];
-	std::strcpy(path, SCRIPT_FILENAME.c_str());
+	char PATH[SCRIPT_FILENAME.size() + 1];
+	std::strcpy(PATH, SCRIPT_FILENAME.c_str());
 	//execute(path, input_fd, client_fd);
+
+	return 0;
 }
 
 void CGIExecutor::readCgiOutput(char *path) {

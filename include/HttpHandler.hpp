@@ -100,26 +100,26 @@ public:
 	void	stopTimer();
 	bool	hasTimeOut();
 
-	void error(int error) ;
+	void	error(int error) ;
 
 	void	resetRequestContext();
 	void	copyLast4Char(char *buffer, ssize_t nbytes);
 
-	void parseRequest();
-	void createHttpResponse();
+	void	parseRequest();
+	void	createHttpResponse();
 
-	bool findHeader(const std::string &header, std::string &value) const;
+	bool	findHeader(const std::string &header, std::string &value) const;
 
-	void GET();
-	void POST();
-	void DELETE();
+	void	GET();
+	void	POST();
+	void	DELETE();
 
-	void constructStringResponse();
+	void	constructStringResponse();
 
-	void setupRoute(const std::string &url);
+	void	setupRoute(const std::string &url);
 
-	void uploadFile(const std::string& contentType, size_t pos_boundary);
-	void generate_directory_listing_html(const std::string& directory_path);
+	void	uploadFile(const std::string& contentType, size_t pos_boundary);
+	void	generate_directory_listing_html(const std::string& directory_path);
 };
 
 #endif

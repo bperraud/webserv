@@ -184,7 +184,7 @@ void ServerManager::handleReadEvent(int client_fd) {
 		HttpHandler *client = _client_map[client_fd];
 		client->stopTimer();
 
-		#if 0
+		#if 1
 		std::cout << "Header for client : " << client_fd << std::endl;
 		std::cout << client->getRequest() << std::endl;
 		#else
@@ -194,7 +194,7 @@ void ServerManager::handleReadEvent(int client_fd) {
 
 		client->createHttpResponse();
 
-		#if 0
+		#if 1
 		std::cout << "Response Header to client : " << client_fd << std::endl;
 		std::cout << client->getResponseHeader() << std::endl;
 		std::cout << "Response Message body to client : " << client_fd  << std::endl;

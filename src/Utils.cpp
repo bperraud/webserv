@@ -32,8 +32,6 @@ std::string intToString(int value)
 }
 
 void loadFile(const std::string &fileName, std::basic_iostream<char> &stream) {
-
-	//std::cout << fileName << std::endl;
 	std::ifstream input_file(fileName.c_str());
 	stream << input_file.rdbuf();
 }
@@ -46,7 +44,7 @@ std::ofstream* createOrEraseFile(std::string fileName) {
 		std::ofstream* file = new std::ofstream(filename);
 		if (!(*file)) {
 			delete file;
-			return NULL; // Return null pointer on error
+			return NULL;
 		}
 		return file;
 	} else {
@@ -54,7 +52,7 @@ std::ofstream* createOrEraseFile(std::string fileName) {
 		std::ofstream* file = new std::ofstream(filename);
 		if (!(*file)) {
 			delete file;
-			return NULL; // Return null pointer on error
+			return NULL;
 		}
 		return file;
 	}

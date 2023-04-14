@@ -17,13 +17,25 @@ class CGIExecutor {
 private:
 	char**	_env;
 
-public:
-    // Constructor takes the path to the CGI binary as a parameter
-    CGIExecutor(char** env);
+	CGIExecutor(const CGIExecutor &other);
+	CGIExecutor &operator=(const CGIExecutor &other) ;
 
+public:
+	CGIExecutor();
+
+	static CGIExecutor& getCgiInstance(){
+		static CGIExecutor s_cgi;
+		return s_cgi;
+	}
+
+	static void run (const HttpMessage &request) {
+		CGIExecutor::getCgiInstance()._run(request);
+	}
+
+	void setEnv(char **env);
     // Execute the CGI script with the given environment variables and input data
-    void execute(char* path, int input_fd, int output_fd) const ;
-	void run(const HttpMessage &request, int client_fd);
+    void execute(char* path, int input_fd, int output_fd)  ;
+	void _run(const HttpMessage &request);
 
 	void readCgiOutput(char *path);
 };

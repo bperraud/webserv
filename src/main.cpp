@@ -24,6 +24,8 @@ int main(int argc, char **argv, char ** envp)
 	}
 	std::cout << "server started..." << std::endl;
 
+	CGIExecutor::getCgiInstance().setEnv(envp);
+
 	JsonParser parser(argv[1]);
 	ServerConfig config(parser);
 	ServerManager serverManager(config);

@@ -16,6 +16,8 @@
 #include "ErrorHandler.hpp"
 #include "Timer.hpp"
 
+#include "CGIExecutor.hpp"
+
 # define CRLF "\r\n\r\n"
 # define ROOT_PATH "www"
 

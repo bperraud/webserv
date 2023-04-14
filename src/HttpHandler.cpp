@@ -194,8 +194,7 @@ void HttpHandler::createHttpResponse() {
 		error(413);
 	}
 	else if(!_active_route->handler.empty()) {
-		//cgi handler
-		//_cgi_executor.run(client->getStructRequest(), client_fd);
+		CGIExecutor::run(_request);
 	}
 	else {
 		for (index = 0; index < 4; index++)

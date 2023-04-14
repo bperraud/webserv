@@ -33,9 +33,6 @@ int JsonParser::parseJsonString(std::string &str) {
 			throw std::runtime_error("Expected ','");
 		str.erase(0, 1);  // consume the ','
 	}
-	for (std::vector<json_value>::iterator it = _json_object_vector.begin(); it != _json_object_vector.end(); it++) {
-		;//std::cout << *it << std::endl;
-	}
 	return 0;
 }
 

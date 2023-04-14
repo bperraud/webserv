@@ -28,7 +28,7 @@
 #include <sys/event.h>  // kqueue
 #endif
 
-# define BUFFER_SIZE 1024
+# define BUFFER_SIZE 4096	// min 4 bytes
 # define MAX_EVENTS 4096
 # define TIMEOUT_SECS 5
 # define WAIT_TIMEOUT_SECS 2
@@ -61,7 +61,6 @@ public:
     ~ServerManager();
 
     void	run();
-
 	void	setNonBlockingMode(int socket);
 	void	setupSocket(server &serv);
 
@@ -73,10 +72,9 @@ public:
 
 	void	handleReadEvent(int client_fd);
 	void	handleWriteEvent(int client_fd);
-
 	void 	handleNewConnection(int listen_fd, const server* serv);
-	void	eventManager();
 
+	void	eventManager();
 	void	timeoutCheck();
 	void	connectionCloseMode(int client_fd);
     void	closeClientConnection(int client_fd);

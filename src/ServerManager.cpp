@@ -268,7 +268,7 @@ void ServerManager::connectionCloseMode(int client_fd) {
 		closeClientConnection(client_fd);
 }
 
-int	ServerManager::readFromClient(int client_fd){
+int	ServerManager::readFromClient(int client_fd) {
 	char buffer[BUFFER_SIZE + 4];
 
 	HttpHandler *client = _client_map[client_fd];
@@ -289,7 +289,7 @@ int	ServerManager::readFromClient(int client_fd){
 			body_left_to_read = client->writeToBody(buffer + 4, nbytes);
 			return (body_left_to_read > 0);
 		}
-		size_t pos_end_header = ((std::string)buffer).find(CRLF);
+		const size_t pos_end_header = ((std::string)buffer).find(CRLF);
 		if (pos_end_header == std::string::npos) {
 			client->writeToStream(buffer + 4, nbytes);
 			return 1;
@@ -305,7 +305,7 @@ int	ServerManager::readFromClient(int client_fd){
 }
 
 void ServerManager::writeToClient(int client_fd, const std::string &str) {
-	ssize_t nbytes = send(client_fd, str.c_str(), str.length(), 0);
+	const ssize_t nbytes = send(client_fd, str.c_str(), str.length(), 0);
 	if (nbytes == -1)
 		throw std::runtime_error("send()");
 	else if ((size_t) nbytes == str.length()) {

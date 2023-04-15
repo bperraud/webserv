@@ -318,10 +318,13 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 }
 
 ServerManager::~ServerManager() {
+	std::cout << "Destructor called\n";
 	for (server_iterator_type serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
 		close(serv->listen_fd);
 	}
-	for (map_iterator_type it = _client_map.begin(); it != _client_map.end(); it++) {
-		delete it->second;
-	}
+	_server_list.clear();
+	_client_map.clear();
+	// for (map_iterator_type it = _client_map.begin(); it != _client_map.end(); it++) {
+	// 	delete it->second;
+	// }
 }

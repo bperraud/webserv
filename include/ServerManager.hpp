@@ -21,6 +21,7 @@
 #include <cassert>
 #include <fcntl.h>		 // fcntl
 #include <netinet/tcp.h> // TCP_NODELAY
+#include <csignal>
 
 #if (defined (LINUX) || defined (__linux__))
 #include <sys/epoll.h>  // epoll
@@ -57,8 +58,9 @@ private:
 #endif
 
 public:
+
     ServerManager(const ServerConfig &config, const CGIExecutor& cgi);
-    ~ServerManager();
+    ~ServerManager(); 
 
     void	run();
 
@@ -81,6 +83,7 @@ public:
 	void	connectionCloseMode(int client_fd);
     void	closeClientConnection(int client_fd);
 	void	closeClientConnection(int client_fd, map_iterator_type elem);
+	
 };
 
 #endif

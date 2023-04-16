@@ -46,7 +46,7 @@ def chunker(data, size):
 		yield chunk.encode()
 
 
-def test_chunked_message():
+def rtest_chunked_message():
 
 	headers = {
 		"Transfer-Encoding": "chunked",
@@ -59,12 +59,12 @@ def test_chunked_message():
 	assert response.text == 'OK'
 
 
-def rtest_chunked():
+def test_chunked():
 
 	headers = {
 		"Transfer-Encoding": "chunked",
 		"Content-Type": "text/plain",
 	}
 	data = "This is the data to be sent in chunks"
-	response = requests.post(f"{URL}/echo", headers=headers, data=chunker(data, 5))
+	response = requests.post(URL, headers=headers, data=chunker(data, 5))
 	assert response.text == data

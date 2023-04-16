@@ -163,8 +163,8 @@ int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	else if (_transfer_chunked) // chunked
 	{
 		copyLast4Char(buffer, nbytes);
-		bool found = ((std::string)buffer).find('0' + CRLF) != std::string::npos;
-
+		const size_t pos_end_header = ((std::string)buffer).find('0' + CRLF);
+		bool found = pos_end_header != std::string::npos && ssize_t(pos_end_header + 5) == nbytes;
 		std::cout << "chunked message found : " << found << std::endl;
 		return !found;
 	}
@@ -221,11 +221,7 @@ void HttpHandler::setupRoute(const std::string &url) {
 }
 
 bool HttpHandler::invalidRequest() const {
-	if (_request.method.empty() || _request.url.empty() || _request.version.empty()) {
-		return true;
-	}
-	std::cout << "method : " << _request.method << std::endl;
-	return false;
+	return (_request.method.empty() || _request.url.empty() || _request.version.empty());
 }
 
 void HttpHandler::createHttpResponse() {

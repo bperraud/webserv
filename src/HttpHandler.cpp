@@ -2,9 +2,9 @@
 
 
 HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _timer(timeout_seconds),
-	_readStream(),  _close_keep_alive(false),
-	_left_to_read(0), _MIME_TYPES(), _ready_to_write(false), _server(*serv),
-	_body_size_exceeded(false), _default_route(), _active_route(&_default_route){
+	_readStream(), _left_to_read(0), _MIME_TYPES(), _server(*serv),
+	_close_keep_alive(false), _body_size_exceeded(false), _ready_to_write(false), _transfer_chunked(false),
+	_default_route(), _active_route(&_default_route){
 	_last_4_char[0] = '\0';
 	_MIME_TYPES["html"] = "text/html";
     _MIME_TYPES["css"] = "text/css";
@@ -114,8 +114,10 @@ void HttpHandler::resetRequestContext() {
 void	HttpHandler::copyLast4Char(char *buffer, ssize_t nbytes) {
 	if (_last_4_char[0])
 		std::memcpy(buffer, _last_4_char, 4);
-	else
+	else if (nbytes >= 4)
 		std::memcpy(buffer, buffer + 4, 4);
+	else
+		;//std::memcpy(buffer, buffer + 4 - nbytes, 4);
 	std::memcpy(_last_4_char, buffer + nbytes, 4);
 }
 
@@ -126,8 +128,12 @@ void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
 	}
 }
 
+bool HttpHandler::endOfChunkedMessage() const {		// return 0 if its the end
+	return false;
+}
+
 int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
-	if (!_left_to_read)
+	if (!_left_to_read && !_transfer_chunked)
 		return 0;
 	if ( _server.max_body_size && static_cast<ssize_t>(_request_body_stream.tellp()) + nbytes > _server.max_body_size) {
 		_left_to_read = 0;
@@ -138,8 +144,17 @@ int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	if (_request_body_stream.fail()) {
 		throw std::runtime_error("writing to _request_body_stream");
 	}
-	_left_to_read -= nbytes;
-	return _left_to_read;
+	if (_left_to_read)	// if not chunked
+	{
+		_left_to_read -= nbytes;
+		return _left_to_read;
+	}
+	//return _left_to_read;
+	else if (_transfer_chunked) // if chunked
+	{
+		return endOfChunkedMessage();
+	}
+	return 0;
 }
 
 void HttpHandler::parseRequest() {
@@ -165,6 +180,9 @@ void HttpHandler::parseRequest() {
 		_close_keep_alive = connection_header == "keep-alive";
 	else
 		_close_keep_alive = true;
+	std::string transfer_encoding_header;
+	if (findHeader("Transfer-Encoding", transfer_encoding_header))
+		_transfer_chunked = connection_header == "chunked";
 	_left_to_read = _request.body_length;
 }
 
@@ -331,9 +349,14 @@ void HttpHandler::uploadFile(const std::string& contentType, size_t pos_boundary
 
 	std::string path = _active_route->root + "/" + fileName;
 	std::ofstream *outfile = Utils::createOrEraseFile(path);
-	outfile->write(messageBody.c_str(), messageBody.length());
-    outfile->close();
-	delete outfile;
+	if (outfile)
+	{
+		outfile->write(messageBody.c_str(), messageBody.length());
+    	outfile->close();
+		delete outfile;
+	}
+	else
+		return error(403);
 	_response.status_code = "201";
 	_response.status_phrase = "Created";
 	_response_body_stream << messageBody;

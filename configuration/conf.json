@@ -22,11 +22,7 @@
 		},
 		"/form/upload": {
 		  "root": "www/upload",
-		  "handler": "extensions/upload.py",
-		  "methods": ["POST"],
-		  "cgi": {
-			".py": "/usr/bin/python3"
-		  }
+		  "methods": ["POST"]
 		},
 		"/upload": {
 		  "root": "www/upload",

@@ -51,17 +51,16 @@ private:
 
 	HttpMessage			_request;
 	HttpResponse		_response;
-	bool				_close_keep_alive;
 	char				_last_4_char[4];
 
 	ssize_t				_left_to_read;
 	std::map<std::string, std::string> _MIME_TYPES;
-
-	bool				_ready_to_write;
-
 	server_config		_server;
 
+	bool				_close_keep_alive;
 	bool				_body_size_exceeded;
+	bool				_ready_to_write;
+	bool				_transfer_chunked;
 
 	routes				_default_route;
 	routes*				_active_route;
@@ -89,6 +88,8 @@ public:
 	bool isAllowedMethod(const std::string &method) const;
 
 	bool	isReadyToWrite() const;
+	bool	endOfChunkedMessage() const;
+
 
 	void	setReadyToWrite(bool ready);
 

@@ -62,11 +62,13 @@ public:
 	void	setNonBlockingMode(int socket);
 	void	setupSocket(server &serv);
 
-	int		readFromClient(int client_fd);
-	void	writeToClient(int client_fd, const std::string &str);
 
 	void	epollInit();
 	const server*	isPartOfListenFd(int fd) const;
+
+	int 	treatRecvData(char *buffer, const ssize_t nbytes, int client_fd);
+	int		readFromClient(int client_fd);
+	void	writeToClient(int client_fd, const std::string &str);
 
 	void	handleReadEvent(int client_fd);
 	void	handleWriteEvent(int client_fd);

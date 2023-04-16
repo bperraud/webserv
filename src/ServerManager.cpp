@@ -262,6 +262,28 @@ void ServerManager::connectionCloseMode(int client_fd) {
 		closeClientConnection(client_fd);
 }
 
+int ServerManager::treatRecvData(char *buffer, const ssize_t nbytes, int client_fd) {
+	HttpHandler *client = _client_map[client_fd];
+
+	ssize_t body_left_to_read = client->getLeftToRead();
+	if (body_left_to_read > 0)
+	{
+		body_left_to_read = client->writeToBody(buffer + 4, nbytes);
+		return (body_left_to_read > 0);
+	}
+	const size_t pos_end_header = ((std::string)buffer).find(CRLF);
+	if (pos_end_header == std::string::npos) {
+		client->writeToStream(buffer + 4, nbytes);
+		return 1;
+	}
+	else {
+		client->writeToStream(buffer + 4, pos_end_header);
+		client->parseRequest();
+		body_left_to_read = client->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header);
+		return (body_left_to_read > 0);
+	}
+}
+
 int	ServerManager::readFromClient(int client_fd) {
 	char buffer[BUFFER_SIZE + 4];
 
@@ -276,24 +298,8 @@ int	ServerManager::readFromClient(int client_fd) {
 		return 1;
 	}
 	else {
-		std::cout << "finished reading data from client " << client_fd << std::endl;
-		ssize_t body_left_to_read = client->getLeftToRead();
-		if (body_left_to_read > 0)
-		{
-			body_left_to_read = client->writeToBody(buffer + 4, nbytes);
-			return (body_left_to_read > 0);
-		}
-		const size_t pos_end_header = ((std::string)buffer).find(CRLF);
-		if (pos_end_header == std::string::npos) {
-			client->writeToStream(buffer + 4, nbytes);
-			return 1;
-		}
-		else {
-			client->writeToStream(buffer + 4, pos_end_header);
-			client->parseRequest();
-			body_left_to_read = client->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header);
-			return (body_left_to_read > 0);
-		}
+		//std::cout << "finished reading data from client " << client_fd << std::endl;
+		return (treatRecvData(buffer, nbytes, client_fd));
 	}
 	return 1;
 }

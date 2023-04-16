@@ -5,3 +5,4 @@ TODO :
   - leaks ?
   - cookies
   - location and date header
+  - define a HTTP redirection

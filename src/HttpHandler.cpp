@@ -115,16 +115,20 @@ void HttpHandler::resetRequestContext() {
 void	HttpHandler::copyLast4Char(char *buffer, ssize_t nbytes) {
 	if (nbytes >= 4) {
 		if (_last_4_char[0])
+		{
 			std::memcpy(buffer, _last_4_char, 4);
+		}
 		else
 			std::memcpy(buffer, buffer + 4, 4);	 // ..
 		std::memcpy(_last_4_char, buffer + nbytes, 4); // save last 4 char
 	}
-	else {
+	else if (nbytes > 0) {
 		std::memcpy(buffer, _last_4_char, 4);
 		std::memmove(_last_4_char, _last_4_char + nbytes, 4 - nbytes);  // moves left by nbytes
 		std::memcpy(_last_4_char + 4 - nbytes, buffer + 4, nbytes); // save last nbytes char
 	}
+	else
+		std::cout << "no bytes in copyLast4Char()" << std::endl;
 }
 
 void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {

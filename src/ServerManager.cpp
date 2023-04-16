@@ -261,7 +261,11 @@ void ServerManager::connectionCloseMode(int client_fd) {
 		closeClientConnection(client_fd);
 }
 
-int ServerManager::treatReceiveData(char *buffer, const ssize_t nbytes, HttpHandler *client) {
+int ServerManager::treatReceiveData(char *buffer, const ssize_t nbytes, int client_fd) {
+	HttpHandler *client = _client_map[client_fd];
+
+	client->startTimer();
+	client->copyLast4Char(buffer, nbytes);
 	bool isBodyUnfinished = client->isBodyUnfinished();
 	if (isBodyUnfinished)
 	{
@@ -275,6 +279,7 @@ int ServerManager::treatReceiveData(char *buffer, const ssize_t nbytes, HttpHand
 	}
 	else {
 		client->writeToStream(buffer + 4, pos_end_header);
+		client->resetLast4();
 		client->parseRequest();
 		isBodyUnfinished = client->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header);
 		return (isBodyUnfinished);
@@ -284,10 +289,7 @@ int ServerManager::treatReceiveData(char *buffer, const ssize_t nbytes, HttpHand
 int	ServerManager::readFromClient(int client_fd) {
 	char buffer[BUFFER_SIZE + 4];
 
-	HttpHandler *client = _client_map[client_fd];
 	const ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
-	client->startTimer();
-	client->copyLast4Char(buffer, nbytes);
 	if (nbytes == -1)
 		throw std::runtime_error("recv()");
 	else if (nbytes == 0) {
@@ -295,8 +297,9 @@ int	ServerManager::readFromClient(int client_fd) {
 		return 1;
 	}
 	else {
+
 		std::cout << "finished reading data from client " << client_fd << std::endl;
-		return (treatReceiveData(buffer, nbytes, client));
+		return (treatReceiveData(buffer, nbytes, client_fd));
 	}
 	return 1;
 }

@@ -104,6 +104,11 @@ void HttpHandler::resetRequestContext() {
 	_request_body_stream.str(std::string());
 	_request_body_stream.seekp(0, std::ios_base::beg);
 	_request_body_stream.clear();
+
+	_request.method = "";
+	_request.url = "";
+	_request.version = "";
+
 	_response_body_stream.str(std::string());
 	_response_body_stream.clear();
 	_response_header_stream.str(std::string());
@@ -158,7 +163,9 @@ int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	else if (_transfer_chunked) // chunked
 	{
 		copyLast4Char(buffer, nbytes);
-		bool found = ((std::string)buffer).find(CRLF) != std::string::npos;
+		bool found = ((std::string)buffer).find('0' + CRLF) != std::string::npos;
+
+		std::cout << "chunked message found : " << found << std::endl;
 		return !found;
 	}
 	return 0;
@@ -213,13 +220,24 @@ void HttpHandler::setupRoute(const std::string &url) {
 	_request.url = _active_route->root + _request.url;
 }
 
+bool HttpHandler::invalidRequest() const {
+	if (_request.method.empty() || _request.url.empty() || _request.version.empty()) {
+		return true;
+	}
+	std::cout << "method : " << _request.method << std::endl;
+	return false;
+}
+
 void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
 	_response.version = _request.version;
 
 	setupRoute(_request.url);
-	if (!Utils::correctPath(_request.url)) {
+	if (invalidRequest()) {
+		error(400);
+	}
+	else if (!Utils::correctPath(_request.url)) {
 		error(404);
 	}
 	else if (_body_size_exceeded) {

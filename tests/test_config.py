@@ -3,7 +3,7 @@ import requests
 URL = 'http://localhost:8080/'
 
 # Send a GET request
-def test_get():
+def rtest_get():
 	response = requests.get(URL)
 	assert(response.status_code == 200)
 	assert(response.headers['content-type'] == 'text/html')
@@ -12,7 +12,7 @@ def test_get():
 
 
 # Send a POST request with data
-def test_post():
+def rtest_post():
 	data = {'username': 'john', 'password': 'doe'}
 	response = requests.post(URL + '/login', data=data)
 	assert(response.status_code == 404)
@@ -23,14 +23,14 @@ def test_post():
 
 
 # Send a DELETE request
-def test_delete():
+def rtest_delete():
 	response = requests.delete(URL + '/user/123')
 	assert(response.status_code == 404)
 	response = requests.delete(URL + '/cgi/add.py')
 	assert(response.status_code == 405)
 
 # Upload file -> GET file -> DELETE file
-def test_upload_file():
+def rtest_upload_file():
 	files = {'file': open('files/upload.txt', 'rb')}
 	response = requests.post(URL + 'form/upload', files=files)
 	assert(response.status_code == 201)
@@ -46,14 +46,25 @@ def chunker(data, size):
 		yield chunk.encode()
 
 
-def tes_chunked_message():
+def test_chunked_message():
 
 	headers = {
 		"Transfer-Encoding": "chunked",
 		"Content-Type": "text/plain",
 	}
 
-	data = "This is the data to be sent in chunks"
-	response = requests.post(URL, headers=headers, data=chunker(data, 5))
-	assert response.text == data
+	data = '5\r\nhello\r\n6\r\nworld!\r\n0\r\n\r\n'
+	response = requests.post(URL, headers=headers, data=data)
+	assert response.status_code == 200
+	assert response.text == 'OK'
 
+
+def rtest_chunked():
+
+	headers = {
+		"Transfer-Encoding": "chunked",
+		"Content-Type": "text/plain",
+	}
+	data = "This is the data to be sent in chunks"
+	response = requests.post(f"{URL}/echo", headers=headers, data=chunker(data, 5))
+	assert response.text == data

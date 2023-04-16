@@ -297,7 +297,6 @@ int	ServerManager::readFromClient(int client_fd) {
 		return 1;
 	}
 	else {
-
 		std::cout << "finished reading data from client " << client_fd << std::endl;
 		return (treatReceiveData(buffer, nbytes, client_fd));
 	}

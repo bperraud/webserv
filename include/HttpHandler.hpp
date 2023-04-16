@@ -89,6 +89,7 @@ public:
 	bool isAllowedMethod(const std::string &method) const;
 
 	bool	isReadyToWrite() const;
+	bool	invalidRequest() const;
 
 	void	setReadyToWrite(bool ready);
 

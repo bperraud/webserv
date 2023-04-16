@@ -132,8 +132,6 @@ void	HttpHandler::copyLast4Char(char *buffer, ssize_t nbytes) {
 		std::memmove(_last_4_char, _last_4_char + nbytes, 4 - nbytes);  // moves left by nbytes
 		std::memcpy(_last_4_char + 4 - nbytes, buffer + 4, nbytes); // save last nbytes char
 	}
-	else
-		std::cout << "no bytes in copyLast4Char()" << std::endl;
 }
 
 void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
@@ -162,10 +160,7 @@ int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	}
 	else if (_transfer_chunked) // chunked
 	{
-		copyLast4Char(buffer, nbytes);
-		const size_t pos_end_header = ((std::string)buffer).find('0' + CRLF);
-		bool found = pos_end_header != std::string::npos && ssize_t(pos_end_header + 5) == nbytes;
-		std::cout << "chunked message found : " << found << std::endl;
+		bool found = _request_body_stream.str().find(EOF_CHUNKED) != std::string::npos;
 		return !found;
 	}
 	return 0;

@@ -18,6 +18,7 @@
 
 #include "CGIExecutor.hpp"
 
+# define EOF_CHUNKED "\r\n0\r\n\r\n"
 # define CRLF "\r\n\r\n"
 # define ROOT_PATH "www"
 

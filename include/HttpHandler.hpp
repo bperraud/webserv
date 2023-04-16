@@ -78,6 +78,7 @@ public:
 	~HttpHandler();
 
 	bool	isKeepAlive() const;
+
 	HttpMessage getStructRequest() const;
 	std::string		getRequest() const;
 	std::string		getBody() const;
@@ -88,14 +89,14 @@ public:
 	bool isAllowedMethod(const std::string &method) const;
 
 	bool	isReadyToWrite() const;
-	bool	endOfChunkedMessage() const;
-
 
 	void	setReadyToWrite(bool ready);
 
-
 	void	writeToStream(char *buffer, ssize_t nbytes) ;
 	int		writeToBody(char *buffer, ssize_t nbytes);
+
+	void 	resetLast4();
+	bool	isBodyUnfinished() const ;
 
 	void	startTimer();
 	void	stopTimer();

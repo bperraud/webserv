@@ -77,6 +77,10 @@ void	HttpHandler::setReadyToWrite(bool ready) {
 	_ready_to_write = ready;
 }
 
+void	HttpHandler::resetLast4() {
+	bzero(_last_4_char, 4);
+}
+
 // ---------------------------------- TIMER ---------------------------------- //
 
 void	HttpHandler::startTimer() {
@@ -97,17 +101,14 @@ void HttpHandler::resetRequestContext() {
 	_readStream.str(std::string());
 	_readStream.seekp(0, std::ios_base::beg);
 	_readStream.clear();
-
 	_request_body_stream.str(std::string());
 	_request_body_stream.seekp(0, std::ios_base::beg);
 	_request_body_stream.clear();
-
 	_response_body_stream.str(std::string());
 	_response_body_stream.clear();
 	_response_header_stream.str(std::string());
 	_response_header_stream.clear();
-
-	_last_4_char[0] = '\0';
+	bzero(_last_4_char, 4);
 	_active_route = &_default_route;
 }
 
@@ -116,12 +117,12 @@ void	HttpHandler::copyLast4Char(char *buffer, ssize_t nbytes) {
 		if (_last_4_char[0])
 			std::memcpy(buffer, _last_4_char, 4);
 		else
-			std::memcpy(buffer, buffer + 4, 4);
+			std::memcpy(buffer, buffer + 4, 4);	 // ..
 		std::memcpy(_last_4_char, buffer + nbytes, 4); // save last 4 char
 	}
 	else {
 		std::memcpy(buffer, _last_4_char, 4);
-		std::memmove(_last_4_char, _last_4_char + nbytes, 4 - nbytes);  // moves to the left by nbytes
+		std::memmove(_last_4_char, _last_4_char + nbytes, 4 - nbytes);  // moves left by nbytes
 		std::memcpy(_last_4_char + 4 - nbytes, buffer + 4, nbytes); // save last nbytes char
 	}
 }
@@ -129,12 +130,8 @@ void	HttpHandler::copyLast4Char(char *buffer, ssize_t nbytes) {
 void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
 	_readStream.write(buffer, nbytes);
 	if (_readStream.fail()) {
-		throw std::runtime_error("writing to _readStream");
+		throw std::runtime_error("writing to read stream");
 	}
-}
-
-bool HttpHandler::endOfChunkedMessage() const {		// return 0 if its the end
-	return false;
 }
 
 int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
@@ -147,19 +144,24 @@ int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	}
 	_request_body_stream.write(buffer, nbytes);
 	if (_request_body_stream.fail()) {
-		throw std::runtime_error("writing to _request_body_stream");
+		throw std::runtime_error("writing to request body stream");
 	}
-	if (_left_to_read)	// if not chunked
+	if (_left_to_read)	// not chunked
 	{
 		_left_to_read -= nbytes;
-		return _left_to_read;
+		return _left_to_read > 0;
 	}
-	//return _left_to_read;
-	else if (_transfer_chunked) // if chunked
+	else if (_transfer_chunked) // chunked
 	{
-		return endOfChunkedMessage();
+		copyLast4Char(buffer, nbytes);
+		bool found = ((std::string)buffer).find(CRLF) != std::string::npos;
+		return !found;
 	}
 	return 0;
+}
+
+bool HttpHandler::isBodyUnfinished() const {
+	return (_left_to_read || _transfer_chunked);
 }
 
 void HttpHandler::parseRequest() {
@@ -186,8 +188,9 @@ void HttpHandler::parseRequest() {
 	else
 		_close_keep_alive = true;
 	std::string transfer_encoding_header;
-	if (findHeader("Transfer-Encoding", transfer_encoding_header))
-		_transfer_chunked = connection_header == "chunked";
+	if (findHeader("Transfer-Encoding", transfer_encoding_header)) {
+		_transfer_chunked = transfer_encoding_header == "chunked";
+	}
 	_left_to_read = _request.body_length;
 }
 

@@ -318,7 +318,6 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 }
 
 ServerManager::~ServerManager() {
-	std::cout << "destrictor" << std::endl;
 	for (server_iterator_type serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
 		close(serv->listen_fd);
 	}

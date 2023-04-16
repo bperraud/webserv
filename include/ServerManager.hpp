@@ -27,7 +27,7 @@
 #include <sys/event.h>  // kqueue
 #endif
 
-# define BUFFER_SIZE 4096	// min 4 bytes
+# define BUFFER_SIZE 4096
 # define MAX_EVENTS 4096
 # define TIMEOUT_SECS 5
 # define WAIT_TIMEOUT_SECS 2

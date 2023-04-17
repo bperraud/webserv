@@ -315,12 +315,18 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 ServerManager::~ServerManager() {
 	for (std::list<server>::iterator it = _server_list.begin(); it != _server_list.end(); ++it) {
 		std::cout << "closing connection on server " << it->listen_fd << std::endl;
+		//if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, it->listen_fd, NULL) < 0)
+			//throw std::runtime_error("epoll_ctl EPOLL_CTL_DEL");
 		close(it->listen_fd);
 	}
-	_server_list.clear();
 	if (!_client_map.empty()) {
+		std::stack<int> stack;
 		for (map_iterator_type it = _client_map.begin(); it != _client_map.end(); ++it) {
-			closeClientConnection(it->first);
+			stack.push(it->first);
+		}
+		for (size_t i = 0; i < _client_map.size(); ++i) {
+			closeClientConnection(stack.top());
+			stack.pop();
 		}
 	}
 	close(_epoll_fd);

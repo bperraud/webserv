@@ -20,6 +20,7 @@
 #include <cassert>
 #include <fcntl.h>		 // fcntl
 #include <netinet/tcp.h> // TCP_NODELAY
+#include <stack>
 
 #if (defined (LINUX) || defined (__linux__))
 #include <sys/epoll.h>  // epoll

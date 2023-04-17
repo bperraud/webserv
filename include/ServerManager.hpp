@@ -46,7 +46,7 @@ typedef std::list<server>::const_iterator server_iterator_type;
 
 class ServerManager {
 
-private:
+public:
 	std::list<server>	_server_list;
 	map_type			_client_map;
 	CGIExecutor			_cgi_executor;

@@ -10,7 +10,7 @@ ServerConfig::ServerConfig(const JsonParser &parser) {
 }
 
 ServerConfig::~ServerConfig() {
-
+	std::cout << "Server config destructor called.\n";
 }
 
 std::list<server_config> ServerConfig::getServerList() const {
@@ -58,6 +58,7 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object) {
 				route.root = "";
 				route.autoindex = false;
 
+				route.cgi = std::map<std::string, std::string>();
 				std::map<std::string, json_value>::const_iterator sub_sub_it;
 				for (sub_sub_it = route_value.object_value.begin(); sub_sub_it != route_value.object_value.end(); sub_sub_it++) {
 					std::string route_info_key = sub_sub_it->first;

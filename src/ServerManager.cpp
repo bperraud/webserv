@@ -318,12 +318,24 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 }
 
 ServerManager::~ServerManager() {
-	std::cout << "Destructor called\n";
-	for (server_iterator_type serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
-		close(serv->listen_fd);
-	}
-	_server_list.clear();
-	_client_map.clear();
+	std::cout << "Server manager destructor called\n";
+	// std::cout << "printing _server_list\n";
+
+	// std::list<server>::iterator it = _server_list.begin();
+	// std::cout << "host : " << it->PORT << std::endl;
+
+	// std::cout << "hereeeeeeeee\n";
+
+	// for (std::list<server>::iterator it = _server_list.begin(); it != _server_list.end(); it++) {
+	// 	std::cout << "host : " << it->host << std::endl;
+	// 	std::cout << "PORT : " << it->PORT << std::endl;
+	// 	std::cout << "max_body_size : " << it->max_body_size << std::endl;
+	// }
+	// for (server_iterator_type serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
+	// 	close(serv->listen_fd);
+	// }
+	// _server_list.clear();
+	// _client_map.clear();
 	// for (map_iterator_type it = _client_map.begin(); it != _client_map.end(); it++) {
 	// 	delete it->second;
 	// }

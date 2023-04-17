@@ -11,19 +11,31 @@
 #include <stdio.h>		// perror
 #include "fcntl.h" 		// open()
 
-#include "HttpHandler.hpp"
+struct HttpMessage;
 
 class CGIExecutor {
 private:
-	char**		_env;
+	char**	_env;
+
+	CGIExecutor(const CGIExecutor &other);
+	CGIExecutor &operator=(const CGIExecutor &other) ;
 
 public:
-    // Constructor takes the path to the CGI binary as a parameter
-    CGIExecutor(char** env);
+	CGIExecutor();
 
+	static CGIExecutor& getCgiInstance(){
+		static CGIExecutor s_cgi;
+		return s_cgi;
+	}
+
+	static void run (const HttpMessage &request, const std::string& path, const std::string &interpreter) {
+		CGIExecutor::getCgiInstance()._run(request, path, interpreter);
+	}
+
+	void setEnv(char **env);
     // Execute the CGI script with the given environment variables and input data
-    void execute(char* path, int input_fd, int output_fd) const ;
-	void run(const HttpMessage &request, int client_fd);
+    void execute(char* path, int input_fd, int output_fd)  ;
+	int _run(const HttpMessage &request, const std::string& path, const std::string &interpreter);
 
 	void readCgiOutput(char *path);
 };

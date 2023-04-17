@@ -14,9 +14,11 @@
 #include "Utils.hpp"
 #include "ServerConfig.hpp"
 #include "ErrorHandler.hpp"
-
 #include "Timer.hpp"
 
+#include "CGIExecutor.hpp"
+
+# define EOF_CHUNKED "\r\n0\r\n\r\n"
 # define CRLF "\r\n\r\n"
 # define ROOT_PATH "www"
 
@@ -36,6 +38,7 @@ struct HttpResponse {
     std::map<std::string, std::string> map_headers;
 };
 
+
 class HttpHandler {
 
 private:
@@ -49,18 +52,16 @@ private:
 
 	HttpMessage			_request;
 	HttpResponse		_response;
-	bool				_close_keep_alive;
 	char				_last_4_char[4];
 
 	ssize_t				_left_to_read;
 	std::map<std::string, std::string> _MIME_TYPES;
-
-	bool				_cgiMode;
-	bool				_ready_to_write;
-
 	server_config		_server;
 
+	bool				_close_keep_alive;
 	bool				_body_size_exceeded;
+	bool				_ready_to_write;
+	bool				_transfer_chunked;
 
 	routes				_default_route;
 	routes*				_active_route;
@@ -78,6 +79,7 @@ public:
 	~HttpHandler();
 
 	bool	isKeepAlive() const;
+
 	HttpMessage getStructRequest() const;
 	std::string		getRequest() const;
 	std::string		getBody() const;
@@ -86,40 +88,44 @@ public:
 	std::string getResponseBody() const;
 	std::string getContentType(const std::string& path) const;
 	bool isAllowedMethod(const std::string &method) const;
-	bool isCGI(const std::string &path) const ;
-	bool	isCGIMode() const;
+
 	bool	isReadyToWrite() const;
+	bool	invalidRequest() const;
 
 	void	setReadyToWrite(bool ready);
 
-
 	void	writeToStream(char *buffer, ssize_t nbytes) ;
 	int		writeToBody(char *buffer, ssize_t nbytes);
+
+	void 	resetLast4();
+	bool	isBodyUnfinished() const ;
 
 	void	startTimer();
 	void	stopTimer();
 	bool	hasTimeOut();
 
-	void error(int error) ;
+	void	unchunckMessage();
+
+	void	error(int error) ;
 
 	void	resetRequestContext();
 	void	copyLast4Char(char *buffer, ssize_t nbytes);
 
-	void parseRequest();
-	void createHttpResponse();
+	void	parseRequest();
+	void	createHttpResponse();
 
-	bool findHeader(const std::string &header, std::string &value) const;
+	bool	findHeader(const std::string &header, std::string &value) const;
 
-	void GET();
-	void POST();
-	void DELETE();
+	void	GET();
+	void	POST();
+	void	DELETE();
 
-	void constructStringResponse();
+	void	constructStringResponse();
 
-	void setupRoute(const std::string &url);
+	void	setupRoute(const std::string &url);
 
-	void uploadFile(const std::string& contentType, size_t pos_boundary);
-	void generate_directory_listing_html(const std::string& directory_path);
+	void	uploadFile(const std::string& contentType, size_t pos_boundary);
+	void	generate_directory_listing_html(const std::string& directory_path);
 };
 
 #endif

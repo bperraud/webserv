@@ -44,7 +44,7 @@ std::ofstream* createOrEraseFile(std::string fileName) {
 		std::ofstream* file = new std::ofstream(filename);
 		if (!(*file)) {
 			delete file;
-			return NULL; // Return null pointer on error
+			return NULL;
 		}
 		return file;
 	} else {
@@ -52,7 +52,7 @@ std::ofstream* createOrEraseFile(std::string fileName) {
 		std::ofstream* file = new std::ofstream(filename);
 		if (!(*file)) {
 			delete file;
-			return NULL; // Return null pointer on error
+			return NULL;
 		}
 		return file;
 	}
@@ -61,7 +61,6 @@ std::ofstream* createOrEraseFile(std::string fileName) {
 std::string urlDecode(const std::string& encoded_url) {
 	std::stringstream decoded_url;
 	decoded_url << std::hex << std::setfill('0');
-
 	for (size_t i = 0; i < encoded_url.length(); ++i) {
 		if (encoded_url[i] == '%') {
 			if (i + 2 < encoded_url.length()) {

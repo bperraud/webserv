@@ -2,7 +2,6 @@
 #define SERVERMANAGER_HPP
 
 #include "HttpHandler.hpp"
-#include "CGIExecutor.hpp"
 #include "ServerConfig.hpp"
 
 #include <iostream>
@@ -29,7 +28,7 @@
 #include <sys/event.h>  // kqueue
 #endif
 
-# define BUFFER_SIZE 1024
+# define BUFFER_SIZE 10
 # define MAX_EVENTS 4096
 # define TIMEOUT_SECS 5
 # define WAIT_TIMEOUT_SECS 2
@@ -49,7 +48,6 @@ class ServerManager {
 public:
 	std::list<server>	_server_list;
 	map_type			_client_map;
-	CGIExecutor			_cgi_executor;
 
 #if (defined (LINUX) || defined (__linux__))
 	int		_epoll_fd;
@@ -58,27 +56,26 @@ public:
 #endif
 
 public:
-
-    ServerManager(const ServerConfig &config, const CGIExecutor& cgi);
-    ~ServerManager(); 
+    ServerManager(const ServerConfig &config);
+    ~ServerManager();
 
     void	run();
-
 	void	setNonBlockingMode(int socket);
 	void	setupSocket(server &serv);
 
-	int		readFromClient(int client_fd);
-	void	writeToClient(int client_fd, const std::string &str);
 
 	void	epollInit();
 	const server*	isPartOfListenFd(int fd) const;
 
+	int 	treatReceiveData(char *buffer, const ssize_t nbytes, int client_fd);
+	int		readFromClient(int client_fd);
+	void	writeToClient(int client_fd, const std::string &str);
+
 	void	handleReadEvent(int client_fd);
 	void	handleWriteEvent(int client_fd);
-
 	void 	handleNewConnection(int listen_fd, const server* serv);
-	void	eventManager();
 
+	void	eventManager();
 	void	timeoutCheck();
 	void	connectionCloseMode(int client_fd);
     void	closeClientConnection(int client_fd);

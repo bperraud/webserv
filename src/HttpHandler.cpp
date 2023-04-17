@@ -2,9 +2,9 @@
 
 
 HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _timer(timeout_seconds),
-	_readStream(),  _close_keep_alive(false),
-	_left_to_read(0), _MIME_TYPES(), _cgiMode(false), _ready_to_write(false), _server(*serv),
-	_body_size_exceeded(false), _default_route(), _active_route(&_default_route){
+	_readStream(), _left_to_read(0), _MIME_TYPES(), _server(*serv),
+	_close_keep_alive(false), _body_size_exceeded(false), _ready_to_write(false), _transfer_chunked(false),
+	_default_route(), _active_route(&_default_route){
 	_last_4_char[0] = '\0';
 	_MIME_TYPES["html"] = "text/html";
     _MIME_TYPES["css"] = "text/css";
@@ -47,7 +47,6 @@ ssize_t 		HttpHandler::getLeftToRead() const { return _left_to_read; }
 std::string 	HttpHandler::getResponseHeader() const { return _response_header_stream.str();}
 std::string 	HttpHandler::getResponseBody() const {return _response_body_stream.str();}
 bool 			HttpHandler::isKeepAlive() const { return _close_keep_alive; }
-bool			HttpHandler::isCGIMode() const { return _cgiMode; }
 bool			HttpHandler::isReadyToWrite() const { return _ready_to_write;}
 
 std::string HttpHandler::getContentType(const std::string& path) const {
@@ -64,6 +63,10 @@ std::string HttpHandler::getContentType(const std::string& path) const {
     return it->second;
 }
 
+bool HttpHandler::isBodyUnfinished() const {
+	return (_left_to_read || _transfer_chunked);
+}
+
 bool HttpHandler::isAllowedMethod(const std::string &method) const {
 	for (size_t i = 0; i < _active_route->methods->length(); i++) {
 		if (_active_route->methods[i] == method)
@@ -72,10 +75,27 @@ bool HttpHandler::isAllowedMethod(const std::string &method) const {
 	return false;
 }
 
+bool HttpHandler::findHeader(const std::string &header, std::string &value) const {
+	std::map<std::string, std::string>::const_iterator it = _request.map_headers.find(header);
+	if (it != _request.map_headers.end()) {
+		value = it->second;
+		return true;
+	}
+	return false;
+}
+
+bool HttpHandler::invalidRequest() const {
+	return (_request.method.empty() || _request.url.empty() || _request.version.empty());
+}
+
 // --------------------------------- SETTERS --------------------------------- //
 
 void	HttpHandler::setReadyToWrite(bool ready) {
 	_ready_to_write = ready;
+}
+
+void	HttpHandler::resetLast4() {
+	bzero(_last_4_char, 4);
 }
 
 // ---------------------------------- TIMER ---------------------------------- //
@@ -98,37 +118,46 @@ void HttpHandler::resetRequestContext() {
 	_readStream.str(std::string());
 	_readStream.seekp(0, std::ios_base::beg);
 	_readStream.clear();
-
 	_request_body_stream.str(std::string());
 	_request_body_stream.seekp(0, std::ios_base::beg);
 	_request_body_stream.clear();
-
+	_request.method = "";
+	_request.url = "";
+	_request.version = "";
 	_response_body_stream.str(std::string());
 	_response_body_stream.clear();
 	_response_header_stream.str(std::string());
 	_response_header_stream.clear();
-
-	_last_4_char[0] = '\0';
+	bzero(_last_4_char, 4);
 	_active_route = &_default_route;
 }
 
 void	HttpHandler::copyLast4Char(char *buffer, ssize_t nbytes) {
-	if (_last_4_char[0])
+	if (nbytes >= 4) {
+		if (_last_4_char[0])
+		{
+			std::memcpy(buffer, _last_4_char, 4);
+		}
+		else
+			std::memcpy(buffer, buffer + 4, 4);	 // ..
+		std::memcpy(_last_4_char, buffer + nbytes, 4); // save last 4 char
+	}
+	else if (nbytes > 0) {
 		std::memcpy(buffer, _last_4_char, 4);
-	else
-		std::memcpy(buffer, buffer + 4, 4);
-	std::memcpy(_last_4_char, buffer + nbytes, 4);
+		std::memmove(_last_4_char, _last_4_char + nbytes, 4 - nbytes);  // moves left by nbytes
+		std::memcpy(_last_4_char + 4 - nbytes, buffer + 4, nbytes); // save last nbytes char
+	}
 }
 
 void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
 	_readStream.write(buffer, nbytes);
 	if (_readStream.fail()) {
-		throw std::runtime_error("writing to _readStream");
+		throw std::runtime_error("writing to read stream");
 	}
 }
 
 int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
-	if (!_left_to_read)
+	if (!_left_to_read && !_transfer_chunked)
 		return 0;
 	if ( _server.max_body_size && static_cast<ssize_t>(_request_body_stream.tellp()) + nbytes > _server.max_body_size) {
 		_left_to_read = 0;
@@ -137,10 +166,19 @@ int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	}
 	_request_body_stream.write(buffer, nbytes);
 	if (_request_body_stream.fail()) {
-		throw std::runtime_error("writing to _request_body_stream");
+		throw std::runtime_error("writing to request body stream");
 	}
-	_left_to_read -= nbytes;
-	return _left_to_read;
+	if (_left_to_read)	// not chunked
+	{
+		_left_to_read -= nbytes;
+		return _left_to_read > 0;
+	}
+	else if (_transfer_chunked) // chunked
+	{
+		bool found = _request_body_stream.str().find(EOF_CHUNKED) != std::string::npos;
+		return !found;
+	}
+	return 0;
 }
 
 void HttpHandler::parseRequest() {
@@ -166,19 +204,42 @@ void HttpHandler::parseRequest() {
 		_close_keep_alive = connection_header == "keep-alive";
 	else
 		_close_keep_alive = true;
+	std::string transfer_encoding_header;
+	if (findHeader("Transfer-Encoding", transfer_encoding_header)) {
+		_transfer_chunked = transfer_encoding_header == "chunked";
+	}
 	_left_to_read = _request.body_length;
 }
 
 void HttpHandler::setupRoute(const std::string &url) {
 	std::map<std::string, routes>::iterator it = _server.routes_map.begin();
 	for (; it != _server.routes_map.end(); ++it) {
-		if ((url.find(it->first) == 0 && it->first != "/" )|| (url == "/" && it->first == "/")) {
+		if ((url.find(it->first) == 0 && it->first != "/" ) || (url == "/" && it->first == "/")) {
 			_active_route = &it->second;
-			_request.url = _request.url.replace(url.find(it->first), it->first.length(), it->second.root);
+			if (_active_route->handler.empty())
+				_request.url = _request.url.replace(url.find(it->first), it->first.length(), it->second.root);
+			else
+				_request.url = _active_route->handler;
 			return;
 		}
 	}
 	_request.url = _active_route->root + _request.url;
+}
+
+void HttpHandler::unchunckMessage() {
+    std::string line;
+
+    while (std::getline(_request_body_stream, line)) {
+        int chunk_size = std::atoi(line.c_str());
+        if (chunk_size == 0) {
+            break;
+        }
+        std::string chunk;
+        chunk.resize(chunk_size);
+        _request_body_stream.read(&chunk[0], chunk_size);
+        _request_body_stream.ignore(2);
+        _response_body_stream.write(chunk.data(), chunk_size);
+    }
 }
 
 void HttpHandler::createHttpResponse() {
@@ -187,12 +248,19 @@ void HttpHandler::createHttpResponse() {
 	_response.version = _request.version;
 
 	setupRoute(_request.url);
-	if (!Utils::correctPath(_request.url)) {
+	if (invalidRequest()) {
+		error(400);
+	}
+	else if (!Utils::correctPath(_request.url)) {
 		error(404);
 	}
 	else if (_body_size_exceeded) {
 		_body_size_exceeded = false;
 		error(413);
+	}
+	else if(!_active_route->handler.empty()) {
+		std::string extension = _request.url.substr(_request.url.find_last_of('.'));
+		CGIExecutor::run(_request, _active_route->handler, _active_route->cgi[extension]);
 	}
 	else {
 		for (index = 0; index < 4; index++)
@@ -216,10 +284,6 @@ void HttpHandler::createHttpResponse() {
 		}
 	}
 	constructStringResponse();
-}
-
-bool HttpHandler::isCGI(const std::string &path) const {
-	return path.substr(0, std::strlen("/cgi-bin/")).compare("/cgi-bin/") == 0;
 }
 
 void HttpHandler::error(int error) {
@@ -274,16 +338,10 @@ void HttpHandler::generate_directory_listing_html(const std::string& directory_p
     closedir(dir);
 }
 
-
 void HttpHandler::GET() {
 	_response.status_code = "200";
 	_response.status_phrase = "OK";
 
-	if (isCGI(_request.url))
-	{
-		_cgiMode = true;
-		return ;
-	}
 	if (Utils::isDirectory(_request.url)) { // directory
 		if (_active_route->autoindex == true)
 		{
@@ -300,21 +358,11 @@ void HttpHandler::GET() {
 	}
 	else
 		return error(404);
-
 	std::string content_type = getContentType(_request.url);
 	if (content_type.empty())
 		return error(415);
 	_response.map_headers["Content-Type"] = content_type;
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
-}
-
-bool HttpHandler::findHeader(const std::string &header, std::string &value) const {
-	std::map<std::string, std::string>::const_iterator it = _request.map_headers.find(header);
-	if (it != _request.map_headers.end()) {
-		value = it->second;
-		return true;
-	}
-	return false;
 }
 
 void HttpHandler::uploadFile(const std::string& contentType, size_t pos_boundary) {
@@ -335,9 +383,14 @@ void HttpHandler::uploadFile(const std::string& contentType, size_t pos_boundary
 
 	std::string path = _active_route->root + "/" + fileName;
 	std::ofstream *outfile = Utils::createOrEraseFile(path);
-	outfile->write(messageBody.c_str(), messageBody.length());
-    outfile->close();
-	delete outfile;
+	if (outfile)
+	{
+		outfile->write(messageBody.c_str(), messageBody.length());
+    	outfile->close();
+		delete outfile;
+	}
+	else
+		return error(403);
 	_response.status_code = "201";
 	_response.status_phrase = "Created";
 	_response_body_stream << messageBody;
@@ -357,6 +410,11 @@ void HttpHandler::POST() {
 	std::string request_content_type;
 	if (!findHeader("Content-Type", request_content_type))
 		return error(400);
+	if (_transfer_chunked) {
+		unchunckMessage();
+		_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+		return;
+	}
 	size_t pos_boundary = request_content_type.find("boundary=");
 	if (pos_boundary != std::string::npos) { //multipart/form-data
 		uploadFile(request_content_type, pos_boundary);

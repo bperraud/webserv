@@ -1,7 +1,7 @@
 #include "ServerManager.hpp"
 
 
-ServerManager::ServerManager(const ServerConfig &config, const CGIExecutor &cgi) : _cgi_executor(cgi) {
+ServerManager::ServerManager(const ServerConfig &config) {
 	std::list<server_config> server_list = config.getServerList();
 	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		std::cout << "server manager : " << *it << std::endl;
@@ -187,27 +187,20 @@ void ServerManager::handleReadEvent(int client_fd) {
 		#if 1
 		std::cout << "Header for client : " << client_fd << std::endl;
 		std::cout << client->getRequest() << std::endl;
-		#else
 		std::cout << "Message body :" << std::endl;
 		std::cout << client->getBody() << std::endl;
 		#endif
 
 		client->createHttpResponse();
 
-		if (client->isCGIMode())
-		{
-			_cgi_executor.run(client->getStructRequest(), client_fd);
-		}
-		else{
-
-		#if 0
+		#if 1
 		std::cout << "Response Header to client : " << client_fd << std::endl;
 		std::cout << client->getResponseHeader() << std::endl;
 		std::cout << "Response Message body to client : " << client_fd  << std::endl;
 		std::cout << client->getResponseBody() << std::endl;
 		#endif
 
-		}
+
 		client->setReadyToWrite(true);
 	}
 }
@@ -268,13 +261,35 @@ void ServerManager::connectionCloseMode(int client_fd) {
 		closeClientConnection(client_fd);
 }
 
-int	ServerManager::readFromClient(int client_fd){
-	char buffer[BUFFER_SIZE + 4];
-
+int ServerManager::treatReceiveData(char *buffer, const ssize_t nbytes, int client_fd) {
 	HttpHandler *client = _client_map[client_fd];
-	const ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
+
 	client->startTimer();
 	client->copyLast4Char(buffer, nbytes);
+	bool isBodyUnfinished = client->isBodyUnfinished();
+	if (isBodyUnfinished)
+	{
+		isBodyUnfinished = client->writeToBody(buffer + 4, nbytes);
+		return (isBodyUnfinished);
+	}
+	const size_t pos_end_header = ((std::string)buffer).find(CRLF);
+	if (pos_end_header == std::string::npos) {
+		client->writeToStream(buffer + 4, nbytes);
+		return 1;
+	}
+	else {
+		client->writeToStream(buffer + 4, pos_end_header);
+		client->resetLast4();
+		client->parseRequest();
+		isBodyUnfinished = client->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header);
+		return (isBodyUnfinished);
+	}
+}
+
+int	ServerManager::readFromClient(int client_fd) {
+	char buffer[BUFFER_SIZE + 4];
+
+	const ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
 	if (nbytes == -1)
 		throw std::runtime_error("recv()");
 	else if (nbytes == 0) {
@@ -283,29 +298,13 @@ int	ServerManager::readFromClient(int client_fd){
 	}
 	else {
 		std::cout << "finished reading data from client " << client_fd << std::endl;
-		ssize_t body_left_to_read = client->getLeftToRead();
-		if (body_left_to_read > 0)
-		{
-			body_left_to_read = client->writeToBody(buffer + 4, nbytes);
-			return (body_left_to_read > 0);
-		}
-		size_t pos_end_header = ((std::string)buffer).find(CRLF);
-		if (pos_end_header == std::string::npos) {
-			client->writeToStream(buffer + 4, nbytes);
-			return 1;
-		}
-		else {
-			client->writeToStream(buffer + 4, pos_end_header);
-			client->parseRequest();
-			body_left_to_read = client->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header);
-			return (body_left_to_read > 0);
-		}
+		return (treatReceiveData(buffer, nbytes, client_fd));
 	}
 	return 1;
 }
 
 void ServerManager::writeToClient(int client_fd, const std::string &str) {
-	ssize_t nbytes = send(client_fd, str.c_str(), str.length(), 0);
+	const ssize_t nbytes = send(client_fd, str.c_str(), str.length(), 0);
 	if (nbytes == -1)
 		throw std::runtime_error("send()");
 	else if ((size_t) nbytes == str.length()) {

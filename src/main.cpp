@@ -20,6 +20,7 @@ void	signalHandler(int signal, ServerManager &serverManager) {
 	std::cout << "Signal handler called for signal : " << signal << std::endl;
 	if (signal == SIGINT)
 		serverManager._client_map.clear();
+	system("leaks webserv");
 	exit(EXIT_SUCCESS);
 }
 
@@ -30,12 +31,13 @@ int main(int argc, char **argv, char ** envp)
 		std::cerr << "Usage: ./webserv <config_file>" << std::endl;
 		return 1;
 	}
-	std::cout << "Server started" << std::endl;
+	std::cout << "server started..." << std::endl;
+
+	CGIExecutor::getCgiInstance().setEnv(envp);
 
 	JsonParser parser(argv[1]);
 	ServerConfig config(parser);
-	CGIExecutor cgi(envp);
-	ServerManager serverManager(config, cgi);
+	ServerManager serverManager(config);
 
 	std::signal(SIGINT, (void (*)(int))signalHandler);
 	serverManager.run();

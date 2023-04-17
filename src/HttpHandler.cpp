@@ -247,6 +247,20 @@ void HttpHandler::unchunckMessage() {
 	_response_body_stream.clear();
 }
 
+void HttpHandler::handleCGI(const std::string &original_url) {
+	std::string extension = _request.url.substr(_request.url.find_last_of('.'));
+	int err = CGIExecutor::run(_request, &_response_body_stream, _active_route->handler, _active_route->cgi[extension], original_url);
+	if (err)
+		error(err);
+	else
+	{
+		_response.status_code = "200";
+		_response.status_phrase = "OK";
+		_response.map_headers["Content-Type"] = "text/html";
+		_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+	}
+}
+
 void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
@@ -264,10 +278,8 @@ void HttpHandler::createHttpResponse() {
 		_body_size_exceeded = false;
 		error(413);
 	}
-	else if(!_active_route->handler.empty()) {
-		std::string extension = _request.url.substr(_request.url.find_last_of('.'));
-		CGIExecutor::run(_request, _active_route->handler, _active_route->cgi[extension], original_url);
-
+	else if(!_active_route->handler.empty()) { // cgi
+		handleCGI(original_url);
 	}
 	else {
 		for (index = 0; index < 4; index++)

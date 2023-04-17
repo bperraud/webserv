@@ -29,14 +29,14 @@ public:
 		return s_cgi;
 	}
 
-	static void run (const HttpMessage &request, const std::string& path, const std::string &interpreter, const std::string &url) {
-		CGIExecutor::getCgiInstance()._run(request, path, interpreter, url);
+	static int run (const HttpMessage &request, std::stringstream *response_stream, const std::string& path, const std::string &interpreter, const std::string &url) {
+		return CGIExecutor::getCgiInstance()._run(request, response_stream, path, interpreter, url);
 	}
 
 	void setEnv(char **env);
     // Execute the CGI script with the given environment variables and input data
-    std::string execute(const std::string &path, const std::string &interpreter)  ;
-	std::string _run(const HttpMessage &request, const std::string& path, const std::string &interpreter, const std::string &url);
+    int execute(std::stringstream *response_stream, const std::string &path, const std::string &interpreter)  ;
+	int _run(const HttpMessage &request, std::stringstream *response_stream, const std::string& path, const std::string &interpreter, const std::string &url);
 
 };
 

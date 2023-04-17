@@ -104,6 +104,7 @@ public:
 	void	stopTimer();
 	bool	hasTimeOut();
 
+	void	handleCGI(const std::string &original_url);
 	void	unchunckMessage();
 
 	void	error(int error) ;

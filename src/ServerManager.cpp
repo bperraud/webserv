@@ -316,11 +316,10 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 	}
 }
 
+void	ServerManager::clear_client_map() {
+	_client_map.clear();
+}
+
 ServerManager::~ServerManager() {
-	for (server_iterator_type serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
-		close(serv->listen_fd);
-	}
-	for (map_iterator_type it = _client_map.begin(); it != _client_map.end(); it++) {
-		delete it->second;
-	}
+	clear_client_map();
 }

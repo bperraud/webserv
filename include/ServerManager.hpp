@@ -79,6 +79,8 @@ public:
 	void	connectionCloseMode(int client_fd);
     void	closeClientConnection(int client_fd);
 	void	closeClientConnection(int client_fd, map_iterator_type elem);
+
+	void	clear_client_map();
 };
 
 #endif

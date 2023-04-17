@@ -11,9 +11,16 @@
 /* ************************************************************************** */
 
 #include <iostream>
+#include <csignal>
 #include "JsonParser.hpp"
 #include "ServerConfig.hpp"
 #include "ServerManager.hpp"
+
+void	signalHandler(int signal, ServerManager &serverManager) {
+	std::cout << "\nServer closed with signal " << signal << " (ctrl-c).\n";
+	serverManager.clear_client_map();
+	exit(EXIT_SUCCESS);
+}
 
 int main(int argc, char **argv, char ** envp)
 {
@@ -30,6 +37,7 @@ int main(int argc, char **argv, char ** envp)
 	ServerConfig config(parser);
 	ServerManager serverManager(config);
 
+	std::signal(SIGINT, (void (*)(int))signalHandler);
 	serverManager.run();
 
 	return 0;

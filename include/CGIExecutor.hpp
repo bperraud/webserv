@@ -34,10 +34,9 @@ public:
 
 	void setEnv(char **env);
     // Execute the CGI script with the given environment variables and input data
-    void execute(char* path, int input_fd, int output_fd)  ;
-	int _run(const HttpMessage &request, const std::string& path, const std::string &interpreter);
+    std::string execute(const std::string &path, const std::string &interpreter)  ;
+	std::string _run(const HttpMessage &request, const std::string& path, const std::string &interpreter);
 
-	void readCgiOutput(char *path);
 };
 
 

@@ -197,8 +197,12 @@ void HttpHandler::createHttpResponse() {
 		error(413);
 	}
 	else if(!_active_route->handler.empty()) {
+		
 		std::string extension = _request.url.substr(_request.url.find_last_of('.'));
+		_response_body_stream << "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><table>";
+		_response.map_headers["Content-Length"] = "0";
 		CGIExecutor::run(_request, _active_route->handler, _active_route->cgi[extension]);
+
 	}
 	else {
 		for (index = 0; index < 4; index++)

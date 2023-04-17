@@ -19,6 +19,7 @@ private:
 
 	CGIExecutor(const CGIExecutor &other);
 	CGIExecutor &operator=(const CGIExecutor &other) ;
+	void setupEnv(const HttpMessage &request, const std::string &url);
 
 public:
 	CGIExecutor();
@@ -28,14 +29,14 @@ public:
 		return s_cgi;
 	}
 
-	static void run (const HttpMessage &request, const std::string& path, const std::string &interpreter) {
-		CGIExecutor::getCgiInstance()._run(request, path, interpreter);
+	static void run (const HttpMessage &request, const std::string& path, const std::string &interpreter, const std::string &url) {
+		CGIExecutor::getCgiInstance()._run(request, path, interpreter, url);
 	}
 
 	void setEnv(char **env);
     // Execute the CGI script with the given environment variables and input data
     std::string execute(const std::string &path, const std::string &interpreter)  ;
-	std::string _run(const HttpMessage &request, const std::string& path, const std::string &interpreter);
+	std::string _run(const HttpMessage &request, const std::string& path, const std::string &interpreter, const std::string &url);
 
 };
 

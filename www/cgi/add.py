@@ -3,14 +3,15 @@
 import cgi, cgitb
 cgitb.enable()
 
-#input_data = cgi.FieldStorage()
+input_data = cgi.FieldStorage()
 
 print("Content-Type: text/html") # HTML is following
 print("")                        # Leave a blank line
 print("<h1>Addition Results</h1>")
 try:
-    num1 = 1 #int(input_data["num1"].value)
-    num2 = 2 #int(input_data["num2"].value)
+    print(input_data)
+    num1 = int(input_data["num1"].value)
+    num2 = int(input_data["num2"].value)
 except:
     print("<output>Sorry, the script cannot turn your inputs into numbers (integers).</output>")
     raise SystemExit(1)

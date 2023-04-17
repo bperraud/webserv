@@ -187,6 +187,7 @@ void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
 	_response.version = _request.version;
+	std::string original_url = _request.url;
 
 	setupRoute(_request.url);
 	if (!Utils::correctPath(_request.url)) {
@@ -197,11 +198,10 @@ void HttpHandler::createHttpResponse() {
 		error(413);
 	}
 	else if(!_active_route->handler.empty()) {
-		
 		std::string extension = _request.url.substr(_request.url.find_last_of('.'));
 		_response_body_stream << "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><table>";
 		_response.map_headers["Content-Length"] = "0";
-		CGIExecutor::run(_request, _active_route->handler, _active_route->cgi[extension]);
+		CGIExecutor::run(_request, _active_route->handler, _active_route->cgi[extension], original_url);
 
 	}
 	else {

@@ -5,33 +5,34 @@ CGIExecutor::CGIExecutor()
 {
 }
 
+void CGIExecutor::setupEnv(const HttpMessage &request, const std::string &url)
+{
+	std::string request_method = "REQUEST_METHOD=" + request.method;
+	putenv(const_cast<char *>(request_method.c_str()));
+	
+	std::string query_string = "QUERY_STRING=" + url.substr(url.find("?") + 1);
+	putenv(const_cast<char *>(query_string.c_str()));
+	std::cout << getenv("QUERY_STRING") << std::endl;
+	
+	if (request.body_length)
+	{
+		std::string content_length = "CONTENT_LENGTH=" + request.map_headers.at("Content-Length");
+		putenv(const_cast<char *>(content_length.c_str()));
+	}
+}
+
 void CGIExecutor::setEnv(char **envp)
 {
 	_env = envp;
 }
 
-std::string CGIExecutor::_run(const HttpMessage &request, const std::string &path, const std::string &interpreter)
+std::string CGIExecutor::_run(const HttpMessage &request, const std::string &path, const std::string &interpreter, const std::string &url)
 {
-
-	std::string REQUEST_METHOD = "REQUEST_METHOD=" + request.method;
-	std::string QUERY_STRING = "QUERY_STRING=" + request.url.substr(request.url.find("?") + 1);
-
-	if (request.body_length)
-	{
-		std::string CONTENT_LENGTH = "CONTENT_LENGTH=" + request.map_headers.at("Content-Length");
-		putenv(const_cast<char *>(CONTENT_LENGTH.c_str()));
-	}
-	std::string SCRIPT_NAME = request.url.substr(0, request.url.find("?"));
-	std::string SCRIPT_FILENAME = ROOT_PATH + SCRIPT_NAME;
-	
-
-	// if (!Utils::hasExecutePermissions(SCRIPT_FILENAME.c_str())) {
-	// 	return 403;
+	setupEnv(request, url);
+	std::string script_name = request.url.substr(0, request.url.find("?"));
+	// if (!Utils::hasExecutePermissions(script_name.c_str())) {
+	//     return "Status: 403\r\n\r\n";
 	// }
-
-	putenv(const_cast<char *>(REQUEST_METHOD.c_str()));
-	putenv(const_cast<char *>(QUERY_STRING.c_str()));
-
 	return execute(path, interpreter);
 }
 
@@ -39,37 +40,40 @@ std::string CGIExecutor::execute(const std::string &path, const std::string &int
 {
 	std::string res;
 	int pipe_fd[2];
-	pipe(pipe_fd);
+
+	if (pipe(pipe_fd) == -1)
+		return "Status: 500\r\n\r\n";
 	pid_t pid = fork();
+	if (pid == -1)
+		return "Status: 500\r\n\r\n";
 	if (pid == 0)
 	{
 		close(pipe_fd[0]);
 		dup2(pipe_fd[1], STDOUT_FILENO);
 		close(pipe_fd[1]);
-		
-		char path2[path.length() + 1];
-		strcpy(path2, path.c_str());
 
-		char interpreter2[interpreter.length() + 1];
-		strcpy(interpreter2, interpreter.c_str());
-		char *argv[] = {interpreter2, path2, NULL};
-		execvp(interpreter2, argv);
+		char parameter[path.length() + 1];
+		strcpy(parameter, path.c_str());
+
+		char script[interpreter.length() + 1];
+		strcpy(script, interpreter.c_str());
+		
+		char *argv[] = {script, parameter, NULL};
+		execvp(script, argv);
+		return "Status: 500\r\n\r\n";
 	}
 	else
 	{
 		close(pipe_fd[1]);
+
 		char buffer[1024];
-
 		ssize_t n;
-
 		while ((n = read(pipe_fd[0], buffer, 1024)) > 0)
 			res.append(buffer, n);
 		close(pipe_fd[0]);
 	}
 	waitpid(-1, NULL, 0);
 
-
 	std::cout << "CGI result :" << std::endl << res << std::endl;
-
 	return res;
 }

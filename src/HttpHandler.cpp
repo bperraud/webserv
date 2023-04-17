@@ -251,6 +251,7 @@ void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
 	_response.version = _request.version;
+	std::string original_url = _request.url;
 
 	setupRoute(_request.url);
 	if (_transfer_chunked) {
@@ -265,7 +266,8 @@ void HttpHandler::createHttpResponse() {
 	}
 	else if(!_active_route->handler.empty()) {
 		std::string extension = _request.url.substr(_request.url.find_last_of('.'));
-		CGIExecutor::run(_request, _active_route->handler, _active_route->cgi[extension]);
+		CGIExecutor::run(_request, _active_route->handler, _active_route->cgi[extension], original_url);
+
 	}
 	else {
 		for (index = 0; index < 4; index++)

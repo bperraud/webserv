@@ -30,8 +30,8 @@ HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _time
 	_default_route.index = "";
 	_default_route.autoindex = false;
 	_default_route.methods[0] = "GET";
-	_default_route.methods[1] = "POST";
-	_default_route.methods[2] = "DELETE";
+	_default_route.methods[1] = "";
+	_default_route.methods[2] = "";
 	_default_route.root = ROOT_PATH;
 }
 
@@ -251,9 +251,9 @@ void HttpHandler::createHttpResponse() {
 	if (invalidRequest()) {
 		error(400);
 	}
-	//else if (!Utils::correctPath(_request.url)) {
-	//	error(404);
-	//}
+	else if (!Utils::correctPath(_request.url)) {
+		error(404);
+	}
 	else if (_body_size_exceeded) {
 		_body_size_exceeded = false;
 		error(413);

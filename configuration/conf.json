@@ -15,7 +15,7 @@
 		"/form/add": {
 		  "root": "www",
 		  "handler": "www/cgi/add.py",
-		  "methods": ["POST"],
+		  "methods": ["GET"],
 		  "cgi": {
 			".py": "/usr/bin/python3"
 		  }

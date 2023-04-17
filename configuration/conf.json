@@ -29,10 +29,10 @@
 		  "methods": ["GET", "DELETE"],
 		  "autoindex": true
 		},
-		"/chunck": {
-			"root": "www/chunck",
+		"/sendback": {
+			"root": "www/sendback",
 			"methods": ["POST"]
-		  },
+		},
 		"/hello": {
 		  "root": "www/hello",
 		  "autoindex": true,

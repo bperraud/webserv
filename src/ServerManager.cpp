@@ -187,7 +187,6 @@ void ServerManager::handleReadEvent(int client_fd) {
 		#if 1
 		std::cout << "Header for client : " << client_fd << std::endl;
 		std::cout << client->getRequest() << std::endl;
-		#else
 		std::cout << "Message body :" << std::endl;
 		std::cout << client->getBody() << std::endl;
 		#endif
@@ -262,13 +261,35 @@ void ServerManager::connectionCloseMode(int client_fd) {
 		closeClientConnection(client_fd);
 }
 
+int ServerManager::treatReceiveData(char *buffer, const ssize_t nbytes, int client_fd) {
+	HttpHandler *client = _client_map[client_fd];
+
+	client->startTimer();
+	client->copyLast4Char(buffer, nbytes);
+	bool isBodyUnfinished = client->isBodyUnfinished();
+	if (isBodyUnfinished)
+	{
+		isBodyUnfinished = client->writeToBody(buffer + 4, nbytes);
+		return (isBodyUnfinished);
+	}
+	const size_t pos_end_header = ((std::string)buffer).find(CRLF);
+	if (pos_end_header == std::string::npos) {
+		client->writeToStream(buffer + 4, nbytes);
+		return 1;
+	}
+	else {
+		client->writeToStream(buffer + 4, pos_end_header);
+		client->resetLast4();
+		client->parseRequest();
+		isBodyUnfinished = client->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header);
+		return (isBodyUnfinished);
+	}
+}
+
 int	ServerManager::readFromClient(int client_fd) {
 	char buffer[BUFFER_SIZE + 4];
 
-	HttpHandler *client = _client_map[client_fd];
 	const ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
-	client->startTimer();
-	client->copyLast4Char(buffer, nbytes);
 	if (nbytes == -1)
 		throw std::runtime_error("recv()");
 	else if (nbytes == 0) {
@@ -277,23 +298,7 @@ int	ServerManager::readFromClient(int client_fd) {
 	}
 	else {
 		std::cout << "finished reading data from client " << client_fd << std::endl;
-		ssize_t body_left_to_read = client->getLeftToRead();
-		if (body_left_to_read > 0)
-		{
-			body_left_to_read = client->writeToBody(buffer + 4, nbytes);
-			return (body_left_to_read > 0);
-		}
-		const size_t pos_end_header = ((std::string)buffer).find(CRLF);
-		if (pos_end_header == std::string::npos) {
-			client->writeToStream(buffer + 4, nbytes);
-			return 1;
-		}
-		else {
-			client->writeToStream(buffer + 4, pos_end_header);
-			client->parseRequest();
-			body_left_to_read = client->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header);
-			return (body_left_to_read > 0);
-		}
+		return (treatReceiveData(buffer, nbytes, client_fd));
 	}
 	return 1;
 }
@@ -312,7 +317,6 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 }
 
 ServerManager::~ServerManager() {
-	std::cout << "destrictor" << std::endl;
 	for (server_iterator_type serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
 		close(serv->listen_fd);
 	}

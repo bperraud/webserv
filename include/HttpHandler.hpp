@@ -104,6 +104,8 @@ public:
 	void	stopTimer();
 	bool	hasTimeOut();
 
+	void	unchunckMessage();
+
 	void	error(int error) ;
 
 	void	resetRequestContext();

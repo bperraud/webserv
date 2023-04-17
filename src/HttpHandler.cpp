@@ -30,8 +30,8 @@ HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _time
 	_default_route.index = "";
 	_default_route.autoindex = false;
 	_default_route.methods[0] = "GET";
-	_default_route.methods[1] = "";
-	_default_route.methods[2] = "";
+	_default_route.methods[1] = "POST";
+	_default_route.methods[2] = "DELETE";
 	_default_route.root = ROOT_PATH;
 }
 
@@ -63,12 +63,29 @@ std::string HttpHandler::getContentType(const std::string& path) const {
     return it->second;
 }
 
+bool HttpHandler::isBodyUnfinished() const {
+	return (_left_to_read || _transfer_chunked);
+}
+
 bool HttpHandler::isAllowedMethod(const std::string &method) const {
 	for (size_t i = 0; i < _active_route->methods->length(); i++) {
 		if (_active_route->methods[i] == method)
 			return true;
 	}
 	return false;
+}
+
+bool HttpHandler::findHeader(const std::string &header, std::string &value) const {
+	std::map<std::string, std::string>::const_iterator it = _request.map_headers.find(header);
+	if (it != _request.map_headers.end()) {
+		value = it->second;
+		return true;
+	}
+	return false;
+}
+
+bool HttpHandler::invalidRequest() const {
+	return (_request.method.empty() || _request.url.empty() || _request.version.empty());
 }
 
 // --------------------------------- SETTERS --------------------------------- //
@@ -104,11 +121,9 @@ void HttpHandler::resetRequestContext() {
 	_request_body_stream.str(std::string());
 	_request_body_stream.seekp(0, std::ios_base::beg);
 	_request_body_stream.clear();
-
 	_request.method = "";
 	_request.url = "";
 	_request.version = "";
-
 	_response_body_stream.str(std::string());
 	_response_body_stream.clear();
 	_response_header_stream.str(std::string());
@@ -166,10 +181,6 @@ int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	return 0;
 }
 
-bool HttpHandler::isBodyUnfinished() const {
-	return (_left_to_read || _transfer_chunked);
-}
-
 void HttpHandler::parseRequest() {
 	// Parse the start-line
 	_readStream >> _request.method >> _request.url >> _request.version;
@@ -215,8 +226,20 @@ void HttpHandler::setupRoute(const std::string &url) {
 	_request.url = _active_route->root + _request.url;
 }
 
-bool HttpHandler::invalidRequest() const {
-	return (_request.method.empty() || _request.url.empty() || _request.version.empty());
+void HttpHandler::unchunckMessage() {
+    std::string line;
+
+    while (std::getline(_request_body_stream, line)) {
+        int chunk_size = std::atoi(line.c_str());
+        if (chunk_size == 0) {
+            break;
+        }
+        std::string chunk;
+        chunk.resize(chunk_size);
+        _request_body_stream.read(&chunk[0], chunk_size);
+        _request_body_stream.ignore(2);
+        _response_body_stream.write(chunk.data(), chunk_size);
+    }
 }
 
 void HttpHandler::createHttpResponse() {
@@ -228,9 +251,9 @@ void HttpHandler::createHttpResponse() {
 	if (invalidRequest()) {
 		error(400);
 	}
-	else if (!Utils::correctPath(_request.url)) {
-		error(404);
-	}
+	//else if (!Utils::correctPath(_request.url)) {
+	//	error(404);
+	//}
 	else if (_body_size_exceeded) {
 		_body_size_exceeded = false;
 		error(413);
@@ -335,21 +358,11 @@ void HttpHandler::GET() {
 	}
 	else
 		return error(404);
-
 	std::string content_type = getContentType(_request.url);
 	if (content_type.empty())
 		return error(415);
 	_response.map_headers["Content-Type"] = content_type;
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
-}
-
-bool HttpHandler::findHeader(const std::string &header, std::string &value) const {
-	std::map<std::string, std::string>::const_iterator it = _request.map_headers.find(header);
-	if (it != _request.map_headers.end()) {
-		value = it->second;
-		return true;
-	}
-	return false;
 }
 
 void HttpHandler::uploadFile(const std::string& contentType, size_t pos_boundary) {
@@ -397,6 +410,11 @@ void HttpHandler::POST() {
 	std::string request_content_type;
 	if (!findHeader("Content-Type", request_content_type))
 		return error(400);
+	if (_transfer_chunked) {
+		unchunckMessage();
+		_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+		return;
+	}
 	size_t pos_boundary = request_content_type.find("boundary=");
 	if (pos_boundary != std::string::npos) { //multipart/form-data
 		uploadFile(request_content_type, pos_boundary);

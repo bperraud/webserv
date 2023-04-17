@@ -16,11 +16,11 @@
 #include "ServerManager.hpp"
 #include "CGIExecutor.hpp"
 
-void	signalHandler(int signal, ServerManager &sm) {
-	std::cout << "Signal handler called for signal :" << signal << std::endl;
+void	signalHandler(int signal, ServerManager &serverManager) {
+	std::cout << "Signal handler called for signal : " << signal << std::endl;
 	if (signal == SIGINT)
-		sm._client_map.clear();
-	exit (0);
+		serverManager._client_map.clear();
+	exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv, char ** envp)

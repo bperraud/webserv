@@ -4,7 +4,6 @@
 ServerManager::ServerManager(const ServerConfig &config) {
 	std::list<server_config> server_list = config.getServerList();
 	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
-		std::cout << "server manager : " << *it << std::endl;
 		server serv(*it);
 		setupSocket(serv);
 		_server_list.push_back(serv);

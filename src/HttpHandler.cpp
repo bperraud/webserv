@@ -30,7 +30,7 @@ HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _time
 	_default_route.index = "";
 	_default_route.autoindex = false;
 	_default_route.methods[0] = "GET";
-	_default_route.methods[1] = "";
+	_default_route.methods[1] = "POST";
 	_default_route.methods[2] = "";
 	_default_route.root = ROOT_PATH;
 }
@@ -240,6 +240,11 @@ void HttpHandler::unchunckMessage() {
         _request_body_stream.ignore(2);
         _response_body_stream.write(chunk.data(), chunk_size);
     }
+	_request_body_stream.str("");
+	_request_body_stream.clear();
+	_request_body_stream << _response_body_stream.str();
+	_response_body_stream.str("");
+	_response_body_stream.clear();
 }
 
 void HttpHandler::createHttpResponse() {
@@ -248,11 +253,11 @@ void HttpHandler::createHttpResponse() {
 	_response.version = _request.version;
 
 	setupRoute(_request.url);
+	if (_transfer_chunked) {
+		unchunckMessage();
+	}
 	if (invalidRequest()) {
 		error(400);
-	}
-	else if (!Utils::correctPath(_request.url)) {
-		error(404);
 	}
 	else if (_body_size_exceeded) {
 		_body_size_exceeded = false;
@@ -410,23 +415,23 @@ void HttpHandler::POST() {
 	std::string request_content_type;
 	if (!findHeader("Content-Type", request_content_type))
 		return error(400);
-	if (_transfer_chunked) {
-		unchunckMessage();
-		_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
-		return;
-	}
 	size_t pos_boundary = request_content_type.find("boundary=");
 	if (pos_boundary != std::string::npos) { //multipart/form-data
 		uploadFile(request_content_type, pos_boundary);
 		_response.status_code = "201";
 		_response.status_phrase = "Created";
 	}
+	else if (_request.url == "www/sendback") {
+		_response_body_stream << _request_body_stream.str();
+	}
 	else if (request_content_type.find("application/x-www-form-urlencoded") != std::string::npos) {
-		_response.map_headers["Content-Length"] = "0";
+		_response_body_stream << "Response to application/x-www-form-urlencoded";
 	}
 	else { // others
 		return error(501);
 	}
+	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+	return;
 }
 
 void HttpHandler::DELETE() {

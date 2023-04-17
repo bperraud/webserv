@@ -16,10 +16,18 @@
 #include "ServerConfig.hpp"
 #include "ServerManager.hpp"
 
-void	signalHandler(int signal, ServerManager &serverManager) {
-	std::cout << "\nServer closed with signal " << signal << " (ctrl-c).\n";
-	serverManager.clear_client_map();
-	exit(EXIT_SUCCESS);
+ServerManager* g_serverManager = 0;
+
+void signalHandler(int signal)
+{
+    if (g_serverManager)
+    {
+        std::cout << "\nServer closed with signal " << signal << " (ctrl-c).\n";
+        delete g_serverManager;
+        g_serverManager = 0;
+    }
+	//system("leaks webserv");
+    exit(EXIT_SUCCESS);
 }
 
 int main(int argc, char **argv, char ** envp)
@@ -35,10 +43,10 @@ int main(int argc, char **argv, char ** envp)
 
 	JsonParser parser(argv[1]);
 	ServerConfig config(parser);
-	ServerManager serverManager(config);
+	g_serverManager = new ServerManager(config);
 
 	std::signal(SIGINT, (void (*)(int))signalHandler);
-	serverManager.run();
+	g_serverManager->run();
 
 	return 0;
 }

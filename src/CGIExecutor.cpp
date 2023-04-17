@@ -10,13 +10,13 @@ void CGIExecutor::setupEnv(const HttpMessage &request, const std::string &url)
 	std::string request_method = "REQUEST_METHOD=" + request.method;
 	putenv(const_cast<char *>(request_method.c_str()));
 	
-	std::string query_string = "QUERY_STRING=" + url.substr(url.find("?") + 1);
-	putenv(const_cast<char *>(query_string.c_str()));
-	std::cout << getenv("QUERY_STRING") << std::endl;
+	std::string query_string = url.substr(url.find("?") + 1);
+	setenv("QUERY_STRING", query_string.c_str(), 1);
+
 	
 	if (request.body_length)
 	{
-		std::string content_length = "CONTENT_LENGTH=" + request.map_headers.at("Content-Length");
+		std::string content_length = "CONTENT_LENGTH=" + (request.body_length ? request.map_headers.at("Content-Length") : 0);
 		putenv(const_cast<char *>(content_length.c_str()));
 	}
 }
@@ -30,9 +30,9 @@ std::string CGIExecutor::_run(const HttpMessage &request, const std::string &pat
 {
 	setupEnv(request, url);
 	std::string script_name = request.url.substr(0, request.url.find("?"));
-	// if (!Utils::hasExecutePermissions(script_name.c_str())) {
-	//     return "Status: 403\r\n\r\n";
-	// }
+	if (!Utils::hasExecutePermissions(script_name.c_str())) {
+	    return "Status: 403\r\n\r\n";
+	}
 	return execute(path, interpreter);
 }
 

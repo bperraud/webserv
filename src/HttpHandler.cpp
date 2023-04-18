@@ -281,6 +281,12 @@ void HttpHandler::createHttpResponse() {
 	else if(!_active_route->handler.empty()) { // cgi
 		handleCGI(original_url);
 	}
+	else if (_active_route->redir.size()) {
+    	_response.status_code = "301";
+    	_response.status_phrase = "Moved Permanently";
+    	_response.map_headers["Location"] = _active_route->redir;
+		error(301);
+	}
 	else {
 		for (index = 0; index < 4; index++)
 		{
@@ -313,8 +319,10 @@ void HttpHandler::error(int error) {
 		error_page = _server.error_pages[Utils::intToString(error)];
 	if (error >= 500)
 		error_handler = new ServerError(_response, _response_body_stream, error_page);
-	else
+	else if (error >= 400)
 		error_handler = new ClientError(_response, _response_body_stream, error_page);
+	else
+		error_handler = new Redirections(_response, _response_body_stream, error_page);
 	error_handler->errorProcess(error);
 	delete error_handler;
 }

@@ -286,9 +286,7 @@ int	ServerManager::readFromClient(int client_fd) {
 	char buffer[BUFFER_SIZE + 4];
 
 	const ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
-	if (nbytes == -1)
-		throw std::runtime_error("recv()");
-	else if (nbytes == 0) {
+	if (nbytes <= 0) {
 		closeClientConnection(client_fd);
 		return 1;
 	}

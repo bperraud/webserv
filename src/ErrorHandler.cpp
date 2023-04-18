@@ -22,6 +22,10 @@ ClientError::ClientError(HttpResponse& response, std::stringstream& stream, cons
 	_error_map[415] = static_cast<void (ErrorHandler::*)()>(&ClientError::unsupportedMediaType);
 }
 
+Redirections::Redirections(HttpResponse& response, std::stringstream& stream, const std::string &error_page) : ErrorHandler(response, stream, error_page) {
+	_error_map[301] = static_cast<void (ErrorHandler::*)()>(&Redirections::movedPermanently);
+}
+
 void ErrorHandler::errorProcess(int error) {
 	if (!_error_page.empty())
 		Utils::loadFile(_error_page, _body_stream);
@@ -106,3 +110,15 @@ void ServerError::HTTPVersion() {
 	_response.status_phrase = "HTTP Version Not Supported";
 	if (_error_page.empty()) _body_stream << "<html><body><h1>505 HTTP Version Not Supported</h1></body></html>";
 }
+
+// ----------------------------- Redirections -----------------------------
+
+//? not an error mais sinon je le mets ou ?????
+
+void Redirections::movedPermanently() {
+	_response.status_code = "301";
+	_response.status_phrase = "Moved Permanently";
+	if (_error_page.empty()) _body_stream << "<html><body><h1>301 Moved Permanently</h1></body></html>";
+}
+
+Redirections::~Redirections() {}

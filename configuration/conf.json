@@ -46,6 +46,11 @@
 			".lua": "/usr/bin/lua"
 		  }
 		},
+		"/redir": {
+			"root": "www/redir",
+			"methods": ["GET"],
+			"redir": "https://www.pechetruite.com/"
+		},
 		"/cookies": {
 		  "root": "www",
 		  "methods": ["GET"],

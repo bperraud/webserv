@@ -80,6 +80,8 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object) {
 						}
 					} else if (route_info_key == "autoindex") {
 						route.autoindex = route_info_value.boolean_value;
+					} else if (route_info_key == "redir") {
+						route.redir = route_info_value.string_value;
 					}
 					else if (route_info_key == "index") {
 						route.index = route_info_value.string_value;

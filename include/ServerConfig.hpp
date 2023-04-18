@@ -7,6 +7,7 @@
 
 struct routes {
 	std::string root;
+	std::string redir;
 	std::string methods[3];
 	std::string index;
 	std::string handler;

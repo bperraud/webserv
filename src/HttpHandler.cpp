@@ -2,7 +2,7 @@
 
 
 HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _timer(timeout_seconds),
-	_readStream(), _left_to_read(0), _MIME_TYPES(), _server(*serv),
+	_readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(), _left_to_read(0), _MIME_TYPES(), _server(*serv),
 	_close_keep_alive(false), _body_size_exceeded(false), _ready_to_write(false), _transfer_chunked(false),
 	_default_route(), _active_route(&_default_route){
 	_last_4_char[0] = '\0';
@@ -369,7 +369,7 @@ void HttpHandler::GET() {
 		else {
 			if (_active_route->index == "") return error(404);	// no index file
 			_request.url += "/" + _active_route->index;
-			Utils::loadFile(_request.url, _response_body_stream);
+			Utils::loadFile(_request.url , _response_body_stream);
 		}
 	}
 	else if (Utils::pathToFileExist(_request.url)) { // file
@@ -381,6 +381,7 @@ void HttpHandler::GET() {
 	if (content_type.empty())
 		return error(415);
 	_response.map_headers["Content-Type"] = content_type;
+	//if (!_response_body_stream.str().empty())
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
 }
 

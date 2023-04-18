@@ -183,7 +183,7 @@ void ServerManager::handleReadEvent(int client_fd) {
 		HttpHandler *client = _client_map[client_fd];
 		client->stopTimer();
 
-		#if 1
+		#if 0
 		std::cout << "Header for client : " << client_fd << std::endl;
 		std::cout << client->getRequest() << std::endl;
 		std::cout << "Message body :" << std::endl;
@@ -192,7 +192,7 @@ void ServerManager::handleReadEvent(int client_fd) {
 
 		client->createHttpResponse();
 
-		#if 1
+		#if 0
 		std::cout << "Response Header to client : " << client_fd << std::endl;
 		std::cout << client->getResponseHeader() << std::endl;
 		std::cout << "Response Message body to client : " << client_fd  << std::endl;
@@ -315,8 +315,6 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 ServerManager::~ServerManager() {
 	for (std::list<server>::iterator it = _server_list.begin(); it != _server_list.end(); ++it) {
 		std::cout << "closing connection on server " << it->listen_fd << std::endl;
-		//if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, it->listen_fd, NULL) < 0)
-			//throw std::runtime_error("epoll_ctl EPOLL_CTL_DEL");
 		close(it->listen_fd);
 	}
 	if (!_client_map.empty()) {
@@ -324,10 +322,15 @@ ServerManager::~ServerManager() {
 		for (map_iterator_type it = _client_map.begin(); it != _client_map.end(); ++it) {
 			stack.push(it->first);
 		}
-		for (size_t i = 0; i < _client_map.size(); ++i) {
+		size_t size = _client_map.size();
+		for (size_t i = 0; i < size; ++i) {
 			closeClientConnection(stack.top());
 			stack.pop();
 		}
 	}
-	close(_epoll_fd);
+	#if (defined (LINUX) || defined (__linux__))
+		close(_epoll_fd);
+	#else
+		close(_kqueue_fd);
+	#endif
 }

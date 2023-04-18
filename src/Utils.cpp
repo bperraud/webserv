@@ -26,14 +26,15 @@ bool correctPath(const std::string& path) {
 
 std::string intToString(int value)
 {
-	std::ostringstream oss;
-	oss << value;
-	return oss.str();
+	std::stringstream ss;
+	ss << value;
+	return ss.str();
 }
 
-void loadFile(const std::string &fileName, std::basic_iostream<char> &stream) {
+void loadFile(const std::string &fileName, std::stringstream &stream) {
 	std::ifstream input_file(fileName.c_str());
 	stream << input_file.rdbuf();
+	input_file.close();
 }
 
 std::ofstream* createOrEraseFile(std::string fileName) {

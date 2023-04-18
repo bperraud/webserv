@@ -19,7 +19,7 @@ namespace Utils {
 	std::string		intToString(int value);
 
 	std::string 	urlDecode(const std::string &url);
-	void			loadFile(const std::string &fileName, std::basic_iostream<char> &stream) ;
+	void			loadFile(const std::string &fileName, std::stringstream &stream) ;
 
 	std::ofstream*	createOrEraseFile(std::string fileName);
 	int				directoryListing(const std::string &dir);

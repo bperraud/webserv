@@ -261,6 +261,13 @@ void HttpHandler::handleCGI(const std::string &original_url) {
 	}
 }
 
+void HttpHandler::redirection() {
+	_response.status_code = "301";
+    _response.status_phrase = "Moved Permanently";
+    _response.map_headers["Location"] = _active_route->redir;
+	_response_body_stream << "<html><body><h1>301 Moved Permanently</h1></body></html>";
+}
+
 void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
@@ -278,14 +285,11 @@ void HttpHandler::createHttpResponse() {
 		_body_size_exceeded = false;
 		error(413);
 	}
-	else if(!_active_route->handler.empty()) { // cgi
+	else if(!_active_route->handler.empty()) {
 		handleCGI(original_url);
 	}
-	else if (_active_route->redir.size()) {
-    	_response.status_code = "301";
-    	_response.status_phrase = "Moved Permanently";
-    	_response.map_headers["Location"] = _active_route->redir;
-		error(301);
+	else if (!_active_route->redir.empty()) {
+    	redirection();
 	}
 	else {
 		for (index = 0; index < 4; index++)
@@ -313,7 +317,7 @@ void HttpHandler::createHttpResponse() {
 
 void HttpHandler::error(int error) {
 	resetRequestContext();
-	ErrorHandler* error_handler;
+	ErrorHandler* error_handler = 0;
 	std::string error_page;
 	if (_server.error_pages.find(Utils::intToString(error)) != _server.error_pages.end())
 		error_page = _server.error_pages[Utils::intToString(error)];
@@ -321,9 +325,7 @@ void HttpHandler::error(int error) {
 		error_handler = new ServerError(_response, _response_body_stream, error_page);
 	else if (error >= 400)
 		error_handler = new ClientError(_response, _response_body_stream, error_page);
-	else
-		error_handler = new Redirections(_response, _response_body_stream, error_page);
-	error_handler->errorProcess(error);
+	if (error_handler) error_handler->errorProcess(error);
 	delete error_handler;
 }
 

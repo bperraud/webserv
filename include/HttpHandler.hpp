@@ -109,6 +109,7 @@ public:
 
 	void	error(int error) ;
 
+	void 	redirection();
 	void	resetRequestContext();
 	void	copyLast4Char(char *buffer, ssize_t nbytes);
 

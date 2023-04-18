@@ -20,15 +20,6 @@ public:
 	virtual ~ErrorHandler() {};
 };
 
-class Redirections : public ErrorHandler {
-
-public:
-	Redirections(HttpResponse& request, std::stringstream& body_stream, const std::string &error_page);
-	~Redirections();
-
-	void movedPermanently(); 	// 301
-};
-
 class ClientError : public ErrorHandler {
 
 public:

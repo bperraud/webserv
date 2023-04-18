@@ -54,12 +54,12 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object) {
 				routes route;
 				route.handler = "";
 				route.index = "";
+				route.redir = "";
 				route.methods[0] = "";
 				route.methods[1] = "";
 				route.methods[2] = "";
 				route.root = "";
 				route.autoindex = false;
-
 				route.cgi = std::map<std::string, std::string>();
 				std::map<std::string, json_value>::const_iterator sub_sub_it;
 				for (sub_sub_it = route_value.object_value.begin(); sub_sub_it != route_value.object_value.end(); sub_sub_it++) {

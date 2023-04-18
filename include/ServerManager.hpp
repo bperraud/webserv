@@ -40,7 +40,6 @@
 # define TIMEOUT_SECS 5
 # define WAIT_TIMEOUT_SECS 2
 
-
 struct server : public server_config {
 	int	listen_fd;
 
@@ -53,7 +52,7 @@ typedef std::list<server>::const_iterator server_iterator_type;
 
 class ServerManager {
 
-public:
+private:
 	std::list<server>	_server_list;
 	map_type			_client_map;
 

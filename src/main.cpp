@@ -17,13 +17,13 @@
 #include "ServerManager.hpp"
 #include "CGIExecutor.hpp"
 
-void	signalHandler(int signal, ServerManager &serverManager) {
-	std::cout << "Signal handler called for signal : " << signal << std::endl;
-	if (signal == SIGINT)
-		serverManager._client_map.clear();
-	system("leaks webserv");
-	exit(EXIT_SUCCESS);
-}
+//void	signalHandler(int signal, ServerManager &serverManager) {
+//	std::cout << "Signal handler called for signal : " << signal << std::endl;
+//	if (signal == SIGINT)
+//		serverManager._client_map.clear();
+//	system("leaks webserv");
+//	exit(EXIT_SUCCESS);
+//}
 
 ServerManager* g_serverManager = 0;
 

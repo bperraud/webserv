@@ -12,10 +12,13 @@
 </head>
 <body>
 	<h1>webserv</h1>
-	<button> Bouton 1 </button>
-	<button> Bouton 2 </button>
-	<button> Bouton 3 </button>
-</body>
+		<button onclick="openNewTab()">!!! Vous avez gagn&eacute; un iphone 11 !!! cliquez ici !!!</button>
+
+		<script>
+		  function openNewTab() {
+			window.open("http://localhost:8080/redir/", "_blank");
+		  }
+		</script>
 <body>
 	<h1>Upload File Form</h1>
 	<form action="form/upload" method="POST" enctype="multipart/form-data" target="_blank">

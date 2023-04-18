@@ -96,7 +96,7 @@ void ServerManager::handleNewConnection(int socket, const server *serv) {
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, new_sockfd, &event) < 0)
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
 	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, serv)));
-	std::cout << "new connection -> " <<  GREEN << "socket " << new_sockfd << RESET << std::endl;
+	std::cout << "new connection -> " <<  GREEN << "client " << new_sockfd << RESET << std::endl;
 }
 
 void ServerManager::eventManager() {
@@ -150,7 +150,7 @@ void ServerManager::handleNewConnection(int socket, const server *serv) {
 	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
 		throw std::runtime_error("kevent add write");
 	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, serv)));
-	std::cout << "new connection -> " <<  GREEN << "socket " << new_sockfd << RESET << std::endl;
+	std::cout << "new connection -> " <<  GREEN << "client " << new_sockfd << RESET << std::endl;
 }
 
 void ServerManager::eventManager() {

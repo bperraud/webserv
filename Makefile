@@ -4,7 +4,6 @@ SRC = $(wildcard src/*.cpp)
 
 CXX = c++
 
-#CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -Iinclude
 CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -Iinclude -O3 #-fsanitize=address -g
 
 OBJ = $(SRC:.cpp=.o)

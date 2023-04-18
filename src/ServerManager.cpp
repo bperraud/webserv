@@ -4,7 +4,6 @@
 ServerManager::ServerManager(const ServerConfig &config) {
 	std::list<server_config> server_list = config.getServerList();
 	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
-		std::cout << "server manager : " << *it << std::endl;
 		server serv(*it);
 		setupSocket(serv);
 		_server_list.push_back(serv);
@@ -99,9 +98,9 @@ void ServerManager::handleNewConnection(int socket, const server *serv) {
 }
 
 void ServerManager::eventManager() {
-	std::vector<struct epoll_event> events(MAX_EVENTS);
+	struct epoll_event events[MAX_EVENTS];
 	while (1) {
-		int n_ready = epoll_wait(_epoll_fd, events.data(), MAX_EVENTS, WAIT_TIMEOUT_SECS * 1000);
+		int n_ready = epoll_wait(_epoll_fd, events, MAX_EVENTS, WAIT_TIMEOUT_SECS * 1000);
 		if (n_ready == -1)
 			throw std::runtime_error("epoll_wait");
 		for (int i = 0; i < n_ready; i++) {
@@ -217,7 +216,6 @@ void ServerManager::handleWriteEvent(int client_fd) {
 	}
 }
 
-
 void ServerManager::closeClientConnection(int client_fd) {
 #if (defined (LINUX) || defined (__linux__))
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
@@ -234,7 +232,6 @@ void ServerManager::closeClientConnection(int client_fd) {
 	_client_map.erase(client_fd);
 	close(client_fd);
 	std::cout << "connection closed on client " << client_fd << std::endl;
-	return ;
 }
 
 void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem) {
@@ -253,7 +250,6 @@ void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem)
 	_client_map.erase(elem);
 	close(client_fd);
 	std::cout << "connection closed on client " << client_fd << std::endl;
-	return ;
 }
 
 void ServerManager::connectionCloseMode(int client_fd) {
@@ -317,5 +313,21 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 }
 
 ServerManager::~ServerManager() {
-	std::cout << "Server manager destructor called\n";
+	for (std::list<server>::iterator it = _server_list.begin(); it != _server_list.end(); ++it) {
+		std::cout << "closing connection on server " << it->listen_fd << std::endl;
+		//if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, it->listen_fd, NULL) < 0)
+			//throw std::runtime_error("epoll_ctl EPOLL_CTL_DEL");
+		close(it->listen_fd);
+	}
+	if (!_client_map.empty()) {
+		std::stack<int> stack;
+		for (map_iterator_type it = _client_map.begin(); it != _client_map.end(); ++it) {
+			stack.push(it->first);
+		}
+		for (size_t i = 0; i < _client_map.size(); ++i) {
+			closeClientConnection(stack.top());
+			stack.pop();
+		}
+	}
+	// close(_epoll_fd);
 }

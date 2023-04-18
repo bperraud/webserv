@@ -14,8 +14,9 @@ def test_get():
 # Send a POST request with data
 def test_post():
 	data = {'username': 'john', 'password': 'doe'}
-	response = requests.post(URL + '/login', data=data)
-	assert(response.status_code == 404)
+	response = requests.post(URL + 'login', data=data)
+	assert(response.status_code == 200)
+	assert(response.text == "Response to application/x-www-form-urlencoded")
 	# large file
 	files = {'file': open('files/large_file.txt', 'rb')}
 	response = requests.post(URL + 'form/upload', files=files)
@@ -24,7 +25,7 @@ def test_post():
 
 # Send a DELETE request
 def test_delete():
-	response = requests.delete(URL + '/user/123')
+	response = requests.delete(URL + 'upload/123')
 	assert(response.status_code == 404)
 	response = requests.delete(URL + '/cgi/add.py')
 	assert(response.status_code == 405)
@@ -52,7 +53,7 @@ def test_chunked():
 		"Content-Type": "text/plain",
 	}
 	data = "This is the data to be sent in chunks"
-	response = requests.post(URL + 'chunck', headers=headers, data=chunker(data, 5))
+	response = requests.post(URL + 'sendback', headers=headers, data=chunker(data, 5))
 	assert response.text == data
 	assert response.status_code == 200
 

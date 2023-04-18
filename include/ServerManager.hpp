@@ -21,6 +21,7 @@
 #include <fcntl.h>		 // fcntl
 #include <netinet/tcp.h> // TCP_NODELAY
 #include <csignal>
+#include <stack>
 
 #if (defined (LINUX) || defined (__linux__))
 #include <sys/epoll.h>  // epoll
@@ -28,10 +29,11 @@
 #include <sys/event.h>  // kqueue
 #endif
 
-# define BUFFER_SIZE 10
+# define BUFFER_SIZE 4096
 # define MAX_EVENTS 4096
 # define TIMEOUT_SECS 5
 # define WAIT_TIMEOUT_SECS 2
+
 
 struct server : public server_config {
 	int	listen_fd;
@@ -80,7 +82,8 @@ public:
 	void	connectionCloseMode(int client_fd);
     void	closeClientConnection(int client_fd);
 	void	closeClientConnection(int client_fd, map_iterator_type elem);
-	
+
+	void	clear_client_map();
 };
 
 #endif

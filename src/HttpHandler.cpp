@@ -30,7 +30,7 @@ HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _time
 	_default_route.index = "";
 	_default_route.autoindex = false;
 	_default_route.methods[0] = "GET";
-	_default_route.methods[1] = "";
+	_default_route.methods[1] = "POST";
 	_default_route.methods[2] = "";
 	_default_route.root = ROOT_PATH;
 }
@@ -240,27 +240,46 @@ void HttpHandler::unchunckMessage() {
         _request_body_stream.ignore(2);
         _response_body_stream.write(chunk.data(), chunk_size);
     }
+	_request_body_stream.str("");
+	_request_body_stream.clear();
+	_request_body_stream << _response_body_stream.str();
+	_response_body_stream.str("");
+	_response_body_stream.clear();
+}
+
+void HttpHandler::handleCGI(const std::string &original_url) {
+	std::string extension = _request.url.substr(_request.url.find_last_of('.'));
+	int err = CGIExecutor::run(_request, &_response_body_stream, _active_route->handler, _active_route->cgi[extension], original_url);
+	if (err)
+		error(err);
+	else
+	{
+		_response.status_code = "200";
+		_response.status_phrase = "OK";
+		_response.map_headers["Content-Type"] = "text/html";
+		_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+	}
 }
 
 void HttpHandler::createHttpResponse() {
 	int index;
 	std::string type[4] = {"GET", "POST", "DELETE", ""};
 	_response.version = _request.version;
+	std::string original_url = _request.url;
 
 	setupRoute(_request.url);
+	if (_transfer_chunked) {
+		unchunckMessage();
+	}
 	if (invalidRequest()) {
 		error(400);
-	}
-	else if (!Utils::correctPath(_request.url)) {
-		error(404);
 	}
 	else if (_body_size_exceeded) {
 		_body_size_exceeded = false;
 		error(413);
 	}
-	else if(!_active_route->handler.empty()) {
-		std::string extension = _request.url.substr(_request.url.find_last_of('.'));
-		CGIExecutor::run(_request, _active_route->handler, _active_route->cgi[extension]);
+	else if(!_active_route->handler.empty()) { // cgi
+		handleCGI(original_url);
 	}
 	else {
 		for (index = 0; index < 4; index++)
@@ -410,23 +429,23 @@ void HttpHandler::POST() {
 	std::string request_content_type;
 	if (!findHeader("Content-Type", request_content_type))
 		return error(400);
-	if (_transfer_chunked) {
-		unchunckMessage();
-		_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
-		return;
-	}
 	size_t pos_boundary = request_content_type.find("boundary=");
 	if (pos_boundary != std::string::npos) { //multipart/form-data
 		uploadFile(request_content_type, pos_boundary);
 		_response.status_code = "201";
 		_response.status_phrase = "Created";
 	}
+	else if (_request.url == "www/sendback") {
+		_response_body_stream << _request_body_stream.str();
+	}
 	else if (request_content_type.find("application/x-www-form-urlencoded") != std::string::npos) {
-		_response.map_headers["Content-Length"] = "0";
+		_response_body_stream << "Response to application/x-www-form-urlencoded";
 	}
 	else { // others
 		return error(501);
 	}
+	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+	return;
 }
 
 void HttpHandler::DELETE() {

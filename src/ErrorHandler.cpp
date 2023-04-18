@@ -1,5 +1,6 @@
 #include "ErrorHandler.hpp"
 #include "HttpHandler.hpp"
+#include "Utils.hpp"
 
 ErrorHandler::ErrorHandler(HttpResponse& response, std::stringstream& body_stream, const std::string &error_page) :
 	_response(response), _body_stream(body_stream) , _error_map(), _error_page(error_page) {

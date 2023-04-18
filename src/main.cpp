@@ -31,7 +31,7 @@ void signalHandler(int signal)
 {
     if (g_serverManager)
     {
-        std::cout << "\nServer closed with signal " << signal << " (ctrl-c).\n";
+        std::cout << RED << "\nserver closed with signal " << signal << " (ctrl-c)." << RESET << std::endl;
         delete g_serverManager;
         g_serverManager = 0;
     }
@@ -46,7 +46,6 @@ int main(int argc, char **argv, char ** envp)
 		std::cerr << "Usage: ./webserv <config_file>" << std::endl;
 		return 1;
 	}
-	std::cout << "server started..." << std::endl;
 
 	CGIExecutor::getCgiInstance().setEnv(envp);
 

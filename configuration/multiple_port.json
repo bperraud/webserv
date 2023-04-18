@@ -5,7 +5,7 @@
         "/": {
           "root": "www",
           "methods": ["GET"],
-          "index": "1.html"
+          "index": "index.html"
         }
       }
     },
@@ -15,7 +15,7 @@
         "/": {
           "root": "www",
           "methods": ["GET"],
-          "index": "2.html"
+          "index": "index2.html"
         }
       }
     }

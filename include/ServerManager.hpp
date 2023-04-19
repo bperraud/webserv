@@ -28,6 +28,7 @@
 #define RESET   "\033[0m"
 #define GREEN   "\033[32m"
 #define RED     "\033[31m"
+#define BLACK	"\033[1;30m"
 
 #if (defined (LINUX) || defined (__linux__))
 #include <sys/epoll.h>  // epoll
@@ -62,6 +63,8 @@ private:
 	int		_kqueue_fd;
 #endif
 
+typedef std::pair<int, HttpHandler*> fd_client_pair;
+
 public:
     ServerManager(const ServerConfig &config);
     ~ServerManager();
@@ -70,23 +73,24 @@ public:
 	void	setNonBlockingMode(int socket);
 	void	setupSocket(server &serv);
 
+	void	printServerSocket(int socket);
 
 	void	epollInit();
 	const server*	isPartOfListenFd(int fd) const;
 
-	int 	treatReceiveData(char *buffer, const ssize_t nbytes, int client_fd);
-	int		readFromClient(int client_fd);
+	int 	treatReceiveData(char *buffer, const ssize_t nbytes, HttpHandler *client);
+	int		readFromClient(fd_client_pair client);
 	void	writeToClient(int client_fd, const std::string &str);
 
-	void	handleReadEvent(int client_fd);
-	void	handleWriteEvent(int client_fd);
+	void	handleReadEvent(fd_client_pair client);
+	void	handleWriteEvent(fd_client_pair client);
 	void 	handleNewConnection(int listen_fd, const server* serv);
 
 	void	eventManager();
 	void	timeoutCheck();
-	void	connectionCloseMode(int client_fd);
-    void	closeClientConnection(int client_fd);
-	void	closeClientConnection(int client_fd, map_iterator_type elem);
+	void	connectionCloseMode(fd_client_pair client);
+    void	closeClientConnection(fd_client_pair client);
+	void	closeClientConnection(fd_client_pair client, map_iterator_type elem);
 
 	void	clear_client_map();
 };

@@ -15,6 +15,10 @@ void ServerManager::run() {
 	eventManager();
 }
 
+void ServerManager::printServerSocket(int socket) {
+	std::cout << BLACK << "[" <<  socket  << "] " << RESET ;
+}
+
 void	ServerManager::setupSocket(server &serv) {
 	struct sockaddr_in host_addr;
 	serv.listen_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -38,8 +42,8 @@ void	ServerManager::setupSocket(server &serv) {
 	setNonBlockingMode(serv.listen_fd);
 	if (listen(serv.listen_fd, SOMAXCONN) < 0)
 		throw std::runtime_error("listen failed");
-	//std::cout << "server listening for connections on " << std::endl;
-	std::cout << "server listening for connections -> "
+	printServerSocket(serv.listen_fd);
+	std::cout <<  "server listening for connections -> "
 	<< YELLOW << "[" << serv.host << ", " << serv.PORT << "] " <<  RESET << std::endl;
 }
 
@@ -51,10 +55,10 @@ void ServerManager::setNonBlockingMode(int socket) {
 void ServerManager::timeoutCheck() {
 	for (map_iterator_type it = _client_map.begin(); it != _client_map.end();) {
 		if (it->second->hasTimeOut()) {
-			int fd = it->first;
+			fd_client_pair client = *it;
 			map_iterator_type to_delete = it;
 			++it;
-			closeClientConnection(fd, to_delete);
+			closeClientConnection(client, to_delete);
 		}
 		else
 			++it;
@@ -111,11 +115,14 @@ void ServerManager::eventManager() {
 			if (serv) {
 				handleNewConnection(fd, serv);
 			}
-			else if (events[i].events & EPOLLIN) {
-				handleReadEvent(fd);
-			}
-			else if (events[i].events & EPOLLOUT) {
-				handleWriteEvent(fd);
+			else {
+				fd_client_pair client = *_client_map.find(fd);
+				if (events[i].events & EPOLLIN) {
+					handleReadEvent(client);
+				}
+				else if (events[i].events & EPOLLOUT) {
+					handleWriteEvent(client);
+				}
 			}
 		}
 		timeoutCheck();
@@ -168,11 +175,14 @@ void ServerManager::eventManager() {
 			if (serv) {
 				handleNewConnection(fd, serv);
 			}
-			else if (events[i].filter == EVFILT_READ) {
-				handleReadEvent(fd);
-			}
-			else if (events[i].filter == EVFILT_WRITE) {
-				handleWriteEvent(fd);
+			else {
+				fd_client_pair client = *_client_map.find(fd);
+				if (events[i].filter == EVFILT_READ) {
+					handleReadEvent(client);
+				}
+				else if (events[i].filter == EVFILT_WRITE) {
+					handleWriteEvent(client);
+				}
 			}
 		}
 		timeoutCheck();
@@ -180,10 +190,9 @@ void ServerManager::eventManager() {
 }
 #endif
 
-void ServerManager::handleReadEvent(int client_fd) {
-	if (!readFromClient(client_fd)) {
-		HttpHandler *client = _client_map[client_fd];
-		client->stopTimer();
+void ServerManager::handleReadEvent(fd_client_pair client)  {
+	if (!readFromClient(client)) {
+		client.second->stopTimer();
 
 		#if 0
 		std::cout << "Header for client : " << client_fd << std::endl;
@@ -192,7 +201,7 @@ void ServerManager::handleReadEvent(int client_fd) {
 		std::cout << client->getBody() << std::endl;
 		#endif
 
-		client->createHttpResponse();
+		client.second->createHttpResponse();
 
 		#if 0
 		std::cout << "Response Header to client : " << client_fd << std::endl;
@@ -201,67 +210,63 @@ void ServerManager::handleReadEvent(int client_fd) {
 		std::cout << client->getResponseBody() << std::endl;
 		#endif
 
-
-		client->setReadyToWrite(true);
+		client.second->setReadyToWrite(true);
 	}
 }
 
-void ServerManager::handleWriteEvent(int client_fd) {
-	HttpHandler *client = _client_map[client_fd];
-	if (client->isReadyToWrite())
+void ServerManager::handleWriteEvent(fd_client_pair client) {
+	if (client.second->isReadyToWrite())
 	{
-		writeToClient(client_fd, client->getResponseHeader());
-		writeToClient(client_fd, client->getResponseBody());
-		client->resetRequestContext();
-		connectionCloseMode(client_fd);
-		client->setReadyToWrite(false);
+		writeToClient(client.first, client.second->getResponseHeader());
+		writeToClient(client.first, client.second->getResponseBody());
+		client.second->resetRequestContext();
+		connectionCloseMode(client);
+		client.second->setReadyToWrite(false);
 	}
 }
 
-void ServerManager::closeClientConnection(int client_fd) {
+void ServerManager::closeClientConnection(fd_client_pair client) {
 #if (defined (LINUX) || defined (__linux__))
-	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
+	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.first, NULL) < 0)
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_DEL");
 #else
 	struct kevent events[2];
-	EV_SET(events, client_fd, EVFILT_READ, EV_DELETE, 0, 0, 0);
-	EV_SET(events + 1, client_fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0);
+	EV_SET(events, client.first, EVFILT_READ, EV_DELETE, 0, 0, 0);
+	EV_SET(events + 1, client.first, EVFILT_WRITE, EV_DELETE, 0, 0, 0);
 	if (kevent(_kqueue_fd, events, 2, NULL, 0, NULL) < 0) {
 		throw std::runtime_error("kevent delete");
 	}
 #endif
-	delete _client_map[client_fd];
-	_client_map.erase(client_fd);
-	close(client_fd);
-	std::cout << "connection closed ->" << RED << " client " << client_fd << RESET << std::endl;
+	delete client.second;
+	_client_map.erase(client.first);
+	close(client.first);
+	std::cout << "connection closed ->" << RED << " client " << client.first << RESET << std::endl;
 }
 
-void ServerManager::closeClientConnection(int client_fd, map_iterator_type elem) {
+void ServerManager::closeClientConnection(fd_client_pair client, map_iterator_type elem) {
 #if (defined (LINUX) || defined (__linux__))
-	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client_fd, NULL) < 0)
+	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.first, NULL) < 0)
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_DEL");
 #else
 	struct kevent events[2];
-	EV_SET(events, client_fd, EVFILT_READ, EV_DELETE, 0, 0, 0);
-	EV_SET(events + 1, client_fd, EVFILT_WRITE, EV_DELETE, 0, 0, 0);
+	EV_SET(events, client.first, EVFILT_READ, EV_DELETE, 0, 0, 0);
+	EV_SET(events + 1, client.first, EVFILT_WRITE, EV_DELETE, 0, 0, 0);
 	if (kevent(_kqueue_fd, events, 2, NULL, 0, NULL ) < 0) {
 		throw std::runtime_error("kevent delete");
 	}
 #endif
-	delete _client_map[client_fd];
+	delete client.second;
 	_client_map.erase(elem);
-	close(client_fd);
-	std::cout << "connection closed ->" << RED << " client " << client_fd << RESET << std::endl;
+	close(client.first);
+	std::cout << "connection closed ->" << RED << " client " << client.first << RESET << std::endl;
 }
 
-void ServerManager::connectionCloseMode(int client_fd) {
-	if (!_client_map[client_fd]->isKeepAlive())
-		closeClientConnection(client_fd);
+void ServerManager::connectionCloseMode(fd_client_pair client) {
+	if (!client.second->isKeepAlive())
+		closeClientConnection(client);
 }
 
-int ServerManager::treatReceiveData(char *buffer, const ssize_t nbytes, int client_fd) {
-	HttpHandler *client = _client_map[client_fd];
-
+int ServerManager::treatReceiveData(char *buffer, const ssize_t nbytes, HttpHandler *client) {
 	client->startTimer();
 	client->copyLast4Char(buffer, nbytes);
 	bool isBodyUnfinished = client->isBodyUnfinished();
@@ -284,17 +289,15 @@ int ServerManager::treatReceiveData(char *buffer, const ssize_t nbytes, int clie
 	}
 }
 
-int	ServerManager::readFromClient(int client_fd) {
+int	ServerManager::readFromClient(fd_client_pair client) {
 	char buffer[BUFFER_SIZE + 4];
-
-	const ssize_t nbytes = recv(client_fd, buffer + 4, BUFFER_SIZE, 0);
+	const ssize_t nbytes = recv(client.first, buffer + 4, BUFFER_SIZE, 0);
 	if (nbytes <= 0) {
-		closeClientConnection(client_fd);
+		closeClientConnection(client);
 		return 1;
 	}
 	else {
-		//std::cout << "finished reading data from client " << client_fd << std::endl;
-		return (treatReceiveData(buffer, nbytes, client_fd));
+		return (treatReceiveData(buffer, nbytes, client.second));
 	}
 	return 1;
 }
@@ -303,11 +306,7 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 	const ssize_t nbytes = send(client_fd, str.c_str(), str.length(), 0);
 	if (nbytes == -1)
 		throw std::runtime_error("send()");
-	else if ((size_t) nbytes == str.length()) {
-		//std::cout << "finished writing " << client_fd << std::endl;
-	}
-	else {
-		//std::cout << "writing " << nbytes << " bytes to client " << client_fd << std::endl;
+	else if ((size_t) nbytes < str.length()) {
 		writeToClient(client_fd, str.substr(nbytes));
 	}
 }
@@ -318,9 +317,9 @@ ServerManager::~ServerManager() {
 		close(it->listen_fd);
 	}
 	if (!_client_map.empty()) {
-		std::stack<int> stack;
+		std::stack<fd_client_pair> stack;
 		for (map_iterator_type it = _client_map.begin(); it != _client_map.end(); ++it) {
-			stack.push(it->first);
+			stack.push(*it);
 		}
 		size_t size = _client_map.size();
 		for (size_t i = 0; i < size; ++i) {

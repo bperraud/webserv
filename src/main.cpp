@@ -23,7 +23,7 @@ void signalHandler(int signal)
 {
     if (g_serverManager)
     {
-        std::cout << RED << "\nserver closed with signal " << signal << " (ctrl-c)." << RESET << std::endl;
+        std::cout << BLACK << "\nserver closed with signal " << signal << " (ctrl-c)." << RESET << std::endl;
         delete g_serverManager;
         g_serverManager = 0;
     }

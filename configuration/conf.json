@@ -20,6 +20,14 @@
 			".py": "/usr/bin/python3"
 		  }
 		},
+		"/form/sub": {
+			"root": "www",
+			"handler": "www/cgi/sub.php",
+			"methods": ["GET"],
+			"cgi": {
+			  ".php": "/usr/local/opt/php@8.0/bin/php"
+			}
+		  },
 		"/form/upload": {
 		  "root": "www/upload",
 		  "methods": ["POST"]

@@ -49,13 +49,16 @@ struct server : public server_config {
 
 typedef std::map<int, HttpHandler*> map_type;
 typedef std::map<int, HttpHandler*>::iterator map_iterator_type;
-typedef std::list<server>::const_iterator server_iterator_type;
+
+typedef std::map<std::string, server> server_map_type;
+
+typedef std::list<server_map_type>::const_iterator server_iterator_type;
 
 class ServerManager {
 
 private:
-	std::list<server>	_server_list;
-	map_type			_client_map;
+	std::list<server_map_type>	_list_server_map;
+	map_type					_client_map;
 
 #if (defined (LINUX) || defined (__linux__))
 	int		_epoll_fd;

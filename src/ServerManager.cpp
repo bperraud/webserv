@@ -2,6 +2,13 @@
 
 
 ServerManager::ServerManager(const ServerConfig &config) {
+	//std::list<server_config> server_list = config.getServerList();
+	//for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
+	//	server serv(*it);
+	//	setupSocket(serv);
+	//	_server_list.push_back(serv);
+	//}
+
 	std::list<server_config> server_list = config.getServerList();
 	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		server serv(*it);
@@ -79,8 +86,8 @@ void ServerManager::epollInit() {
 	if (_epoll_fd < 0)
 		throw std::runtime_error("epoll_create1");
 	struct epoll_event event;
-	for (std::list<server>::iterator serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
-		event.data.fd = serv->listen_fd;
+	for (server_iterator_type server_map = _list_server_map.begin(); server_map != _list_server_map.end(); ++server_map) {
+		event.data.fd = server_map->begin()->second.listen_fd;
 		event.events = EPOLLIN;
 		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, serv->listen_fd, &event) < 0)
 			throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
@@ -194,20 +201,20 @@ void ServerManager::handleReadEvent(fd_client_pair client)  {
 	if (!readFromClient(client)) {
 		client.second->stopTimer();
 
-		#if 0
-		std::cout << "Header for client : " << client_fd << std::endl;
-		std::cout << client->getRequest() << std::endl;
+		#if 1
+		std::cout << "Header for client : " << client.first << std::endl;
+		std::cout << client.second->getRequest() << std::endl;
 		std::cout << "Message body :" << std::endl;
-		std::cout << client->getBody() << std::endl;
+		std::cout << client.second->getBody() << std::endl;
 		#endif
 
 		client.second->createHttpResponse();
 
 		#if 0
-		std::cout << "Response Header to client : " << client_fd << std::endl;
-		std::cout << client->getResponseHeader() << std::endl;
-		std::cout << "Response Message body to client : " << client_fd  << std::endl;
-		std::cout << client->getResponseBody() << std::endl;
+		std::cout << "Response Header to client : " << lient.first << std::endl;
+		std::cout << client.second->getResponseHeader() << std::endl;
+		std::cout << "Response Message body to client : " << lient.first  << std::endl;
+		std::cout << client.second->getResponseBody() << std::endl;
 		#endif
 
 		client.second->setReadyToWrite(true);

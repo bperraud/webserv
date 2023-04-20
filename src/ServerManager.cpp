@@ -17,14 +17,6 @@ ServerManager::ServerManager(const ServerConfig &config) {
 		//server_iterator_type elem = _list_server_map.find(serv.PORT);
 		_list_server_map[serv.PORT].insert(std::make_pair(serv.host, serv));
 
-		#if 0
-		if (elem != _list_server_map.end()) { // found
-			_list_server_map[serv.PORT].insert(std::make_pair(serv.host, serv));
-		}
-		else {
-			_list_server_map[serv.PORT] =
-		}
-		#endif
 
 		//_list_server_map
 	}

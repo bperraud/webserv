@@ -10,7 +10,6 @@ def test_get():
 	response = requests.get(URL + '/random')
 	assert(response.status_code == 404)
 
-
 # Send a POST request with data
 def test_post():
 	data = {'username': 'john', 'password': 'doe'}
@@ -21,7 +20,6 @@ def test_post():
 	files = {'file': open('files/large_file.txt', 'rb')}
 	response = requests.post(URL + 'form/upload', files=files)
 	assert(response.status_code == 413)
-
 
 # Send a DELETE request
 def test_delete():
@@ -39,7 +37,6 @@ def test_upload_file():
 	assert(response.status_code == 200)
 	response = requests.delete(URL + 'upload/upload.txt')
 	assert(response.status_code == 204)
-
 
 def chunker(data, size):
 	for i in range(0, len(data), size):

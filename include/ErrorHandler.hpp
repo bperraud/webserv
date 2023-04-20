@@ -27,8 +27,8 @@ public:
 	~ClientError();
 
 	void badRequest(); 			// 400
-	void notFound(); 			// 404
 	void forbidden(); 			// 403
+	void notFound(); 			// 404
 	void methodNotAllowed(); 	// 405
 	void timeout(); 			// 408
 	void payloadTooLarge(); 	// 413

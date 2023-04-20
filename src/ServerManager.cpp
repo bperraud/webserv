@@ -13,7 +13,20 @@ ServerManager::ServerManager(const ServerConfig &config) {
 	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		server serv(*it);
 		setupSocket(serv);
-		_server_list.push_back(serv);
+
+		//server_iterator_type elem = _list_server_map.find(serv.PORT);
+		_list_server_map[serv.PORT].insert(std::make_pair(serv.host, serv));
+
+		#if 0
+		if (elem != _list_server_map.end()) { // found
+			_list_server_map[serv.PORT].insert(std::make_pair(serv.host, serv));
+		}
+		else {
+			_list_server_map[serv.PORT] =
+		}
+		#endif
+
+		//_list_server_map
 	}
 	epollInit();
 }
@@ -72,10 +85,10 @@ void ServerManager::timeoutCheck() {
 	}
 }
 
-const server*	ServerManager::isPartOfListenFd(int fd) const {
-	for (server_iterator_type serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
-		if (fd == serv->listen_fd)
-			return serv.operator->();
+const server_name_map_type*	ServerManager::isPartOfListenFd(int fd) const {
+	for (server_iterator_type serv_it = _list_server_map.begin(); serv_it != _list_server_map.end(); ++serv_it) {
+		if (fd == serv_it->second.begin()->second.listen_fd)
+			return &(serv_it->second);
 	}
 	return NULL;
 }
@@ -149,7 +162,7 @@ void ServerManager::epollInit() {
 	}
 }
 
-void ServerManager::handleNewConnection(int socket, const server *serv) {
+void ServerManager::handleNewConnection(int socket, std::list<server> *serv_list) {
 	struct kevent event;
 	struct sockaddr_in client_addr;
 	socklen_t client_addrlen = sizeof(client_addr);
@@ -163,7 +176,7 @@ void ServerManager::handleNewConnection(int socket, const server *serv) {
 	EV_SET(&event, new_sockfd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
 	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
 		throw std::runtime_error("kevent add write");
-	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, serv)));
+	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, serv_list)));
 	std::cout << "new connection -> " <<  GREEN << "client " << new_sockfd << RESET << std::endl;
 }
 
@@ -178,7 +191,7 @@ void ServerManager::eventManager() {
 			throw std::runtime_error("kevent wait");
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].ident;
-			const server* serv = isPartOfListenFd(fd);
+			const server_name_map_type* serv = isPartOfListenFd(fd);
 			if (serv) {
 				handleNewConnection(fd, serv);
 			}

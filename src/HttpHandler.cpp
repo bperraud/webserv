@@ -1,8 +1,8 @@
 #include "HttpHandler.hpp"
 
 
-HttpHandler::HttpHandler(int timeout_seconds, const server_config* serv) : _timer(timeout_seconds),
-	_readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(), _left_to_read(0), _MIME_TYPES(), _server(*serv),
+HttpHandler::HttpHandler(int timeout_seconds, std::map<std::string, server_config> *serv_map) : _timer(timeout_seconds),
+	_readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(), _left_to_read(0), _MIME_TYPES(), _serv_map(serv_map), _server(NULL),
 	_close_keep_alive(false), _body_size_exceeded(false), _ready_to_write(false), _transfer_chunked(false),
 	_default_route(), _active_route(&_default_route){
 	_last_4_char[0] = '\0';
@@ -159,7 +159,7 @@ void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
 int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	if (!_left_to_read && !_transfer_chunked)
 		return 0;
-	if ( _server.max_body_size && static_cast<ssize_t>(_request_body_stream.tellp()) + nbytes > _server.max_body_size) {
+	if ( _server->max_body_size && static_cast<ssize_t>(_request_body_stream.tellp()) + nbytes > _server->max_body_size) {
 		_left_to_read = 0;
 		_body_size_exceeded = true;
 		return 0;
@@ -212,8 +212,8 @@ void HttpHandler::parseRequest() {
 }
 
 void HttpHandler::setupRoute(const std::string &url) {
-	std::map<std::string, routes>::iterator it = _server.routes_map.begin();
-	for (; it != _server.routes_map.end(); ++it) {
+	std::map<std::string, routes>::iterator it = _server->routes_map.begin();
+	for (; it != _server->routes_map.end(); ++it) {
 		if ((url.find(it->first) == 0 && it->first != "/" ) || (url == "/" && it->first == "/")) {
 			_active_route = &it->second;
 			if (_active_route->handler.empty())
@@ -319,8 +319,8 @@ void HttpHandler::error(int error) {
 	resetRequestContext();
 	ErrorHandler* error_handler = 0;
 	std::string error_page;
-	if (_server.error_pages.find(Utils::intToString(error)) != _server.error_pages.end())
-		error_page = _server.error_pages[Utils::intToString(error)];
+	if (_server->error_pages.find(Utils::intToString(error)) != _server->error_pages.end())
+		error_page = _server->error_pages[Utils::intToString(error)];
 	if (error >= 500)
 		error_handler = new ServerError(_response, _response_body_stream, error_page);
 	else if (error >= 400)

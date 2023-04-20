@@ -48,16 +48,16 @@ struct server : public server_config {
 };
 
 typedef std::map<int, HttpHandler*> map_type;
-typedef std::map<int, HttpHandler*>::iterator map_iterator_type;
+typedef std::map<int, HttpHandler*>::iterator 					map_iterator_type;
 
-typedef std::map<std::string, server> server_map_type;
+typedef std::map< std::string , server>							server_name_map_type;
 
-typedef std::list<server_map_type>::const_iterator server_iterator_type;
+typedef std::map<int, server_name_map_type>::const_iterator 	server_iterator_type;
 
 class ServerManager {
 
 private:
-	std::list<server_map_type>	_list_server_map;
+	std::map<int, server_name_map_type>	_list_server_map;
 	map_type					_client_map;
 
 #if (defined (LINUX) || defined (__linux__))
@@ -79,7 +79,7 @@ public:
 	void	printServerSocket(int socket);
 
 	void	epollInit();
-	const server*	isPartOfListenFd(int fd) const;
+	const server_name_map_type*	isPartOfListenFd(int fd) const;
 
 	int 	treatReceiveData(char *buffer, const ssize_t nbytes, HttpHandler *client);
 	int		readFromClient(fd_client_pair client);
@@ -87,7 +87,7 @@ public:
 
 	void	handleReadEvent(fd_client_pair client);
 	void	handleWriteEvent(fd_client_pair client);
-	void 	handleNewConnection(int listen_fd, const server* serv);
+	void 	handleNewConnection(int listen_fd, const server_name_map_type* serv);
 
 	void	eventManager();
 	void	timeoutCheck();

@@ -56,7 +56,11 @@ private:
 
 	ssize_t				_left_to_read;
 	std::map<std::string, std::string> _MIME_TYPES;
-	server_config		_server;
+
+
+	serv_map*			_serv_map;
+
+	server_config*		_server;
 
 	bool				_close_keep_alive;
 	bool				_body_size_exceeded;
@@ -75,7 +79,7 @@ private:
 	//? illegal et inutile askip
 
 public:
-	HttpHandler(int timeout_seconds, const server_config* serv);
+	HttpHandler(int timeout_seconds, std::map<std::string, server_config> *serv_map);
 	~HttpHandler();
 
 	bool	isKeepAlive() const;

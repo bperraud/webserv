@@ -1,13 +1,13 @@
 #include "ServerManager.hpp"
 
 
-const host_level2* ServerManager::hostLevel(int port) const {
+host_level2* ServerManager::hostLevel(int port)  {
 
 	struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
 	//fd_port_level1::const_iterator fd_port;
 
-	for (fd_port_level1::const_iterator it = _list_server_map.begin(); it != _list_server_map.end(); ++it) {
+	for (fd_port_level1::iterator it = _list_server_map.begin(); it != _list_server_map.end(); ++it) {
 
 		 int status = getsockname(it->first, (struct sockaddr *)&addr, &addrlen);
 		if (status != 0) {
@@ -18,12 +18,10 @@ const host_level2* ServerManager::hostLevel(int port) const {
 		std::cout << "Local port: " << ntohs(addr.sin_port) << std::endl;
 
 		if (port == ntohs(addr.sin_port))
+		{
 			return &it->second;
+		}
 
-		//fd_port_level1::const_iterator fd_port = _list_server_map.find(ntohs(addr.sin_port));
-		//if (fd_port == _list_server_map.end()) {
-		//	return NULL;
-		//}
 	}
 	return NULL;
 }
@@ -35,37 +33,14 @@ ServerManager::ServerManager(const ServerConfig &config) {
 		server serv(*it);
 
 
+		host_level2* host = hostLevel(serv.PORT);
 
-		fd_port_level1::iterator fd_port = _list_server_map.find(serv.PORT); // remplacer par getsockname()
-		if ( fd_port != _list_server_map.end()) { 	// found
+		if ( host ) { // port exist on the config
 
-			host_level2::iterator host = fd_port->second.find(serv.host);
-			if ( host != fd_port->second.end() ) { // found host
-				server_name_level3::iterator server_name = host->second.find(serv.name);
-				if (server_name != host->second.end()) { // found server name
-					throw std::runtime_error("server name already exists");
-				}
-				else {
-					host->second.insert(std::make_pair(serv.name, serv));
-				}
-			}
-			else {	// new host
-				server_name_level3 server_name;
-				server_name.insert(std::make_pair(serv.name, serv));
-				fd_port->second.insert(std::make_pair(serv.host, server_name));
-			}
-
+			host->insert(std::make_pair(serv.host, server_name_level3()));  // insert at level 2
 		}
-
-		else {
-
-			server_name_level3 server_name;
-			server_name.insert(std::make_pair(serv.name, serv));
-			host_level2 host;
-			host.insert(std::make_pair(serv.host, server_name));
-			_list_server_map.insert(std::make_pair(serv.PORT, host ));
-			setupSocket(serv);
-
+		else {	// new host
+			_list_server_map.insert(std::make_pair(serv.listen_fd, host_level2()));
 		}
 
 	}

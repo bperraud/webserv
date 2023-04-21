@@ -23,6 +23,7 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object) {
 
 	server.PORT = 8080;
 	server.host = "0.0.0.0";
+	server.name = "";
 	std::map<std::string, routes> routes_map;
 	std::map<std::string, json_value>::const_iterator it;
 	std::map<std::string, json_value>::const_iterator sub_it;
@@ -36,6 +37,9 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object) {
 			if (value.array_value.size() >= 2) {
 				server.PORT = value.array_value[1].number_value;
 			}
+		}
+		else if (key == "name") {
+			server.name = value.string_value;
 		}
 		else if (key == "max_body_size") {
 			server.max_body_size = value.number_value;

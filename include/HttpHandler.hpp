@@ -24,7 +24,7 @@
 
 struct server;
 
-typedef std::map<std::string, server>	server_map_type;
+typedef std::map<std::string, server>		server_name_level3;
 
 struct HttpMessage {
     std::string method;
@@ -62,7 +62,7 @@ private:
 	std::map<std::string, std::string> _MIME_TYPES;
 
 
-	const server_map_type*	_serv_map;
+	const server_name_level3*	_serv_map;
 
 	server_config*			_server;
 
@@ -83,7 +83,7 @@ private:
 	//? illegal et inutile askip
 
 public:
-	HttpHandler(int timeout_seconds, const server_map_type *serv_map);
+	HttpHandler(int timeout_seconds, const server_name_level3 *serv_map);
 	~HttpHandler();
 
 	bool	isKeepAlive() const;

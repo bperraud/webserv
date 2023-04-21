@@ -7,22 +7,37 @@ ServerManager::ServerManager(const ServerConfig &config) {
 	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		server serv(*it);
 
-		fd_port_level1::iterator elem = _list_server_map.find(serv.PORT);
-		if ( elem != _list_server_map.end()) { 	// found
+		fd_port_level1::iterator fd_port = _list_server_map.find(serv.PORT);
+		if ( fd_port != _list_server_map.end()) { 	// found
 
-			//_list_server_map[serv.PORT].insert(std::make_pair(serv.host, serv));
-			if ( _list_server_map[serv.PORT].find(serv.host) !=  )
-
+			host_level2::iterator host = fd_port->second.find(serv.host);
+			if ( host != fd_port->second.end() ) { // found host
+				server_name_level3::iterator server_name = host->second.find(serv.name);
+				if (server_name != host->second.end()) { // found server name
+					throw std::runtime_error("server name already exists");
+				}
+				else {
+					host->second.insert(std::make_pair(serv.name, serv));
+				}
+			}
+			else {	// new host
+				server_name_level3 server_name;
+				server_name.insert(std::make_pair(serv.name, serv));
+				fd_port->second.insert(std::make_pair(serv.host, server_name));
+			}
 
 		}
 
 		else {
 
+			server_name_level3 server_name;
+			server_name.insert(std::make_pair(serv.name, serv));
+			host_level2 host;
+			host.insert(std::make_pair(serv.host, server_name));
+			_list_server_map.insert(std::make_pair(serv.PORT, host ));
 			setupSocket(serv);
 
 		}
-		//if () // si serv.PORT + serv.host both exist;
-		_list_server_map[serv.PORT].insert(std::make_pair(serv.host, serv));
 
 	}
 	epollInit();
@@ -82,7 +97,7 @@ void ServerManager::timeoutCheck() {
 	}
 }
 
-const server_name_map_type*	ServerManager::isPartOfListenFd(int fd) const {
+const server_name_level3*	ServerManager::isPartOfListenFd(int fd) const {
 	for (server_iterator_type serv_it = _list_server_map.begin(); serv_it != _list_server_map.end(); ++serv_it) {
 		if (fd == serv_it->second.begin()->second.listen_fd)
 			return &(serv_it->second);
@@ -128,7 +143,7 @@ void ServerManager::eventManager() {
 			throw std::runtime_error("epoll_wait");
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
-			const server_name_map_type* serv = isPartOfListenFd(fd);
+			const server_name_level3* serv = isPartOfListenFd(fd);
 			if (serv) {
 				handleNewConnection(fd, serv);
 			}

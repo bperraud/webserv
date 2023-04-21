@@ -17,6 +17,7 @@ struct routes {
 
 struct server_config {
 	std::string host;
+	std::string name;
 	int			PORT;
 	int			max_body_size;
 	std::map<std::string, std::string> error_pages;

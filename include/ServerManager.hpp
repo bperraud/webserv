@@ -51,17 +51,17 @@ typedef std::map<int, HttpHandler*> map_type;
 typedef std::map<int, HttpHandler*>::iterator 			map_iterator_type;
 
 
-typedef std::map<std::string, server>					hostname_level3;
+typedef std::map<std::string, server>					server_name_level3;
 
-typedef std::map<std::string, hostname_level3>			address_level2; // map_adress_hostname_map
+typedef std::map<std::string, server_name_level3>		host_level2;
 
-typedef std::map<int, address_level2>					fd_port_level1;
+typedef std::map<int, host_level2>						fd_port_level1;
 
 class ServerManager {
 
 private:
-	fd_port_level1						_list_server_map;
-	map_type							_client_map;
+	fd_port_level1		_list_server_map;
+	map_type			_client_map;
 
 #if (defined (LINUX) || defined (__linux__))
 	int		_epoll_fd;

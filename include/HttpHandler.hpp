@@ -22,6 +22,10 @@
 # define CRLF "\r\n\r\n"
 # define ROOT_PATH "www"
 
+struct server;
+
+typedef std::map<std::string, server>	server_map_type;
+
 struct HttpMessage {
     std::string method;
     std::string url;
@@ -58,9 +62,9 @@ private:
 	std::map<std::string, std::string> _MIME_TYPES;
 
 
-	serv_map*			_serv_map;
+	const server_map_type*	_serv_map;
 
-	server_config*		_server;
+	server_config*			_server;
 
 	bool				_close_keep_alive;
 	bool				_body_size_exceeded;
@@ -79,7 +83,7 @@ private:
 	//? illegal et inutile askip
 
 public:
-	HttpHandler(int timeout_seconds, std::map<std::string, server_config> *serv_map);
+	HttpHandler(int timeout_seconds, const server_map_type *serv_map);
 	~HttpHandler();
 
 	bool	isKeepAlive() const;

@@ -13,10 +13,8 @@ ServerManager::ServerManager(const ServerConfig &config) {
 	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		server serv(*it);
 		setupSocket(serv);
-
 		//server_iterator_type elem = _list_server_map.find(serv.PORT);
 		_list_server_map[serv.PORT].insert(std::make_pair(serv.host, serv));
-
 
 		//_list_server_map
 	}
@@ -92,14 +90,14 @@ void ServerManager::epollInit() {
 		throw std::runtime_error("epoll_create1");
 	struct epoll_event event;
 	for (server_iterator_type server_map = _list_server_map.begin(); server_map != _list_server_map.end(); ++server_map) {
-		event.data.fd = server_map->begin()->second.listen_fd;
+		event.data.fd = server_map->second.begin()->second.listen_fd;
 		event.events = EPOLLIN;
-		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, serv->listen_fd, &event) < 0)
+		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, server_map->second.begin()->second.listen_fd, &event) < 0)
 			throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
 	}
 }
 
-void ServerManager::handleNewConnection(int socket, const server *serv) {
+void ServerManager::handleNewConnection(int socket, const server_name_map_type* server_map) {
 	struct epoll_event event;
 	struct sockaddr_in client_addr;
 	socklen_t client_addrlen = sizeof(client_addr);
@@ -111,7 +109,7 @@ void ServerManager::handleNewConnection(int socket, const server *serv) {
 	event.events = EPOLLIN | EPOLLOUT;;
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, new_sockfd, &event) < 0)
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
-	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, serv)));
+	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, server_map)));
 	std::cout << "new connection -> " <<  GREEN << "client " << new_sockfd << RESET << std::endl;
 }
 
@@ -123,7 +121,7 @@ void ServerManager::eventManager() {
 			throw std::runtime_error("epoll_wait");
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
-			const server* serv = isPartOfListenFd(fd);
+			const server_name_map_type* serv = isPartOfListenFd(fd);
 			if (serv) {
 				handleNewConnection(fd, serv);
 			}
@@ -324,10 +322,10 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 }
 
 ServerManager::~ServerManager() {
-	for (std::list<server>::iterator it = _server_list.begin(); it != _server_list.end(); ++it) {
-		std::cout << "connection closed ->" << RED << " server " << it->listen_fd << RESET << std::endl;
-		close(it->listen_fd);
-	}
+	//for (std::list<server>::iterator it = _server_list.begin(); it != _server_list.end(); ++it) {
+	//	std::cout << "connection closed ->" << RED << " server " << it->listen_fd << RESET << std::endl;
+	//	close(it->listen_fd);
+	//}
 	if (!_client_map.empty()) {
 		std::stack<fd_client_pair> stack;
 		for (map_iterator_type it = _client_map.begin(); it != _client_map.end(); ++it) {

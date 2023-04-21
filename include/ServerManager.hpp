@@ -50,7 +50,7 @@ struct server : public server_config {
 typedef std::map<int, HttpHandler*> map_type;
 typedef std::map<int, HttpHandler*>::iterator 					map_iterator_type;
 
-typedef std::map<std::string , server>							server_name_map_type;
+typedef std::map<std::string, server>							server_name_map_type;
 
 typedef std::map<int, server_name_map_type>::const_iterator 	server_iterator_type;
 
@@ -87,7 +87,7 @@ public:
 
 	void	handleReadEvent(fd_client_pair client);
 	void	handleWriteEvent(fd_client_pair client);
-	void 	handleNewConnection(int listen_fd, const server_name_map_type* serv);
+	void 	handleNewConnection(int listen_fd, const server_name_map_type* server_map);
 
 	void	eventManager();
 	void	timeoutCheck();

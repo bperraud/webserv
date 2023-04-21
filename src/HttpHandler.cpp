@@ -1,7 +1,7 @@
 #include "HttpHandler.hpp"
 
 
-HttpHandler::HttpHandler(int timeout_seconds, std::map<std::string, server_config> *serv_map) : _timer(timeout_seconds),
+HttpHandler::HttpHandler(int timeout_seconds, const server_map_type *serv_map) : _timer(timeout_seconds),
 	_readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(), _left_to_read(0), _MIME_TYPES(), _serv_map(serv_map), _server(NULL),
 	_close_keep_alive(false), _body_size_exceeded(false), _ready_to_write(false), _transfer_chunked(false),
 	_default_route(), _active_route(&_default_route){

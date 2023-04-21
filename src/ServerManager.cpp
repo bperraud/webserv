@@ -7,7 +7,9 @@ ServerManager::ServerManager(const ServerConfig &config) {
 	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		server serv(*it);
 
-		fd_port_level1::iterator fd_port = _list_server_map.find(serv.PORT);
+
+
+		fd_port_level1::iterator fd_port = _list_server_map.find(serv.PORT); // remplacer par getsockname()
 		if ( fd_port != _list_server_map.end()) { 	// found
 
 			host_level2::iterator host = fd_port->second.find(serv.host);
@@ -97,9 +99,11 @@ void ServerManager::timeoutCheck() {
 	}
 }
 
-const server_name_level3*	ServerManager::isPartOfListenFd(int fd) const {
-	for (server_iterator_type serv_it = _list_server_map.begin(); serv_it != _list_server_map.end(); ++serv_it) {
-		if (fd == serv_it->second.begin()->second.listen_fd)
+
+// return
+const host_level2*	ServerManager::isPartOfListenFd(int fd) const {
+	for (fd_port_level1::const_iterator serv_it = _list_server_map.begin(); serv_it != _list_server_map.end(); ++serv_it) {
+		if (fd == serv_it->first)
 			return &(serv_it->second);
 	}
 	return NULL;
@@ -111,27 +115,48 @@ void ServerManager::epollInit() {
 	if (_epoll_fd < 0)
 		throw std::runtime_error("epoll_create1");
 	struct epoll_event event;
-	for (server_iterator_type server_map = _list_server_map.begin(); server_map != _list_server_map.end(); ++server_map) {
-		event.data.fd = server_map->second.begin()->second.listen_fd;
+	for (fd_port_level1::const_iterator serv_it = _list_server_map.begin(); serv_it != _list_server_map.end(); ++serv_it) {
+		event.data.fd = serv_it->first;
 		event.events = EPOLLIN;
-		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, server_map->second.begin()->second.listen_fd, &event) < 0)
+		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, serv_it->first, &event) < 0)
 			throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
 	}
 }
 
-void ServerManager::handleNewConnection(int socket, const server_name_map_type* server_map) {
+void ServerManager::handleNewConnection(int socket, const host_level2* server_map) {
 	struct epoll_event event;
 	struct sockaddr_in client_addr;
 	socklen_t client_addrlen = sizeof(client_addr);
 	int new_sockfd = accept(socket, (struct sockaddr *)&client_addr, &client_addrlen);
 	if (new_sockfd < 0)
 		throw std::runtime_error("accept()");
+
+	getsockname( new_sockfd, (struct sockaddr *)( &client_addr ), &client_addrlen );
+
+	std::ostringstream client_ip_stream;
+	client_ip_stream << ((client_addr.sin_addr.s_addr >> 0) & 0xFF) << ".";
+	client_ip_stream << ((client_addr.sin_addr.s_addr >> 8) & 0xFF) << ".";
+	client_ip_stream << ((client_addr.sin_addr.s_addr >> 16) & 0xFF) << ".";
+	client_ip_stream << ((client_addr.sin_addr.s_addr >> 24) & 0xFF);
+	std::string client_ip = client_ip_stream.str();
+
+	char client_port_str[6];
+	sprintf(client_port_str, "%u", ntohs(client_addr.sin_port));
+	std::string client_port = client_port_str;
+
+	std::cout << "host : " << client_ip << std::endl;
+	std::cout << "port : " << client_port << std::endl;
+
+	server_name_level3 ret;
+
+
+
 	setNonBlockingMode(new_sockfd);
 	event.data.fd = new_sockfd;
 	event.events = EPOLLIN | EPOLLOUT;;
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, new_sockfd, &event) < 0)
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
-	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, server_map)));
+	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, ret)));
 	std::cout << "new connection -> " <<  GREEN << "client " << new_sockfd << RESET << std::endl;
 }
 

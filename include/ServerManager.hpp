@@ -82,7 +82,7 @@ public:
 	void	printServerSocket(int socket);
 
 	void	epollInit();
-	const server_name_map_type*	isPartOfListenFd(int fd) const;
+	const host_level2*	isPartOfListenFd(int fd) const;
 
 	int 	treatReceiveData(char *buffer, const ssize_t nbytes, HttpHandler *client);
 	int		readFromClient(fd_client_pair client);
@@ -90,7 +90,7 @@ public:
 
 	void	handleReadEvent(fd_client_pair client);
 	void	handleWriteEvent(fd_client_pair client);
-	void 	handleNewConnection(int socket, const server_name_map_type* server_map);
+	void 	handleNewConnection(int socket, const host_level2* server_map);
 
 	void	eventManager();
 	void	timeoutCheck();

@@ -1,15 +1,31 @@
 #include "ServerManager.hpp"
 
 
-const host_level2* ServerManager::hostLevel(int fd) const {
+const host_level2* ServerManager::hostLevel(int port) const {
 
-	int port = getsockname(fd, NULL, NULL);
+	struct sockaddr_in addr;
+    socklen_t addrlen = sizeof(addr);
+	//fd_port_level1::const_iterator fd_port;
 
-	fd_port_level1::const_iterator fd_port = _list_server_map.find(port);
-	if (fd_port == _list_server_map.end()) {
-		return NULL;
+	for (fd_port_level1::const_iterator it = _list_server_map.begin(); it != _list_server_map.end(); ++it) {
+
+		 int status = getsockname(it->first, (struct sockaddr *)&addr, &addrlen);
+		if (status != 0) {
+			std::cerr << "getsockname error" << std::endl;
+			return NULL;
+		}
+		inet_ntop(AF_INET, &(addr.sin_addr), NULL, INET_ADDRSTRLEN);
+		std::cout << "Local port: " << ntohs(addr.sin_port) << std::endl;
+
+		if (port == ntohs(addr.sin_port))
+			return &it->second;
+
+		//fd_port_level1::const_iterator fd_port = _list_server_map.find(ntohs(addr.sin_port));
+		//if (fd_port == _list_server_map.end()) {
+		//	return NULL;
+		//}
 	}
-	return &fd_port->second;
+	return NULL;
 }
 
 ServerManager::ServerManager(const ServerConfig &config) {

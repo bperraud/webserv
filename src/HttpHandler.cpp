@@ -274,6 +274,7 @@ void HttpHandler::createHttpResponse() {
 	_response.version = _request.version;
 	std::string original_url = _request.url;
 
+	(void) _serv_map;
 	setupRoute(_request.url);
 	if (_transfer_chunked) {
 		unchunckMessage();

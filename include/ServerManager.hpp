@@ -87,7 +87,7 @@ public:
 
 	void	handleReadEvent(fd_client_pair client);
 	void	handleWriteEvent(fd_client_pair client);
-	void 	handleNewConnection(int listen_fd, const server_name_map_type* server_map);
+	void 	handleNewConnection(int socket, const server_name_map_type* server_map);
 
 	void	eventManager();
 	void	timeoutCheck();

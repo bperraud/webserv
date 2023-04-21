@@ -145,14 +145,14 @@ void ServerManager::epollInit() {
 	if (_kqueue_fd < 0)
 		throw std::runtime_error("kqueue");
 	struct kevent event;
-	for (std::list<server>::iterator serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
-		EV_SET(&event, serv->listen_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+	for (server_iterator_type server_map = _list_server_map.begin(); server_map != _list_server_map.end(); ++server_map) {
+		EV_SET(&event, server_map->second.begin()->second.listen_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 		if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
 			throw std::runtime_error("kevent EV_ADD");
 	}
 }
 
-void ServerManager::handleNewConnection(int socket, std::list<server> *serv_list) {
+void ServerManager::handleNewConnection(int socket, const server_name_map_type* server_map) {
 	struct kevent event;
 	struct sockaddr_in client_addr;
 	socklen_t client_addrlen = sizeof(client_addr);
@@ -166,7 +166,7 @@ void ServerManager::handleNewConnection(int socket, std::list<server> *serv_list
 	EV_SET(&event, new_sockfd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
 	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
 		throw std::runtime_error("kevent add write");
-	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, serv_list)));
+	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, server_map)));
 	std::cout << "new connection -> " <<  GREEN << "client " << new_sockfd << RESET << std::endl;
 }
 

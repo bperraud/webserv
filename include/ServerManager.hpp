@@ -75,11 +75,15 @@ public:
     ServerManager(const ServerConfig &config);
     ~ServerManager();
 
+
+	const host_level2* hostLevel(int fd) const;
+
+
     void	run();
 	void	setNonBlockingMode(int socket);
 	void	setupSocket(server &serv);
 
-	void	printServerSocket(int socket);
+	void	printServerSocket(int socket) const;
 
 	void	epollInit();
 	const host_level2*	isPartOfListenFd(int fd) const;

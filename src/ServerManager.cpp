@@ -1,6 +1,17 @@
 #include "ServerManager.hpp"
 
 
+const host_level2* ServerManager::hostLevel(int fd) const {
+
+	int port = getsockname(fd, NULL, NULL);
+
+	fd_port_level1::const_iterator fd_port = _list_server_map.find(port);
+	if (fd_port == _list_server_map.end()) {
+		return NULL;
+	}
+	return &fd_port->second;
+}
+
 ServerManager::ServerManager(const ServerConfig &config) {
 
 	std::list<server_config> server_list = config.getServerList();
@@ -49,7 +60,7 @@ void ServerManager::run() {
 	eventManager();
 }
 
-void ServerManager::printServerSocket(int socket) {
+void ServerManager::printServerSocket(int socket) const {
 	std::cout << BLACK << "[" <<  socket  << "] " << RESET ;
 }
 
@@ -131,6 +142,8 @@ void ServerManager::handleNewConnection(int socket, const host_level2* server_ma
 	if (new_sockfd < 0)
 		throw std::runtime_error("accept()");
 
+	(void) server_map;
+
 	getsockname( new_sockfd, (struct sockaddr *)( &client_addr ), &client_addrlen );
 
 	std::ostringstream client_ip_stream;
@@ -147,7 +160,7 @@ void ServerManager::handleNewConnection(int socket, const host_level2* server_ma
 	std::cout << "host : " << client_ip << std::endl;
 	std::cout << "port : " << client_port << std::endl;
 
-	server_name_level3 ret;
+	const server_name_level3* ret = 0;
 
 
 
@@ -168,7 +181,7 @@ void ServerManager::eventManager() {
 			throw std::runtime_error("epoll_wait");
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
-			const server_name_level3* serv = isPartOfListenFd(fd);
+			const host_level2* serv = isPartOfListenFd(fd);
 			if (serv) {
 				handleNewConnection(fd, serv);
 			}

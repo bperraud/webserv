@@ -2,21 +2,28 @@
 
 
 ServerManager::ServerManager(const ServerConfig &config) {
-	//std::list<server_config> server_list = config.getServerList();
-	//for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
-	//	server serv(*it);
-	//	setupSocket(serv);
-	//	_server_list.push_back(serv);
-	//}
 
 	std::list<server_config> server_list = config.getServerList();
 	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		server serv(*it);
-		setupSocket(serv);
-		//server_iterator_type elem = _list_server_map.find(serv.PORT);
+
+		fd_port_level1::iterator elem = _list_server_map.find(serv.PORT);
+		if ( elem != _list_server_map.end()) { 	// found
+
+			//_list_server_map[serv.PORT].insert(std::make_pair(serv.host, serv));
+			if ( _list_server_map[serv.PORT].find(serv.host) !=  )
+
+
+		}
+
+		else {
+
+			setupSocket(serv);
+
+		}
+		//if () // si serv.PORT + serv.host both exist;
 		_list_server_map[serv.PORT].insert(std::make_pair(serv.host, serv));
 
-		//_list_server_map
 	}
 	epollInit();
 }

@@ -159,6 +159,8 @@ void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
 int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	if (!_left_to_read && !_transfer_chunked)
 		return 0;
+	std::cout << "write " <<  std::endl;
+
 	if ( _server->max_body_size && static_cast<ssize_t>(_request_body_stream.tellp()) + nbytes > _server->max_body_size) {
 		_left_to_read = 0;
 		_body_size_exceeded = true;
@@ -212,6 +214,7 @@ void HttpHandler::parseRequest() {
 	if (findHeader("Host", host_header)) {
 		_request.host = host_header.substr(0, host_header.find(":"));
 	}
+	findServer();
 	_left_to_read = _request.body_length;
 }
 
@@ -274,6 +277,8 @@ void HttpHandler::redirection() {
 
 void HttpHandler::findServer() {
 	std::map<std::string, server>::iterator it = _serv_map->begin();
+	if (_serv_map->empty())
+		throw std::runtime_error("No server found");
 	for (; it != _serv_map->end(); ++it) {
 		_server = &it->second;
 		if (it->second.host == _request.host) {
@@ -288,8 +293,8 @@ void HttpHandler::createHttpResponse() {
 	_response.version = _request.version;
 	std::string original_url = _request.url;
 
-	(void) _serv_map;
-	findServer();
+	if (!_server)
+		throw std::runtime_error("No server found");
 	setupRoute(_request.url);
 	if (_transfer_chunked) {
 		unchunckMessage();

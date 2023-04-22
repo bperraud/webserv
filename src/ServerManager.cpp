@@ -132,8 +132,6 @@ void ServerManager::epollInit() {
 	}
 }
 
-
-
 void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 	struct epoll_event event;
 	struct sockaddr_in client_addr;
@@ -357,6 +355,7 @@ int ServerManager::treatReceiveData(char *buffer, const ssize_t nbytes, HttpHand
 int	ServerManager::readFromClient(fd_client_pair client) {
 	char buffer[BUFFER_SIZE + 4];
 	const ssize_t nbytes = recv(client.first, buffer + 4, BUFFER_SIZE, 0);
+
 	if (nbytes <= 0) {
 		closeClientConnection(client);
 		return 1;

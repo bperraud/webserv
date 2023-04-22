@@ -275,8 +275,8 @@ void HttpHandler::redirection() {
 void HttpHandler::findServer() {
 	std::map<std::string, server>::iterator it = _serv_map->begin();
 	for (; it != _serv_map->end(); ++it) {
+		_server = &it->second;
 		if (it->second.host == _request.host) {
-			_server = &it->second;
 			return;
 		}
 	}
@@ -289,6 +289,7 @@ void HttpHandler::createHttpResponse() {
 	std::string original_url = _request.url;
 
 	(void) _serv_map;
+	findServer();
 	setupRoute(_request.url);
 	if (_transfer_chunked) {
 		unchunckMessage();

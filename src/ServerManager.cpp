@@ -132,7 +132,9 @@ void ServerManager::epollInit() {
 	}
 }
 
-void ServerManager::handleNewConnection(int socket, host_level2* server_map) {
+
+
+void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 	struct epoll_event event;
 	struct sockaddr_in client_addr;
 	socklen_t client_addrlen = sizeof(client_addr);
@@ -140,7 +142,6 @@ void ServerManager::handleNewConnection(int socket, host_level2* server_map) {
 	if (new_sockfd < 0)
 		throw std::runtime_error("accept()");
 
-	(void) server_map;
 
 	getsockname( new_sockfd, (struct sockaddr *)( &client_addr ), &client_addrlen );
 
@@ -158,16 +159,12 @@ void ServerManager::handleNewConnection(int socket, host_level2* server_map) {
 	std::cout << "host : " << client_ip << std::endl;
 	std::cout << "port : " << client_port << std::endl;
 
-	server_name_level3* ret = 0;
-
-
-
 	setNonBlockingMode(new_sockfd);
 	event.data.fd = new_sockfd;
 	event.events = EPOLLIN | EPOLLOUT;;
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, new_sockfd, &event) < 0)
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
-	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, ret)));
+	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, &(*host_map)[client_ip])));
 	std::cout << "new connection -> " <<  GREEN << "client " << new_sockfd << RESET << std::endl;
 }
 

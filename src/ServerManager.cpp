@@ -6,12 +6,17 @@ host_level2* ServerManager::hostLevel(int port)  {
 	struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
 	for (fd_port_level1::iterator it = _list_server_map.begin(); it != _list_server_map.end(); ++it) {
-		 int status = getsockname(it->first, (struct sockaddr *)&addr, &addrlen);
+
+		std::cout << "fd: " << it->first << std::endl;
+		int status = getsockname(it->first, (struct sockaddr *)&addr, &addrlen);
 		if (status != 0) {
 			throw std::runtime_error("getsockname error");
 		}
-		inet_ntop(AF_INET, &(addr.sin_addr), NULL, INET_ADDRSTRLEN);
+		char address_str[INET_ADDRSTRLEN];  // buffer to hold the human-readable address
+		inet_ntop(AF_INET, &(addr.sin_addr), address_str, INET_ADDRSTRLEN);
+
 		std::cout << "Local port: " << ntohs(addr.sin_port) << std::endl;
+
 		if (port == ntohs(addr.sin_port))
 		{
 			return &it->second;
@@ -30,6 +35,7 @@ ServerManager::ServerManager(const ServerConfig &config) {
 			host->insert(std::make_pair(serv.host, server_name_level3()));  // insert at level 2
 		}
 		else {	// new host
+			setupSocket(serv);
 			_list_server_map.insert(std::make_pair(serv.listen_fd, host_level2()));
 		}
 

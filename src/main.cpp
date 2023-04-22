@@ -45,7 +45,7 @@ int main(int argc, char **argv, char ** envp)
 	g_serverManager = new ServerManager(config);
 
 	std::signal(SIGINT, (void (*)(int))signalHandler);
-	g_serverManager->run();
+	//g_serverManager->run();
 
 	return 0;
 }

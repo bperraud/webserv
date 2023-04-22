@@ -5,23 +5,17 @@ host_level2* ServerManager::hostLevel(int port)  {
 
 	struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
-	//fd_port_level1::const_iterator fd_port;
-
 	for (fd_port_level1::iterator it = _list_server_map.begin(); it != _list_server_map.end(); ++it) {
-
 		 int status = getsockname(it->first, (struct sockaddr *)&addr, &addrlen);
 		if (status != 0) {
-			std::cerr << "getsockname error" << std::endl;
-			return NULL;
+			throw std::runtime_error("getsockname error");
 		}
 		inet_ntop(AF_INET, &(addr.sin_addr), NULL, INET_ADDRSTRLEN);
 		std::cout << "Local port: " << ntohs(addr.sin_port) << std::endl;
-
 		if (port == ntohs(addr.sin_port))
 		{
 			return &it->second;
 		}
-
 	}
 	return NULL;
 }
@@ -31,12 +25,8 @@ ServerManager::ServerManager(const ServerConfig &config) {
 	std::list<server_config> server_list = config.getServerList();
 	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		server serv(*it);
-
-
 		host_level2* host = hostLevel(serv.PORT);
-
 		if ( host ) { // port exist on the config
-
 			host->insert(std::make_pair(serv.host, server_name_level3()));  // insert at level 2
 		}
 		else {	// new host

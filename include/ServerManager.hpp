@@ -78,7 +78,7 @@ public:
     ~ServerManager();
 
 
-	host_level2* hostLevel(int fd) ;
+	const int* hostLevel(int fd) ;
 
 
     void	run();

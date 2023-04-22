@@ -30,6 +30,7 @@ struct HttpMessage {
     std::string method;
     std::string url;
     std::string version;
+	std::string host;
     std::map<std::string, std::string> map_headers;
     bool has_body;
     size_t body_length;
@@ -62,7 +63,7 @@ private:
 	std::map<std::string, std::string> _MIME_TYPES;
 
 
-	const server_name_level3*	_serv_map;
+	server_name_level3*	_serv_map;
 
 	server_config*			_server;
 
@@ -83,7 +84,7 @@ private:
 	//? illegal et inutile askip
 
 public:
-	HttpHandler(int timeout_seconds, const server_name_level3 *serv_map);
+	HttpHandler(int timeout_seconds, server_name_level3 *serv_map);
 	~HttpHandler();
 
 	bool	isKeepAlive() const;
@@ -96,6 +97,9 @@ public:
 	std::string getResponseBody() const;
 	std::string getContentType(const std::string& path) const;
 	bool isAllowedMethod(const std::string &method) const;
+
+	void	findServer();
+
 
 	bool	isReadyToWrite() const;
 	bool	invalidRequest() const;

@@ -1,7 +1,7 @@
 #include "HttpHandler.hpp"
+#include "ServerManager.hpp"
 
-
-HttpHandler::HttpHandler(int timeout_seconds, const server_name_level3 *serv_map) : _timer(timeout_seconds),
+HttpHandler::HttpHandler(int timeout_seconds, server_name_level3 *serv_map) : _timer(timeout_seconds),
 	_readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(), _left_to_read(0), _MIME_TYPES(), _serv_map(serv_map), _server(NULL),
 	_close_keep_alive(false), _body_size_exceeded(false), _ready_to_write(false), _transfer_chunked(false),
 	_default_route(), _active_route(&_default_route){
@@ -208,6 +208,10 @@ void HttpHandler::parseRequest() {
 	if (findHeader("Transfer-Encoding", transfer_encoding_header)) {
 		_transfer_chunked = transfer_encoding_header == "chunked";
 	}
+	std::string host_header;
+	if (findHeader("Host", host_header)) {
+		_request.host = host_header.substr(0, host_header.find(":"));
+	}
 	_left_to_read = _request.body_length;
 }
 
@@ -266,6 +270,16 @@ void HttpHandler::redirection() {
     _response.status_phrase = "Moved Permanently";
     _response.map_headers["Location"] = _active_route->redir;
 	_response_body_stream << "<html><body><h1>301 Moved Permanently</h1></body></html>";
+}
+
+void HttpHandler::findServer() {
+	std::map<std::string, server>::iterator it = _serv_map->begin();
+	for (; it != _serv_map->end(); ++it) {
+		if (it->second.host == _request.host) {
+			_server = &it->second;
+			return;
+		}
+	}
 }
 
 void HttpHandler::createHttpResponse() {

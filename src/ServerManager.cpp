@@ -110,8 +110,8 @@ void ServerManager::timeoutCheck() {
 
 
 // return
-const host_level2*	ServerManager::isPartOfListenFd(int fd) const {
-	for (fd_port_level1::const_iterator serv_it = _list_server_map.begin(); serv_it != _list_server_map.end(); ++serv_it) {
+ host_level2*	ServerManager::isPartOfListenFd(int fd)  {
+	for (fd_port_level1::iterator serv_it = _list_server_map.begin(); serv_it != _list_server_map.end(); ++serv_it) {
 		if (fd == serv_it->first)
 			return &(serv_it->second);
 	}
@@ -132,7 +132,7 @@ void ServerManager::epollInit() {
 	}
 }
 
-void ServerManager::handleNewConnection(int socket, const host_level2* server_map) {
+void ServerManager::handleNewConnection(int socket, host_level2* server_map) {
 	struct epoll_event event;
 	struct sockaddr_in client_addr;
 	socklen_t client_addrlen = sizeof(client_addr);
@@ -158,7 +158,7 @@ void ServerManager::handleNewConnection(int socket, const host_level2* server_ma
 	std::cout << "host : " << client_ip << std::endl;
 	std::cout << "port : " << client_port << std::endl;
 
-	const server_name_level3* ret = 0;
+	server_name_level3* ret = 0;
 
 
 
@@ -179,7 +179,7 @@ void ServerManager::eventManager() {
 			throw std::runtime_error("epoll_wait");
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
-			const host_level2* serv = isPartOfListenFd(fd);
+			host_level2* serv = isPartOfListenFd(fd);
 			if (serv) {
 				handleNewConnection(fd, serv);
 			}

@@ -5,7 +5,6 @@ const int* ServerManager::hostLevel(int port)  {
 	struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
 	for (fd_port_level1::iterator it = _list_server_map.begin(); it != _list_server_map.end(); ++it) {
-
 		int status = getsockname(it->first, (struct sockaddr *)&addr, &addrlen);
 		if (status != 0) {
 			throw std::runtime_error("getsockname error");
@@ -21,32 +20,30 @@ const int* ServerManager::hostLevel(int port)  {
 }
 
 ServerManager::ServerManager(const ServerConfig &config) {
-
 	std::list<server_config> server_list = config.getServerList();
 	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		server serv(*it);
 		serv.is_default = false;
 		const int* server_fd = hostLevel(serv.PORT);
 		if ( server_fd ) { // port exist on the config
-			//check for level 3
 			serv.listen_fd = *server_fd;
 			if (_list_server_map[*server_fd].find(serv.host) != _list_server_map[*server_fd].end()) {  // host exist on the config
 				server_name_level3 server_name_map = _list_server_map[*server_fd][serv.host];
 				if (server_name_map.find(serv.name) != server_name_map.end()) {
 					throw std::runtime_error("server name already exist");
 				}
-				server_name_map.insert(std::make_pair(serv.name, serv)); // update level 3
+				server_name_map.insert(std::make_pair(serv.name, serv));
 			}
-			_list_server_map[*server_fd].insert(std::make_pair(serv.host, server_name_level3())); // update level 2
+			_list_server_map[*server_fd].insert(std::make_pair(serv.host, server_name_level3()));
 			serv.is_default = true;
-			_list_server_map[*server_fd][serv.host].insert(std::make_pair(serv.name, serv)); // update level 3
+			_list_server_map[*server_fd][serv.host].insert(std::make_pair(serv.name, serv));
 		}
-		else {	// new host
+		else {	// new fd
 			setupSocket(serv);
 			serv.is_default = true;
-			_list_server_map.insert(std::make_pair(serv.listen_fd, host_level2())); //update level 1
-			_list_server_map[serv.listen_fd].insert(std::make_pair(serv.host, server_name_level3())); //update level 2
-			_list_server_map[serv.listen_fd][serv.host].insert(std::make_pair(serv.name, serv)); //update level 3
+			_list_server_map.insert(std::make_pair(serv.listen_fd, host_level2()));
+			_list_server_map[serv.listen_fd].insert(std::make_pair(serv.host, server_name_level3()));
+			_list_server_map[serv.listen_fd][serv.host].insert(std::make_pair(serv.name, serv));
 		}
 	}
 	epollInit();
@@ -266,23 +263,7 @@ void ServerManager::eventManager() {
 void ServerManager::handleReadEvent(fd_client_pair client)  {
 	if (!readFromClient(client)) {
 		client.second->stopTimer();
-
-		#if 1
-		std::cout << "Header for client : " << client.first << std::endl;
-		std::cout << client.second->getRequest() << std::endl;
-		std::cout << "Message body :" << std::endl;
-		std::cout << client.second->getBody() << std::endl;
-		#endif
-
 		client.second->createHttpResponse();
-
-		#if 0
-		std::cout << "Response Header to client : " << lient.first << std::endl;
-		std::cout << client.second->getResponseHeader() << std::endl;
-		std::cout << "Response Message body to client : " << lient.first  << std::endl;
-		std::cout << client.second->getResponseBody() << std::endl;
-		#endif
-
 		client.second->setReadyToWrite(true);
 	}
 }
@@ -365,7 +346,6 @@ int ServerManager::treatReceiveData(char *buffer, const ssize_t nbytes, HttpHand
 int	ServerManager::readFromClient(fd_client_pair client) {
 	char buffer[BUFFER_SIZE + 4];
 	const ssize_t nbytes = recv(client.first, buffer + 4, BUFFER_SIZE, 0);
-
 	if (nbytes <= 0) {
 		closeClientConnection(client);
 		return 1;

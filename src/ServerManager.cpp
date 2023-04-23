@@ -161,14 +161,18 @@ void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 	std::cout << "host : " << client_ip << std::endl;
 	std::cout << "port : " << client_port << std::endl;
 
-
+	server_name_level3 *server_name ;
+	if (host_map->find(client_ip) == host_map->end())
+		server_name = &host_map->begin()->second;
+	else
+		server_name = &host_map->find(client_ip)->second;
 
 	setNonBlockingMode(new_sockfd);
 	event.data.fd = new_sockfd;
 	event.events = EPOLLIN | EPOLLOUT;;
 	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, new_sockfd, &event) < 0)
 		throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
-	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, &(*host_map)[client_ip])));
+	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, server_name)));
 	std::cout << "new connection -> " <<  GREEN << "client " << new_sockfd << RESET << std::endl;
 }
 
@@ -239,6 +243,12 @@ void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 	std::cout << "host : " << client_ip << std::endl;
 	std::cout << "port : " << client_port << std::endl;
 
+	server_name_level3 *server_name ;
+	if (host_map->find(client_ip) == host_map->end())
+		server_name = &host_map->begin()->second;
+	else
+		server_name = &host_map->find(client_ip)->second;
+
 	setNonBlockingMode(new_sockfd);
 	EV_SET(&event, new_sockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
@@ -246,7 +256,7 @@ void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 	EV_SET(&event, new_sockfd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
 	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
 		throw std::runtime_error("kevent add write");
-	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, &(*host_map)[client_ip])));
+	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, server_name)));
 	std::cout << "new connection -> " <<  GREEN << "client " << new_sockfd << RESET << std::endl;
 }
 

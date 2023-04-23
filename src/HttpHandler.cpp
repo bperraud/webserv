@@ -214,7 +214,7 @@ void HttpHandler::parseRequest() {
 	if (findHeader("Host", host_header)) {
 		_request.host = host_header.substr(0, host_header.find(":"));
 	}
-	findServer();
+
 	_left_to_read = _request.body_length;
 }
 

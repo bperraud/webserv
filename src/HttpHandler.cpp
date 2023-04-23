@@ -279,7 +279,7 @@ void HttpHandler::findServer() {
 		throw std::runtime_error("empty map");
 	_server = &it->second;
 	for (; it != _serv_map->end(); ++it) {
-		if (it->second.host == _request.host) {
+		if (it->second.name == _request.host) {
 			_server = &it->second;
 			return;
 		}

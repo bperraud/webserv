@@ -280,6 +280,7 @@ void HttpHandler::findServer() {
 	_server = &it->second;
 	for (; it != _serv_map->end(); ++it) {
 		if (it->second.host == _request.host) {
+			_server = &it->second;
 			return;
 		}
 	}

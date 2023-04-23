@@ -277,8 +277,8 @@ void HttpHandler::findServer() {
 	std::map<std::string, server>::iterator it = _serv_map->begin();
 	if (_serv_map->empty())
 		throw std::runtime_error("empty map");
+	_server = &it->second;
 	for (; it != _serv_map->end(); ++it) {
-		_server = &it->second;
 		if (it->second.host == _request.host) {
 			return;
 		}

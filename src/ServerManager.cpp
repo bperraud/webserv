@@ -198,8 +198,8 @@ void ServerManager::epollInit() {
 	if (_kqueue_fd < 0)
 		throw std::runtime_error("kqueue");
 	struct kevent event;
-	for (server_iterator_type server_map = _list_server_map.begin(); server_map != _list_server_map.end(); ++server_map) {
-		EV_SET(&event, server_map->second.begin()->second.listen_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
+	for (fd_port_level1::const_iterator serv_it = _list_server_map.begin(); serv_it != _list_server_map.end(); ++serv_it) {
+		EV_SET(&event, serv_it->first, EVFILT_READ, EV_ADD, 0, 0, NULL);
 		if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
 			throw std::runtime_error("kevent EV_ADD");
 	}

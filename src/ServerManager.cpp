@@ -375,6 +375,10 @@ ServerManager::~ServerManager() {
 		for (map_iterator_type it = _client_map.begin(); it != _client_map.end(); ++it) {
 			stack.push(*it);
 		}
+		while (!stack.empty()) {
+			closeClientConnection(stack.top());
+			stack.pop();
+		}
 	}
 	#if (defined (LINUX) || defined (__linux__))
 		close(_epoll_fd);

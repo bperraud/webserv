@@ -79,9 +79,7 @@ public:
 	void	setNonBlockingMode(int socket);
 	void	setupSocket(server &serv);
 
-	const int* hostLevel(int fd)  ;
-
-	void	printServerSocket(int socket) const;
+	const int* hostLevel(int fd) ;
 
 	void	epollInit();
 	host_level2*	isPartOfListenFd(int fd) ;

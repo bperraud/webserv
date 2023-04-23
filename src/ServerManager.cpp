@@ -2,17 +2,15 @@
 
 
 const int* ServerManager::hostLevel(int port)  {
-
 	struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
 	for (fd_port_level1::iterator it = _list_server_map.begin(); it != _list_server_map.end(); ++it) {
 
-		std::cout << "fd: " << it->first << std::endl;
 		int status = getsockname(it->first, (struct sockaddr *)&addr, &addrlen);
 		if (status != 0) {
 			throw std::runtime_error("getsockname error");
 		}
-		char address_str[INET_ADDRSTRLEN];  // buffer to hold the human-readable address
+		char address_str[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &(addr.sin_addr), address_str, INET_ADDRSTRLEN);
 		if (port == ntohs(addr.sin_port))
 		{
@@ -55,10 +53,6 @@ void ServerManager::run() {
 	eventManager();
 }
 
-void ServerManager::printServerSocket(int socket) const {
-	std::cout << BLACK << "[" <<  socket  << "] " << RESET ;
-}
-
 void	ServerManager::setupSocket(server &serv) {
 	struct sockaddr_in host_addr;
 	serv.listen_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -82,7 +76,7 @@ void	ServerManager::setupSocket(server &serv) {
 	setNonBlockingMode(serv.listen_fd);
 	if (listen(serv.listen_fd, SOMAXCONN) < 0)
 		throw std::runtime_error("listen failed");
-	printServerSocket(serv.listen_fd);
+	std::cout << BLACK << "[" <<  socket  << "] " << RESET ;
 	std::cout <<  "server listening for connections -> "
 	<< YELLOW << "[" << serv.host << ", " << serv.PORT << "] " <<  RESET << std::endl;
 }

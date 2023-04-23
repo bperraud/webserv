@@ -148,10 +148,14 @@ void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 8) & 0xFF) << ".";
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 16) & 0xFF) << ".";
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 24) & 0xFF);
-	std::string client_ip = client_ip_stream.str();
 
-	char client_port_str[6];
-	sprintf(client_port_str, "%u", ntohs(client_addr.sin_port));
+
+	std::string client_ip = client_ip_stream.str();
+	std::string client_port_str;
+	std::stringstream ss;
+	ss << ntohs(client_addr.sin_port);
+	ss >> client_port_str;
+
 	std::string client_port = client_port_str;
 
 	std::cout << "host : " << client_ip << std::endl;
@@ -222,8 +226,13 @@ void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 24) & 0xFF);
 	std::string client_ip = client_ip_stream.str();
 
-	char client_port_str[6];
-	sprintf(client_port_str, "%u", ntohs(client_addr.sin_port));
+	std::string client_ip = client_ip_stream.str();
+	std::string client_port_str;
+	std::stringstream ss;
+	ss << ntohs(client_addr.sin_port);
+	ss >> client_port_str;
+
+
 	std::string client_port = client_port_str;
 
 	std::cout << "host : " << client_ip << std::endl;

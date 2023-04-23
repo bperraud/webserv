@@ -25,7 +25,7 @@
 			"handler": "www/cgi/sub.php",
 			"methods": ["GET"],
 			"cgi": {
-			  ".php": "/usr/local/opt/php@8.0/bin/php"
+			  ".php": "/usr/bin/php"
 			}
 		  },
 		"/form/upload": {

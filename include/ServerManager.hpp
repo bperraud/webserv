@@ -36,8 +36,6 @@
 #include <sys/event.h>  // kqueue
 #endif
 
-
-
 # define BUFFER_SIZE 4096
 # define MAX_EVENTS 4096
 # define TIMEOUT_SECS 5
@@ -73,7 +71,6 @@ typedef std::pair<int, HttpHandler*> fd_client_pair;
 public:
     ServerManager(const ServerConfig &config);
     ~ServerManager();
-
 
     void	run();
 	void	setNonBlockingMode(int socket);

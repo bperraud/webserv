@@ -340,7 +340,7 @@ void HttpHandler::createHttpResponse() {
 
 void HttpHandler::error(int error) {
 	resetRequestContext();
-	ErrorHandler* error_handler = 0;
+	ErrorHandler* error_handler = NULL;
 	std::string error_page;
 	if (_server->error_pages.find(Utils::intToString(error)) != _server->error_pages.end())
 		error_page = _server->error_pages[Utils::intToString(error)];

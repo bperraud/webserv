@@ -22,6 +22,7 @@ struct server_config {
 	int			max_body_size;
 	std::map<std::string, std::string> error_pages;
 	std::map<std::string, routes> routes_map;
+	bool		is_default;
 };
 
 class ServerConfig {

@@ -25,6 +25,7 @@ ServerManager::ServerManager(const ServerConfig &config) {
 	std::list<server_config> server_list = config.getServerList();
 	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		server serv(*it);
+		serv.is_default = false;
 		const int* server_fd = hostLevel(serv.PORT);
 		if ( server_fd ) { // port exist on the config
 			//check for level 3
@@ -37,10 +38,12 @@ ServerManager::ServerManager(const ServerConfig &config) {
 				server_name_map.insert(std::make_pair(serv.name, serv)); // update level 3
 			}
 			_list_server_map[*server_fd].insert(std::make_pair(serv.host, server_name_level3())); // update level 2
+			serv.is_default = true;
 			_list_server_map[*server_fd][serv.host].insert(std::make_pair(serv.name, serv)); // update level 3
 		}
 		else {	// new host
 			setupSocket(serv);
+			serv.is_default = true;
 			_list_server_map.insert(std::make_pair(serv.listen_fd, host_level2())); //update level 1
 			_list_server_map[serv.listen_fd].insert(std::make_pair(serv.host, server_name_level3())); //update level 2
 			_list_server_map[serv.listen_fd][serv.host].insert(std::make_pair(serv.name, serv)); //update level 3

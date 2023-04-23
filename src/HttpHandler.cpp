@@ -2,7 +2,8 @@
 #include "ServerManager.hpp"
 
 HttpHandler::HttpHandler(int timeout_seconds, server_name_level3 *serv_map) : _timer(timeout_seconds),
-	_readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(), _left_to_read(0), _MIME_TYPES(), _serv_map(serv_map), _server(NULL),
+	_readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(), _left_to_read(0),
+	_MIME_TYPES(), _serv_map(serv_map), _server(NULL),
 	_close_keep_alive(false), _body_size_exceeded(false), _ready_to_write(false), _transfer_chunked(false),
 	_default_route(), _active_route(&_default_route){
 	_last_4_char[0] = '\0';
@@ -212,8 +213,8 @@ void HttpHandler::parseRequest() {
 	if (findHeader("Host", host_header)) {
 		_request.host = host_header.substr(0, host_header.find(":"));
 	}
-	findServer();
 	_left_to_read = _request.body_length;
+	assignServerConfig();
 }
 
 void HttpHandler::setupRoute(const std::string &url) {
@@ -273,12 +274,14 @@ void HttpHandler::redirection() {
 	_response_body_stream << "<html><body><h1>301 Moved Permanently</h1></body></html>";
 }
 
-void HttpHandler::findServer() {
+void HttpHandler::assignServerConfig() {
 	std::map<std::string, server>::iterator it = _serv_map->begin();
 	if (_serv_map->empty())
 		throw std::runtime_error("empty map");
-	_server = &it->second;
 	for (; it != _serv_map->end(); ++it) {
+		if (it->second.is_default || it->second.host == "") {
+			_server = &it->second;
+		}
 		if (it->second.host == _request.host) {
 			_server = &it->second;
 			return;
@@ -373,10 +376,7 @@ void HttpHandler::generate_directory_listing_html(const std::string& directory_p
         }
         // Format the directory entry as an HTML table row with a link to the file or subdirectory
         std::string row;
-        if (entry->d_type == DT_DIR) {
-            // Link to a subdirectory
-            row = "<tr><td><a href=\"" + name + "/\">" + name + "/</a></td><td>-</td></tr>";
-        } else {
+        if (entry->d_type != DT_DIR) {
             // Link to a file
             std::string file_uri = _request.url.substr(_default_route.root.length()) + "/" + name;
             row = "<tr><td><a href=\"" + file_uri + "\">" + name + "</a></td><td>" + size_str + "</td></tr>";
@@ -411,7 +411,6 @@ void HttpHandler::GET() {
 	if (content_type.empty())
 		return error(415);
 	_response.map_headers["Content-Type"] = content_type;
-	//if (!_response_body_stream.str().empty())
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
 }
 
@@ -463,8 +462,6 @@ void HttpHandler::POST() {
 	size_t pos_boundary = request_content_type.find("boundary=");
 	if (pos_boundary != std::string::npos) { //multipart/form-data
 		uploadFile(request_content_type, pos_boundary);
-		_response.status_code = "201";
-		_response.status_phrase = "Created";
 	}
 	else if (_request.url == "www/sendback") {
 		_response_body_stream << _request_body_stream.str();

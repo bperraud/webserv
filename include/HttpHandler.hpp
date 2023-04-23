@@ -62,10 +62,8 @@ private:
 	ssize_t				_left_to_read;
 	std::map<std::string, std::string> _MIME_TYPES;
 
-
 	server_name_level3*	_serv_map;
-
-	server_config*			_server;
+	server_config*		_server;
 
 	bool				_close_keep_alive;
 	bool				_body_size_exceeded;
@@ -75,34 +73,25 @@ private:
 	routes				_default_route;
 	routes*				_active_route;
 
-	HttpHandler &operator=(HttpHandler const &other) {
-		if (this != &other) {
-			;
-		}
-		return *this;
-	}
-	//? illegal et inutile askip
-
 public:
 	HttpHandler(int timeout_seconds, server_name_level3 *serv_map);
 	~HttpHandler();
 
 	bool	isKeepAlive() const;
-
-	HttpMessage getStructRequest() const;
-	std::string		getRequest() const;
-	std::string		getBody() const;
-	ssize_t getLeftToRead() const;
-	std::string getResponseHeader() const;
-	std::string getResponseBody() const;
-	std::string getContentType(const std::string& path) const;
-	bool isAllowedMethod(const std::string &method) const;
-
-	void	findServer();
-
-
 	bool	isReadyToWrite() const;
 	bool	invalidRequest() const;
+	bool	isBodyUnfinished() const ;
+
+	HttpMessage		getStructRequest() const;
+	std::string		getRequest() const;
+	std::string		getBody() const;
+	ssize_t			getLeftToRead() const;
+	std::string		getResponseHeader() const;
+	std::string		getResponseBody() const;
+	std::string		getContentType(const std::string& path) const;
+	bool	isAllowedMethod(const std::string &method) const;
+
+	void	assignServerConfig();
 
 	void	setReadyToWrite(bool ready);
 
@@ -110,7 +99,6 @@ public:
 	int		writeToBody(char *buffer, ssize_t nbytes);
 
 	void 	resetLast4();
-	bool	isBodyUnfinished() const ;
 
 	void	startTimer();
 	void	stopTimer();

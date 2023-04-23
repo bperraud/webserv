@@ -52,11 +52,8 @@ struct server : public server_config {
 typedef std::map<int, HttpHandler*> map_type;
 typedef std::map<int, HttpHandler*>::iterator 			map_iterator_type;
 
-
 typedef std::map<std::string, server>					server_name_level3;
-
 typedef std::map<std::string, server_name_level3>		host_level2;
-
 typedef std::map<int, host_level2>						fd_port_level1;
 
 class ServerManager {
@@ -78,12 +75,11 @@ public:
     ~ServerManager();
 
 
-	const int* hostLevel(int fd) ;
-
-
     void	run();
 	void	setNonBlockingMode(int socket);
 	void	setupSocket(server &serv);
+
+	const int* hostLevel(int fd)  ;
 
 	void	printServerSocket(int socket) const;
 

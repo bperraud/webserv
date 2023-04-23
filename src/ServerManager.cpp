@@ -389,10 +389,10 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 }
 
 ServerManager::~ServerManager() {
-	//for (std::list<server>::iterator it = _server_list.begin(); it != _server_list.end(); ++it) {
-	//	std::cout << "connection closed ->" << RED << " server " << it->listen_fd << RESET << std::endl;
-	//	close(it->listen_fd);
-	//}
+	for (fd_port_level1::iterator it = _list_server_map.begin(); it != _list_server_map.end(); ++it) {
+		std::cout << "connection closed ->" << RED << " server " << it->first << RESET << std::endl;
+		close(it->first);
+	}
 	if (!_client_map.empty()) {
 		std::stack<fd_client_pair> stack;
 		for (map_iterator_type it = _client_map.begin(); it != _client_map.end(); ++it) {

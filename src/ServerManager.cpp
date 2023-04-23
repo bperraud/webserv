@@ -205,7 +205,7 @@ void ServerManager::epollInit() {
 	}
 }
 
-void ServerManager::handleNewConnection(int socket, const server_name_map_type* server_map) {
+void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 	struct kevent event;
 	struct sockaddr_in client_addr;
 	socklen_t client_addrlen = sizeof(client_addr);

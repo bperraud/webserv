@@ -76,7 +76,7 @@ void	ServerManager::setupSocket(server &serv) {
 	setNonBlockingMode(serv.listen_fd);
 	if (listen(serv.listen_fd, SOMAXCONN) < 0)
 		throw std::runtime_error("listen failed");
-	std::cout << BLACK << "[" <<  socket  << "] " << RESET ;
+	std::cout << BLACK << "[" <<  serv.listen_fd  << "] " << RESET ;
 	std::cout <<  "server listening for connections -> "
 	<< YELLOW << "[" << serv.host << ", " << serv.PORT << "] " <<  RESET << std::endl;
 }

@@ -14,9 +14,6 @@ const int* ServerManager::hostLevel(int port)  {
 		}
 		char address_str[INET_ADDRSTRLEN];  // buffer to hold the human-readable address
 		inet_ntop(AF_INET, &(addr.sin_addr), address_str, INET_ADDRSTRLEN);
-
-		std::cout << "Local port: " << ntohs(addr.sin_port) << std::endl;
-
 		if (port == ntohs(addr.sin_port))
 		{
 			return &it->first;
@@ -108,9 +105,7 @@ void ServerManager::timeoutCheck() {
 	}
 }
 
-
-// return
- host_level2*	ServerManager::isPartOfListenFd(int fd)  {
+host_level2* ServerManager::isPartOfListenFd(int fd)  {
 	for (fd_port_level1::iterator serv_it = _list_server_map.begin(); serv_it != _list_server_map.end(); ++serv_it) {
 		if (fd == serv_it->first)
 			return &(serv_it->second);
@@ -140,33 +135,23 @@ void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 	if (new_sockfd < 0)
 		throw std::runtime_error("accept()");
 
-
 	getsockname( new_sockfd, (struct sockaddr *)( &client_addr ), &client_addrlen );
-
 	std::ostringstream client_ip_stream;
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 0) & 0xFF) << ".";
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 8) & 0xFF) << ".";
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 16) & 0xFF) << ".";
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 24) & 0xFF);
-
-
 	std::string client_ip = client_ip_stream.str();
 	std::string client_port_str;
 	std::stringstream ss;
 	ss << ntohs(client_addr.sin_port);
 	ss >> client_port_str;
-
 	std::string client_port = client_port_str;
-
-	std::cout << "host : " << client_ip << std::endl;
-	std::cout << "port : " << client_port << std::endl;
-
 	server_name_level3 *server_name ;
 	if (host_map->find(client_ip) == host_map->end())
 		server_name = &host_map->begin()->second;
 	else
 		server_name = &host_map->find(client_ip)->second;
-
 	setNonBlockingMode(new_sockfd);
 	event.data.fd = new_sockfd;
 	event.events = EPOLLIN | EPOLLOUT;;
@@ -224,34 +209,22 @@ void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 		throw std::runtime_error("accept()");
 
 	getsockname( new_sockfd, (struct sockaddr *)( &client_addr ), &client_addrlen );
-
 	std::ostringstream client_ip_stream;
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 0) & 0xFF) << ".";
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 8) & 0xFF) << ".";
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 16) & 0xFF) << ".";
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 24) & 0xFF);
-
 	std::string client_ip = client_ip_stream.str();
 	std::string client_port_str;
 	std::stringstream ss;
 	ss << ntohs(client_addr.sin_port);
 	ss >> client_port_str;
-
-
 	std::string client_port = client_port_str;
-
-	std::cout << "host : " << client_ip << std::endl;
-	std::cout << "port : " << client_port << std::endl;
-
 	server_name_level3 *server_name ;
 	if (host_map->find(client_ip) == host_map->end())
 		server_name = &host_map->begin()->second;
 	else
 		server_name = &host_map->find(client_ip)->second;
-
-	std::cout << " here : " << server_name->begin()->second << std::endl;
-
-
 	setNonBlockingMode(new_sockfd);
 	EV_SET(&event, new_sockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)

@@ -74,7 +74,5 @@ int CGIExecutor::execute(std::stringstream *response_stream, const std::string &
 	}
 	waitpid(-1, NULL, 0);
 	*response_stream << res ;
-
-	//std::cout << "CGI result :" << std::endl << res << std::endl;
 	return 0;
 }

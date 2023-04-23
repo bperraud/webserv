@@ -159,8 +159,6 @@ void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
 int	HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	if (!_left_to_read && !_transfer_chunked)
 		return 0;
-	std::cout << "write " <<  std::endl;
-
 	if ( _server->max_body_size && static_cast<ssize_t>(_request_body_stream.tellp()) + nbytes > _server->max_body_size) {
 		_left_to_read = 0;
 		_body_size_exceeded = true;

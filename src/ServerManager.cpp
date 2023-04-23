@@ -212,6 +212,23 @@ void ServerManager::handleNewConnection(int socket, const server_name_map_type* 
 	int new_sockfd = accept(socket, (struct sockaddr *)&client_addr, &client_addrlen);
 	if (new_sockfd < 0)
 		throw std::runtime_error("accept()");
+
+	getsockname( new_sockfd, (struct sockaddr *)( &client_addr ), &client_addrlen );
+
+	std::ostringstream client_ip_stream;
+	client_ip_stream << ((client_addr.sin_addr.s_addr >> 0) & 0xFF) << ".";
+	client_ip_stream << ((client_addr.sin_addr.s_addr >> 8) & 0xFF) << ".";
+	client_ip_stream << ((client_addr.sin_addr.s_addr >> 16) & 0xFF) << ".";
+	client_ip_stream << ((client_addr.sin_addr.s_addr >> 24) & 0xFF);
+	std::string client_ip = client_ip_stream.str();
+
+	char client_port_str[6];
+	sprintf(client_port_str, "%u", ntohs(client_addr.sin_port));
+	std::string client_port = client_port_str;
+
+	std::cout << "host : " << client_ip << std::endl;
+	std::cout << "port : " << client_port << std::endl;
+
 	setNonBlockingMode(new_sockfd);
 	EV_SET(&event, new_sockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
 	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
@@ -219,7 +236,7 @@ void ServerManager::handleNewConnection(int socket, const server_name_map_type* 
 	EV_SET(&event, new_sockfd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
 	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
 		throw std::runtime_error("kevent add write");
-	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, server_map)));
+	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, &(*host_map)[client_ip])));
 	std::cout << "new connection -> " <<  GREEN << "client " << new_sockfd << RESET << std::endl;
 }
 
@@ -234,7 +251,7 @@ void ServerManager::eventManager() {
 			throw std::runtime_error("kevent wait");
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].ident;
-			const server_name_map_type* serv = isPartOfListenFd(fd);
+			host_level2* serv = isPartOfListenFd(fd);
 			if (serv) {
 				handleNewConnection(fd, serv);
 			}

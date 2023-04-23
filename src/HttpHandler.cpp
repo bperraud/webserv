@@ -214,7 +214,7 @@ void HttpHandler::parseRequest() {
 	if (findHeader("Host", host_header)) {
 		_request.host = host_header.substr(0, host_header.find(":"));
 	}
-
+	findServer();
 	_left_to_read = _request.body_length;
 }
 
@@ -278,7 +278,7 @@ void HttpHandler::redirection() {
 void HttpHandler::findServer() {
 	std::map<std::string, server>::iterator it = _serv_map->begin();
 	if (_serv_map->empty())
-		throw std::runtime_error("No server found");
+		throw std::runtime_error("empty map");
 	for (; it != _serv_map->end(); ++it) {
 		_server = &it->second;
 		if (it->second.host == _request.host) {

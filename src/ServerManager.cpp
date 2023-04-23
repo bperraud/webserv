@@ -70,7 +70,7 @@ void	ServerManager::setupSocket(server &serv) {
 	memset((char *)&host_addr, 0, sizeof(host_addr));
 	int host_addrlen = sizeof(host_addr);
 	host_addr.sin_family = AF_INET; // AF_INET for IPv4 Internet protocols
-	host_addr.sin_addr.s_addr = inet_addr(INADDR_ANY);
+	host_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	host_addr.sin_port = htons(serv.PORT);
 	int enable_reuseaddr = 1;
 	if (setsockopt(serv.listen_fd, SOL_SOCKET, SO_REUSEADDR, &enable_reuseaddr, sizeof(int)) < 0)
@@ -247,9 +247,9 @@ void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 	if (host_map->find(client_ip) == host_map->end())
 		server_name = &host_map->begin()->second;
 	else
-		server_name = &host_map->find(client_ip)->second;\
+		server_name = &host_map->find(client_ip)->second;
 
-	std::cout << " : " << server_name->begin()->first << std::endl;
+	std::cout << " here : " << server_name->begin()->second << std::endl;
 
 
 	setNonBlockingMode(new_sockfd);

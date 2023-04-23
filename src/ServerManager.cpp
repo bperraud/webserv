@@ -224,7 +224,6 @@ void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 8) & 0xFF) << ".";
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 16) & 0xFF) << ".";
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 24) & 0xFF);
-	std::string client_ip = client_ip_stream.str();
 
 	std::string client_ip = client_ip_stream.str();
 	std::string client_port_str;

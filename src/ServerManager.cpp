@@ -247,7 +247,10 @@ void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 	if (host_map->find(client_ip) == host_map->end())
 		server_name = &host_map->begin()->second;
 	else
-		server_name = &host_map->find(client_ip)->second;
+		server_name = &host_map->find(client_ip)->second;\
+
+	std::cout << " : " << server_name->begin()->first << std::endl;
+
 
 	setNonBlockingMode(new_sockfd);
 	EV_SET(&event, new_sockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);

@@ -31,7 +31,7 @@ ServerManager::ServerManager(const ServerConfig &config) {
 		if ( server_fd ) { // port exist on the config
 			//check for level 3
 			serv.listen_fd = *server_fd;
-			if (_list_server_map[*server_fd].find(serv.host) != _list_server_map[*server_fd].end()) {
+			if (_list_server_map[*server_fd].find(serv.host) != _list_server_map[*server_fd].end()) {  // host exist on the config
 				server_name_level3 server_name_map = _list_server_map[*server_fd][serv.host];
 				if (server_name_map.find(serv.name) != server_name_map.end()) {
 					throw std::runtime_error("server name already exist");

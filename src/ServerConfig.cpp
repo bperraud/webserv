@@ -105,6 +105,7 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object) {
 std::ostream& operator<<(std::ostream& os, const server_config& s) {
     os << "host: " << s.host << std::endl;
     os << "port: " << s.PORT << std::endl;
+	os << "name: " << s.name << std::endl;
     os << "max body size: " << s.max_body_size << std::endl;
 	os << "error pages: " << std::endl;
 	std::map<std::string, std::string>::const_iterator error_it;

@@ -11,7 +11,7 @@
 	},
 	{
 	  "listen": ["0.0.0.0", 8080],
-	  "names": ["localhost"],
+	  "name": "localhost",
 	  "routes": {
 		"/": {
 		  "root": "www",

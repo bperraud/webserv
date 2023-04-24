@@ -272,6 +272,8 @@ void HttpHandler::redirection() {
     _response.status_phrase = "Moved Permanently";
     _response.map_headers["Location"] = _active_route->redir;
 	_response_body_stream << "<html><body><h1>301 Moved Permanently</h1></body></html>";
+	_response.map_headers["Content-Type"] = "text/html";
+	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
 }
 
 void HttpHandler::assignServerConfig() {

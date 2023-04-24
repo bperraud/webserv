@@ -401,7 +401,10 @@ void HttpHandler::GET() {
 		else {
 			if (_active_route->index == "") return error(404);	// no index file
 			_request.url += "/" + _active_route->index;
-			Utils::loadFile(_request.url , _response_body_stream);
+			if (Utils::pathToFileExist(_request.url))
+				Utils::loadFile(_request.url , _response_body_stream);
+			else
+				return error(404);
 		}
 	}
 	else if (Utils::pathToFileExist(_request.url)) { // file
@@ -471,7 +474,7 @@ void HttpHandler::POST() {
 	else if (request_content_type.find("application/x-www-form-urlencoded") != std::string::npos) {
 		_response_body_stream << "Response to application/x-www-form-urlencoded";
 	}
-	else { // others
+	else {
 		return error(501);
 	}
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());

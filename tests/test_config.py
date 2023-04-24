@@ -39,6 +39,7 @@ def test_upload_file():
 	response = requests.delete(URL + 'upload/upload.txt')
 	assert(response.status_code == 204)
 
+# Testing redirection in a socket
 def test_redir():
 	ADDRESS = "0.0.0.0"
 	PORT = 8080
@@ -60,7 +61,6 @@ def chunker(data, size):
 		yield chunk.encode()
 
 def test_chunked():
-
 	headers = {
 		"Transfer-Encoding": "chunked",
 		"Content-Type": "text/plain",
@@ -70,6 +70,21 @@ def test_chunked():
 	assert response.text == data
 	assert response.status_code == 200
 
-def cgi():
-    response = requests.get(URL + 'form/add/add.py')
-    assert(response.status_code == 301)
+# Testing cgi with addition and substraction
+def test_cgi():
+	num1 = 5
+	num2 = 6
+	url = "form/add/add.py?num1={0}&num2={1}".format(num1, num2)
+	calc = "{0} + {1} = {2}".format(num1, num2, num1 + num2)
+	response = requests.post(URL + url)
+	assert(response.status_code == 200)
+	assert(response.text.startswith("<h1>Addition Results</h1>\n<output>" + calc))
+	
+	num3 = 8
+	num4 = 9
+	url = "form/sub/sub.php?num1={0}&num2={1}".format(num3, num4)
+	calc = "{0} - {1} = {2}".format(num3, num4, num3 - num4)
+	response = requests.post(URL + url)
+	assert(response.status_code == 200)
+	assert(response.text.startswith("<h1>Substraction Results</h1><output>" + calc))
+

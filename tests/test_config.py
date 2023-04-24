@@ -54,3 +54,6 @@ def test_chunked():
 	assert response.text == data
 	assert response.status_code == 200
 
+def cgi():
+    response = requests.get(URL + 'form/add/add.py')
+    assert(response.status_code == 301)

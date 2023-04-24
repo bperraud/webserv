@@ -18,7 +18,7 @@ def test_post():
 	assert(response.status_code == 200)
 	assert(response.text == "Response to application/x-www-form-urlencoded")
 	# large file
-	files = {'file': open('files/large_file.txt', 'rb')}
+	files = {'file': open('tests/files/large_file.txt', 'rb')}
 	response = requests.post(URL + 'form/upload', files=files)
 	assert(response.status_code == 413)
 
@@ -31,7 +31,7 @@ def test_delete():
 
 # Upload file -> GET file -> DELETE file
 def test_upload_file():
-	files = {'file': open('files/upload.txt', 'rb')}
+	files = {'file': open('tests/files/upload.txt', 'rb')}
 	response = requests.post(URL + 'form/upload', files=files)
 	assert(response.status_code == 201)
 	response = requests.get(URL + 'upload/upload.txt')

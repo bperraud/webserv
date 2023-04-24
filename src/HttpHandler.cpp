@@ -56,8 +56,8 @@ std::string HttpHandler::getContentType(const std::string& path) const {
 		if (_active_route->autoindex)
 			return "text/html";
         return "text/plain";
-    }
-    std::map<std::string, std::string>::const_iterator it = _MIME_TYPES.find(path.substr(dot_pos + 1));
+	}
+	std::map<std::string, std::string>::const_iterator it = _MIME_TYPES.find(path.substr(dot_pos + 1));
     if (it == _MIME_TYPES.end()) {
         return "";
     }

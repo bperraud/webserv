@@ -20,11 +20,6 @@ void CGIExecutor::setupEnv(const HttpMessage &request, const std::string &url)
 		std::string content_length = "CONTENT_LENGTH=" + (request.body_length ? request.map_headers.at("Content-Length") : 0);
 		putenv(const_cast<char *>(content_length.c_str()));
 	}
-
-	if (request.map_headers.count("Cookie") > 0) {
-		std::string cookie_values = request.map_headers.at("Cookie");
-		setenv("HTTP_COOKIE", cookie_values.c_str(), 1);
-	}
 }
 
 void CGIExecutor::setEnv(char **envp)
@@ -39,10 +34,10 @@ int CGIExecutor::_run(const HttpMessage &request, std::stringstream *response_st
 	if (!Utils::hasExecutePermissions(script_name.c_str())) {
 	    return 403;
 	}
-	return execute(response_stream, cookies, path, interpreter);
+	return execute(response_stream, cookies, path, interpreter, request);
 }
 
-int CGIExecutor::execute(std::stringstream *response_stream, std::string *cookies, const std::string &path, const std::string &interpreter)
+int CGIExecutor::execute(std::stringstream *response_stream, std::string *cookies, const std::string &path, const std::string &interpreter, const HttpMessage &request)
 {
 	std::string res;
 	int pipe_fd[2];
@@ -54,6 +49,10 @@ int CGIExecutor::execute(std::stringstream *response_stream, std::string *cookie
 		return 500;
 	if (pid == 0)
 	{
+		if (request.map_headers.count("Cookie") > 0) {
+			std::string cookie_values = request.map_headers.at("Cookie");
+			setenv("HTTP_COOKIE", cookie_values.c_str(), 1);
+		}
 		close(pipe_fd[0]);
 		dup2(pipe_fd[1], STDOUT_FILENO);
 		close(pipe_fd[1]);
@@ -87,6 +86,7 @@ void CGIExecutor::parse_response(std::stringstream *response_stream, std::string
 	std::string::size_type pos = output.find("\r\n\r\n");
 	std::istringstream headerStream(output.substr(0, pos));
 	std::string headerLine;
+	
 	if (pos == std::string::npos) {
 		*response_stream << output;
 		return ;

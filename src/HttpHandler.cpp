@@ -251,11 +251,13 @@ void HttpHandler::unchunckMessage() {
 	_request_body_stream << _response_body_stream.str();
 	_response_body_stream.str("");
 	_response_body_stream.clear();
+	_request.map_headers.clear();
 }
 
 void HttpHandler::handleCGI(const std::string &original_url) {
 	std::string extension = _request.url.substr(_request.url.find_last_of('.'));
 	std::string cookies = "";
+	_response.map_headers["Cookie"] = "";
 	int err = CGIExecutor::run(_request, &_response_body_stream, &cookies, _active_route->handler, _active_route->cgi[extension], original_url);
 	if (err)
 		error(err);
@@ -506,4 +508,6 @@ void HttpHandler::constructStringResponse() {
 		first = false;
 	}
 	_response_header_stream << "\r\n\r\n";
+	_response.map_headers.clear();
+	_request.map_headers.clear();
 }

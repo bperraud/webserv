@@ -27,6 +27,7 @@ echo "\r\n";
 <span>
 <?php
   echo "La valeur du cookie est " . $value . "!<br>";
+  unset($_SERVER['HTTP_COOKIE']);
 ?>
 </span>
 </body>

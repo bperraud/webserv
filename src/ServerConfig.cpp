@@ -43,6 +43,8 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object) {
 		}
 		else if (key == "max_body_size") {
 			server.max_body_size = value.number_value;
+			if (server.max_body_size == 0)
+				server.max_body_size = 1;
 		}
 		else if (key == "error_pages") {
 			for (sub_it = value.object_value.begin(); sub_it != value.object_value.end(); sub_it++) {

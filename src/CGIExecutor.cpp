@@ -103,4 +103,3 @@ void CGIExecutor::parse_response(std::stringstream *response_stream, std::string
 	std::string body = output.substr(pos + 4);
 	*response_stream << body;
 }
-

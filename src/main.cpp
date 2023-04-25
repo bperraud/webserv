@@ -27,7 +27,6 @@ void signalHandler(int signal)
         delete g_serverManager;
         g_serverManager = 0;
     }
-	//system("leaks webserv");
     exit(EXIT_SUCCESS);
 }
 

@@ -11,51 +11,56 @@
 	<title>webserv</title>
 </head>
 <body>
-	<h1>webserv</h1>
+	<div>
+		<h1>webserv</h1>
 		<button onclick="openNewTab()">!!! Vous avez gagn&eacute; un iphone 11 !!! cliquez ici !!!</button>
 
 		<script>
-		  function openNewTab() {
+		function openNewTab() {
 			window.open("http://localhost:8080/redir/", "_blank");
-		  }
+		}
 		</script>
-<body>
-	<h1>Upload File Form</h1>
-	<form action="form/upload" method="POST" enctype="multipart/form-data" target="_blank">
-		<input type="file" name="file">
-		<input type="submit" value="Upload">
-	</form>
-</body>
-<head>
-    <title>Addition Form</title>
-  </head>
-  <body>
-    <h1>Addition Form</h1>
-    <form action="/form/add/add.py" method="get" target="_blank">
-      <label for="num1">Number 1:</label>
-      <input type="text" name="num1" id="num1"><br>
-      <label for="num2">Number 2:</label>
-      <input type="text" name="num2" id="num2"><br>
-      <input type="submit" value="Add">
-    </form>
-  </body>
-  <body>
-    <h1>Soustraction Form</h1>
-    <form action="/form/sub/sub.php" method="get" target="_blank">
-      <label for="num1">Number 1:</label>
-      <input type="text" name="num1"><br>
-      <label for="num2">Number 2:</label>
-      <input type="text" name="num2"><br>
-      <input type="submit" value="Sub">
-    </form>
-  </body>
-  <body>
-	<h1>Delete file</h1>
-	<form id="delete-form">
-	  <label for="file-selector">Select file to delete:</label>
-	  <input type="file" id="file-selector" name="file">
-	  <button type="submit">Delete</button>
-	</form>
+	</div>
+	<div>
+		<h1>Cookies</h2>
+		<a href="cookies">Tu veux un cookie ?</a>
+	</div>
+	<div>
+		<h1>Upload File Form</h1>
+		<form action="form/upload" method="POST" enctype="multipart/form-data" target="_blank">
+			<input type="file" name="file">
+			<input type="submit" value="Upload">
+		</form>
+	</div>
+	<div>
+		<title>Addition Form</title>
+		<h1>Addition Form</h1>
+		<form action="/form/add/add.py" method="get" target="_blank">
+		  <label for="num1">Number 1:</label>
+		  <input type="text" name="num1" id="num1"><br>
+		  <label for="num2">Number 2:</label>
+		  <input type="text" name="num2" id="num2"><br>
+		  <input type="submit" value="Add">
+		</form>
+	</div>
+	<div>
+		<h1>Soustraction Form</h1>
+		<form action="/form/sub/sub.php" method="get" target="_blank">
+		  <label for="num1">Number 1:</label>
+		  <input type="text" name="num1"><br>
+		  <label for="num2">Number 2:</label>
+		  <input type="text" name="num2"><br>
+		  <input type="submit" value="Sub">
+		</form>
+	</div>
+	<div>
+		<h1>Delete file</h1>
+		<form id="delete-form">
+		  <label for="file-selector">Select file to delete:</label>
+		  <input type="file" id="file-selector" name="file">
+		  <button type="submit">Delete</button>
+		</form>
+	</div>
 
 	<script>
 	  const deleteForm = document.querySelector('#delete-form');

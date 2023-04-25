@@ -1,5 +1,6 @@
 #include "CGIExecutor.hpp"
 #include "HttpHandler.hpp"
+extern char **environ;
 
 CGIExecutor::CGIExecutor()
 {
@@ -19,6 +20,11 @@ void CGIExecutor::setupEnv(const HttpMessage &request, const std::string &url)
 		std::string content_length = "CONTENT_LENGTH=" + (request.body_length ? request.map_headers.at("Content-Length") : 0);
 		putenv(const_cast<char *>(content_length.c_str()));
 	}
+
+	if (request.map_headers.count("Cookie") > 0) {
+		std::string cookie_values = request.map_headers.at("Cookie");
+		setenv("HTTP_COOKIE", cookie_values.c_str(), 1);
+	}
 }
 
 void CGIExecutor::setEnv(char **envp)
@@ -26,17 +32,17 @@ void CGIExecutor::setEnv(char **envp)
 	_env = envp;
 }
 
-int CGIExecutor::_run(const HttpMessage &request, std::stringstream *response_stream, const std::string &path, const std::string &interpreter, const std::string &url)
+int CGIExecutor::_run(const HttpMessage &request, std::stringstream *response_stream, std::string *cookies, const std::string &path, const std::string &interpreter, const std::string &url)
 {
 	setupEnv(request, url);
 	std::string script_name = request.url.substr(0, request.url.find("?"));
 	if (!Utils::hasExecutePermissions(script_name.c_str())) {
 	    return 403;
 	}
-	return execute(response_stream, path, interpreter);
+	return execute(response_stream, cookies, path, interpreter);
 }
 
-int CGIExecutor::execute(std::stringstream *response_stream, const std::string &path, const std::string &interpreter)
+int CGIExecutor::execute(std::stringstream *response_stream, std::string *cookies, const std::string &path, const std::string &interpreter)
 {
 	std::string res;
 	int pipe_fd[2];
@@ -59,7 +65,7 @@ int CGIExecutor::execute(std::stringstream *response_stream, const std::string &
 		strcpy(script, interpreter.c_str());
 
 		char *argv[] = {script, parameter, NULL};
-		execvp(script, argv);
+		execve(script, argv, environ);
 		return 500;
 	}
 	else
@@ -73,6 +79,28 @@ int CGIExecutor::execute(std::stringstream *response_stream, const std::string &
 		close(pipe_fd[0]);
 	}
 	waitpid(-1, NULL, 0);
-	*response_stream << res ;
+	parse_response(response_stream, cookies, res);
 	return 0;
 }
+
+void CGIExecutor::parse_response(std::stringstream *response_stream, std::string *cookies, std::string output) {
+	std::string::size_type pos = output.find("\r\n\r\n");
+	std::istringstream headerStream(output.substr(0, pos));
+	std::string headerLine;
+	if (pos == std::string::npos) {
+		*response_stream << output;
+		return ;
+	}
+
+	while (std::getline(headerStream, headerLine, '\n')) {
+		std::string::size_type colonPos = headerLine.find(":");
+		std::string headerName = headerLine.substr(0, colonPos);
+        std::string headerValue = headerLine.substr(colonPos + 1);
+		if (headerName == "Set-Cookie") {
+			*cookies = headerValue;
+		}
+	}
+	std::string body = output.substr(pos + 4);
+	*response_stream << body;
+}
+

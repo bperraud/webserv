@@ -255,11 +255,15 @@ void HttpHandler::unchunckMessage() {
 
 void HttpHandler::handleCGI(const std::string &original_url) {
 	std::string extension = _request.url.substr(_request.url.find_last_of('.'));
-	int err = CGIExecutor::run(_request, &_response_body_stream, _active_route->handler, _active_route->cgi[extension], original_url);
+	std::string cookies = "";
+	int err = CGIExecutor::run(_request, &_response_body_stream, &cookies, _active_route->handler, _active_route->cgi[extension], original_url);
 	if (err)
 		error(err);
 	else
 	{
+		if (!cookies.empty()) {
+			_response.map_headers["Set-Cookie"] = cookies;
+		}
 		_response.status_code = "200";
 		_response.status_phrase = "OK";
 		_response.map_headers["Content-Type"] = "text/html";

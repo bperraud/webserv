@@ -28,6 +28,14 @@
 			  ".php": "/usr/bin/php"
 			}
 		  },
+		"/cookies": {
+			"root": "www",
+			"handler": "www/cgi/cookies.php",
+			"methods": ["GET"],
+			"cgi": {
+				".php": "/usr/bin/php"
+			}
+		},
 		"/form/upload": {
 		  "root": "www/upload",
 		  "methods": ["POST"]
@@ -45,14 +53,6 @@
 			"root": "www/redir",
 			"methods": ["GET"],
 			"redir": "https://www.pechetruite.com/"
-		},
-		"/cookies": {
-		  "root": "www",
-		  "methods": ["GET"],
-		  "handler": "www/cgi/cookies.py",
-		  "cgi": {
-			".py": "/usr/bin/python3"
-		  }
 		}
 	  }
 	}

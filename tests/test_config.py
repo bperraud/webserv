@@ -18,7 +18,7 @@ def test_post():
 	assert(response.status_code == 200)
 	assert(response.text == "Response to application/x-www-form-urlencoded")
 	# large file
-	files = {'file': open('tests/files/large_file.txt', 'rb')}
+	files = {'file': open('files/large_file.txt', 'rb')}
 	response = requests.post(URL + 'form/upload', files=files)
 	assert(response.status_code == 413)
 
@@ -31,7 +31,7 @@ def test_delete():
 
 # Upload file -> GET file -> DELETE file
 def test_upload_file():
-	files = {'file': open('tests/files/upload.txt', 'rb')}
+	files = {'file': open('files/upload.txt', 'rb')}
 	response = requests.post(URL + 'form/upload', files=files)
 	assert(response.status_code == 201)
 	response = requests.get(URL + 'upload/upload.txt')
@@ -76,15 +76,15 @@ def test_cgi():
 	num2 = 6
 	url = "form/add/add.py?num1={0}&num2={1}".format(num1, num2)
 	calc = "{0} + {1} = {2}".format(num1, num2, num1 + num2)
-	response = requests.post(URL + url)
+	response = requests.get(URL + url)
 	assert(response.status_code == 200)
 	assert(response.text.startswith("<h1>Addition Results</h1>\n<output>" + calc))
-	
+
 	num3 = 8
 	num4 = 9
 	url = "form/sub/sub.php?num1={0}&num2={1}".format(num3, num4)
 	calc = "{0} - {1} = {2}".format(num3, num4, num3 - num4)
-	response = requests.post(URL + url)
+	response = requests.get(URL + url)
 	assert(response.status_code == 200)
 	assert(response.text.startswith("<h1>Substraction Results</h1><output>" + calc))
 

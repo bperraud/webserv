@@ -80,23 +80,19 @@ void ServerManager::epollInit() {
 	}
 }
 
-#if (defined (LINUX) || defined (__linux__))
 void ServerManager::handleNewConnection(int socket, const server *serv) {
-	struct epoll_event event;
 	struct sockaddr_in client_addr;
 	socklen_t client_addrlen = sizeof(client_addr);
 	int new_sockfd = accept(socket, (struct sockaddr *)&client_addr, &client_addrlen);
 	if (new_sockfd < 0)
 		throw std::runtime_error("accept()");
 	setNonBlockingMode(new_sockfd);
-	event.data.fd = new_sockfd;
-	event.events = EPOLLIN | EPOLLOUT;;
-	if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, new_sockfd, &event) < 0)
-		throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
+	MOD_WRITE_READ(new_sockfd);
 	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, serv)));
 	std::cout << "new connection -> " <<  GREEN << "client " << new_sockfd << RESET << std::endl;
 }
 
+#if (defined (LINUX) || defined (__linux__))
 void ServerManager::eventManager() {
 	struct epoll_event events[MAX_EVENTS];
 	while (1) {
@@ -123,25 +119,6 @@ void ServerManager::eventManager() {
 	}
 }
 #else
-
-void ServerManager::handleNewConnection(int socket, const server *serv) {
-	struct kevent event;
-	struct sockaddr_in client_addr;
-	socklen_t client_addrlen = sizeof(client_addr);
-	int new_sockfd = accept(socket, (struct sockaddr *)&client_addr, &client_addrlen);
-	if (new_sockfd < 0)
-		throw std::runtime_error("accept()");
-	setNonBlockingMode(new_sockfd);
-	EV_SET(&event, new_sockfd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
-		throw std::runtime_error("kevent add read");
-	EV_SET(&event, new_sockfd, EVFILT_WRITE, EV_ADD, 0, 0, NULL);
-	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
-		throw std::runtime_error("kevent add write");
-	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, serv)));
-	std::cout << "new connection -> " <<  GREEN << "client " << new_sockfd << RESET << std::endl;
-}
-
 void ServerManager::eventManager() {
 	struct kevent events[MAX_EVENTS];
 	while (1) {
@@ -208,17 +185,7 @@ void ServerManager::handleWriteEvent(fd_client_pair client) {
 }
 
 void ServerManager::closeClientConnection(fd_client_pair client) {
-#if (defined (LINUX) || defined (__linux__))
-	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.first, NULL) < 0)
-		throw std::runtime_error("epoll_ctl EPOLL_CTL_DEL");
-#else
-	struct kevent events[2];
-	EV_SET(events, client.first, EVFILT_READ, EV_DELETE, 0, 0, 0);
-	EV_SET(events + 1, client.first, EVFILT_WRITE, EV_DELETE, 0, 0, 0);
-	if (kevent(_kqueue_fd, events, 2, NULL, 0, NULL) < 0) {
-		throw std::runtime_error("kevent delete");
-	}
-#endif
+	DEL_EVENT(client.first);
 	delete client.second;
 	_client_map.erase(client.first);
 	close(client.first);
@@ -226,17 +193,7 @@ void ServerManager::closeClientConnection(fd_client_pair client) {
 }
 
 void ServerManager::closeClientConnection(fd_client_pair client, map_iterator_type elem) {
-#if (defined (LINUX) || defined (__linux__))
-	if (epoll_ctl(_epoll_fd, EPOLL_CTL_DEL, client.first, NULL) < 0)
-		throw std::runtime_error("epoll_ctl EPOLL_CTL_DEL");
-#else
-	struct kevent events[2];
-	EV_SET(events, client.first, EVFILT_READ, EV_DELETE, 0, 0, 0);
-	EV_SET(events + 1, client.first, EVFILT_WRITE, EV_DELETE, 0, 0, 0);
-	if (kevent(_kqueue_fd, events, 2, NULL, 0, NULL ) < 0) {
-		throw std::runtime_error("kevent delete");
-	}
-#endif
+	DEL_EVENT(client.first);
 	delete client.second;
 	_client_map.erase(elem);
 	close(client.first);

@@ -9,8 +9,8 @@
 }
 #else
 # define INIT_EPOLL { \
-	_kevent_fd = kqueue(); \
-	if (_kevent_fd == -1) { \
+	_kqueue_fd = kqueue(); \
+	if (_kqueue_fd == -1) { \
 		throw std::runtime_error("kqueue: create"); \
 	} \
 }
@@ -45,9 +45,9 @@
 	} \
 }
 #else
-# define MOD_READ (fd) { \
+# define MOD_READ(socket) { \
 	struct kevent event; \
-	EV_SET(&event, fd, EVFILT_READ, EV_ADD, 0, 0, NULL); \
+	EV_SET(&event, socket, EVFILT_READ, EV_ADD, 0, 0, NULL); \
 	if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) == -1) { \
 		throw std::runtime_error("kevent: add"); \
 	} \

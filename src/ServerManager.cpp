@@ -1,12 +1,50 @@
 #include "ServerManager.hpp"
 
 
+const int* ServerManager::hostLevel(int port)  {
+	struct sockaddr_in addr;
+    socklen_t addrlen = sizeof(addr);
+	for (fd_port_level1::iterator it = _list_server_map.begin(); it != _list_server_map.end(); ++it) {
+		int status = getsockname(it->first, (struct sockaddr *)&addr, &addrlen);
+		if (status != 0) {
+			throw std::runtime_error("getsockname error");
+		}
+		char address_str[INET_ADDRSTRLEN];
+		inet_ntop(AF_INET, &(addr.sin_addr), address_str, INET_ADDRSTRLEN);
+		if (port == ntohs(addr.sin_port))
+		{
+			return &it->first;
+		}
+	}
+	return NULL;
+}
+
 ServerManager::ServerManager(const ServerConfig &config) {
 	std::list<server_config> server_list = config.getServerList();
 	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
 		server serv(*it);
-		setupSocket(serv);
-		_server_list.push_back(serv);
+		serv.is_default = false;
+		const int* server_fd = hostLevel(serv.PORT);
+		if ( server_fd ) { // port exist on the config
+			serv.listen_fd = *server_fd;
+			if (_list_server_map[*server_fd].find(serv.host) != _list_server_map[*server_fd].end()) {  // host exist on the config
+				server_name_level3 server_name_map = _list_server_map[*server_fd][serv.host];
+				if (server_name_map.find(serv.name) != server_name_map.end()) {
+					throw std::runtime_error("server name already exist");
+				}
+				server_name_map.insert(std::make_pair(serv.name, serv));
+			}
+			_list_server_map[*server_fd].insert(std::make_pair(serv.host, server_name_level3()));
+			serv.is_default = true;
+			_list_server_map[*server_fd][serv.host].insert(std::make_pair(serv.name, serv));
+		}
+		else {	// new fd
+			setupSocket(serv);
+			serv.is_default = true;
+			_list_server_map.insert(std::make_pair(serv.listen_fd, host_level2()));
+			_list_server_map[serv.listen_fd].insert(std::make_pair(serv.host, server_name_level3()));
+			_list_server_map[serv.listen_fd][serv.host].insert(std::make_pair(serv.name, serv));
+		}
 	}
 	epollInit();
 }
@@ -23,7 +61,7 @@ void	ServerManager::setupSocket(server &serv) {
 	memset((char *)&host_addr, 0, sizeof(host_addr));
 	int host_addrlen = sizeof(host_addr);
 	host_addr.sin_family = AF_INET; // AF_INET for IPv4 Internet protocols
-	host_addr.sin_addr.s_addr = inet_addr(serv.host.c_str());
+	host_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	host_addr.sin_port = htons(serv.PORT);
 	int enable_reuseaddr = 1;
 	if (setsockopt(serv.listen_fd, SOL_SOCKET, SO_REUSEADDR, &enable_reuseaddr, sizeof(int)) < 0)
@@ -59,30 +97,50 @@ void ServerManager::timeoutCheck() {
 	}
 }
 
-const server*	ServerManager::isPartOfListenFd(int fd) const {
-	for (server_iterator_type serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
-		if (fd == serv->listen_fd)
-			return serv.operator->();
+host_level2* ServerManager::isPartOfListenFd(int fd)  {
+	for (fd_port_level1::iterator serv_it = _list_server_map.begin(); serv_it != _list_server_map.end(); ++serv_it) {
+		if (fd == serv_it->first)
+			return &(serv_it->second);
 	}
 	return NULL;
 }
 
+
 void ServerManager::epollInit() {
 	INIT_EPOLL;
-	for (std::list<server>::iterator serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
-		MOD_READ(serv->listen_fd);
+	struct epoll_event event;
+	for (fd_port_level1::const_iterator serv_it = _list_server_map.begin(); serv_it != _list_server_map.end(); ++serv_it) {
+		MOD_READ(serv_it->first);
 	}
 }
 
-void ServerManager::handleNewConnection(int socket, const server *serv) {
+void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 	struct sockaddr_in client_addr;
 	socklen_t client_addrlen = sizeof(client_addr);
 	int new_sockfd = accept(socket, (struct sockaddr *)&client_addr, &client_addrlen);
 	if (new_sockfd < 0)
 		throw std::runtime_error("accept()");
+
+	getsockname( new_sockfd, (struct sockaddr *)( &client_addr ), &client_addrlen );
+	std::ostringstream client_ip_stream;
+	client_ip_stream << ((client_addr.sin_addr.s_addr >> 0) & 0xFF) << ".";
+	client_ip_stream << ((client_addr.sin_addr.s_addr >> 8) & 0xFF) << ".";
+	client_ip_stream << ((client_addr.sin_addr.s_addr >> 16) & 0xFF) << ".";
+	client_ip_stream << ((client_addr.sin_addr.s_addr >> 24) & 0xFF);
+	std::string client_ip = client_ip_stream.str();
+	std::string client_port_str;
+	std::stringstream ss;
+	ss << ntohs(client_addr.sin_port);
+	ss >> client_port_str;
+	std::string client_port = client_port_str;
+	server_name_level3 *server_name ;
+	if (host_map->find(client_ip) == host_map->end())
+		server_name = &host_map->begin()->second;
+	else
+		server_name = &host_map->find(client_ip)->second;
 	setNonBlockingMode(new_sockfd);
 	MOD_WRITE_READ(new_sockfd);
-	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, serv)));
+	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, server_name)));
 	std::cout << "new connection -> " <<  GREEN << "client " << new_sockfd << RESET << std::endl;
 }
 
@@ -95,7 +153,7 @@ void ServerManager::eventManager() {
 			throw std::runtime_error("epoll_wait");
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
-			const server* serv = isPartOfListenFd(fd);
+			host_level2* serv = isPartOfListenFd(fd);
 			if (serv) {
 				handleNewConnection(fd, serv);
 			}
@@ -124,7 +182,7 @@ void ServerManager::eventManager() {
 			throw std::runtime_error("kevent wait");
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].ident;
-			const server* serv = isPartOfListenFd(fd);
+			host_level2* serv = isPartOfListenFd(fd);
 			if (serv) {
 				handleNewConnection(fd, serv);
 			}
@@ -146,23 +204,7 @@ void ServerManager::eventManager() {
 void ServerManager::handleReadEvent(fd_client_pair client)  {
 	if (!readFromClient(client)) {
 		client.second->stopTimer();
-
-		#if 0
-		std::cout << "Header for client : " << client_fd << std::endl;
-		std::cout << client->getRequest() << std::endl;
-		std::cout << "Message body :" << std::endl;
-		std::cout << client->getBody() << std::endl;
-		#endif
-
 		client.second->createHttpResponse();
-
-		#if 0
-		std::cout << "Response Header to client : " << client_fd << std::endl;
-		std::cout << client->getResponseHeader() << std::endl;
-		std::cout << "Response Message body to client : " << client_fd  << std::endl;
-		std::cout << client->getResponseBody() << std::endl;
-		#endif
-
 		client.second->setReadyToWrite(true);
 	}
 }
@@ -245,17 +287,16 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 }
 
 ServerManager::~ServerManager() {
-	for (std::list<server>::iterator it = _server_list.begin(); it != _server_list.end(); ++it) {
-		std::cout << "connection closed ->" << RED << " server " << it->listen_fd << RESET << std::endl;
-		close(it->listen_fd);
+	for (fd_port_level1::iterator it = _list_server_map.begin(); it != _list_server_map.end(); ++it) {
+		std::cout << "connection closed ->" << RED << " server " << it->first << RESET << std::endl;
+		close(it->first);
 	}
 	if (!_client_map.empty()) {
 		std::stack<fd_client_pair> stack;
 		for (map_iterator_type it = _client_map.begin(); it != _client_map.end(); ++it) {
 			stack.push(*it);
 		}
-		size_t size = _client_map.size();
-		for (size_t i = 0; i < size; ++i) {
+		while (!stack.empty()) {
 			closeClientConnection(stack.top());
 			stack.pop();
 		}

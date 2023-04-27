@@ -48,13 +48,16 @@ struct server : public server_config {
 };
 
 typedef std::map<int, HttpHandler*> map_type;
-typedef std::map<int, HttpHandler*>::iterator map_iterator_type;
-typedef std::list<server>::const_iterator server_iterator_type;
+typedef std::map<int, HttpHandler*>::iterator 			map_iterator_type;
+
+typedef std::map<std::string, server>					server_name_level3;
+typedef std::map<std::string, server_name_level3>		host_level2;
+typedef std::map<int, host_level2>						fd_port_level1;
 
 class ServerManager {
 
 private:
-	std::list<server>	_server_list;
+	fd_port_level1		_list_server_map;
 	map_type			_client_map;
 
 #if (defined (LINUX) || defined (__linux__))
@@ -75,8 +78,10 @@ public:
 	void	setNonBlockingMode(int socket);
 	void	setupSocket(server &serv);
 
+	const int* hostLevel(int fd) ;
+
 	void	epollInit();
-	const server*	isPartOfListenFd(int fd) const;
+	host_level2*	isPartOfListenFd(int fd) ;
 
 	int 	treatReceiveData(char *buffer, const ssize_t nbytes, HttpHandler *client);
 	int		readFromClient(fd_client_pair client);
@@ -84,7 +89,7 @@ public:
 
 	void	handleReadEvent(fd_client_pair client);
 	void	handleWriteEvent(fd_client_pair client);
-	void 	handleNewConnection(int listen_fd, const server* serv);
+	void 	handleNewConnection(int socket, host_level2* server_map);
 
 	void	eventManager();
 	void	timeoutCheck();
@@ -92,7 +97,6 @@ public:
     void	closeClientConnection(fd_client_pair client);
 	void	closeClientConnection(fd_client_pair client, map_iterator_type elem);
 
-	void	clear_client_map();
 };
 
 #endif

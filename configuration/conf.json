@@ -1,7 +1,7 @@
 [
 	{
 	  "listen": ["0.0.0.0", 8080],
-	  "max_body_size": 200000,
+	  "max_body_size": 20000,
 	  "error_pages": {
 		"404": "www/404.html",
 		"405": "www/405.html"
@@ -25,9 +25,17 @@
 			"handler": "www/cgi/sub.php",
 			"methods": ["GET"],
 			"cgi": {
-			  ".php": "/usr/local/opt/php@8.0/bin/php"
+			  ".php": "/usr/bin/php"
 			}
 		  },
+		"/cookies": {
+			"root": "www",
+			"handler": "www/cgi/cookies.php",
+			"methods": ["GET"],
+			"cgi": {
+				".php": "/usr/bin/php"
+			}
+		},
 		"/form/upload": {
 		  "root": "www/upload",
 		  "methods": ["POST"]
@@ -41,31 +49,10 @@
 			"root": "www/sendback",
 			"methods": ["POST"]
 		},
-		"/hello": {
-		  "root": "www/hello",
-		  "autoindex": true,
-		  "methods": ["GET"],
-		  "cgi": {
-			".py": "/usr/bin/python3",
-			".php": "/usr/bin/php-cgi",
-			".js": "/usr/local/bin/node",
-			".rb": "/usr/bin/ruby",
-			".sh": "/bin/sh",
-			".lua": "/usr/bin/lua"
-		  }
-		},
 		"/redir": {
 			"root": "www/redir",
 			"methods": ["GET"],
 			"redir": "https://www.pechetruite.com/"
-		},
-		"/cookies": {
-		  "root": "www",
-		  "methods": ["GET"],
-		  "handler": "www/cgi/cookies.py",
-		  "cgi": {
-			".py": "/usr/bin/python3"
-		  }
 		}
 	  }
 	}

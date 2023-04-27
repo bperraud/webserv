@@ -15,10 +15,6 @@ void ServerManager::run() {
 	eventManager();
 }
 
-void ServerManager::printServerSocket(int socket) {
-	std::cout << BLACK << "[" <<  socket  << "] " << RESET ;
-}
-
 void	ServerManager::setupSocket(server &serv) {
 	struct sockaddr_in host_addr;
 	serv.listen_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -32,8 +28,6 @@ void	ServerManager::setupSocket(server &serv) {
 	int enable_reuseaddr = 1;
 	if (setsockopt(serv.listen_fd, SOL_SOCKET, SO_REUSEADDR, &enable_reuseaddr, sizeof(int)) < 0)
 		throw std::runtime_error("setsockopt(SO_REUSEADDR) failed");
-	// disables the Nagle algorithm, which can improve performance for small messages,
-	//but can degrade performance for large messages or bulk data transfer.
 	int enable_nodelay = 1;
 	if (setsockopt(serv.listen_fd, IPPROTO_TCP, TCP_NODELAY, &enable_nodelay, sizeof(int)) < 0)
 		throw std::runtime_error("setsockopt(TCP_NODELAY) failed");
@@ -42,7 +36,7 @@ void	ServerManager::setupSocket(server &serv) {
 	setNonBlockingMode(serv.listen_fd);
 	if (listen(serv.listen_fd, SOMAXCONN) < 0)
 		throw std::runtime_error("listen failed");
-	printServerSocket(serv.listen_fd);
+	std::cout << BLACK << "[" <<  serv.listen_fd  << "] " << RESET ;
 	std::cout <<  "server listening for connections -> "
 	<< YELLOW << "[" << serv.host << ", " << serv.PORT << "] " <<  RESET << std::endl;
 }

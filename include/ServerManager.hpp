@@ -75,8 +75,6 @@ public:
 	void	setNonBlockingMode(int socket);
 	void	setupSocket(server &serv);
 
-	void	printServerSocket(int socket);
-
 	void	epollInit();
 	const server*	isPartOfListenFd(int fd) const;
 

@@ -535,8 +535,7 @@ void HttpHandler::POST()
 	_response.status_phrase = "OK";
 
 	std::string request_content_type;
-	if (!findHeader("Content-Type", request_content_type))
-		return error(400);
+	findHeader("Content-Type", request_content_type);
 	size_t pos_boundary = request_content_type.find("boundary=");
 	if (pos_boundary != std::string::npos)
 	{ // multipart/form-data

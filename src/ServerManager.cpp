@@ -73,20 +73,14 @@ const server*	ServerManager::isPartOfListenFd(int fd) const {
 	return NULL;
 }
 
-#if (defined (LINUX) || defined (__linux__))
 void ServerManager::epollInit() {
-	_epoll_fd = epoll_create1(0);
-	if (_epoll_fd < 0)
-		throw std::runtime_error("epoll_create1");
-	struct epoll_event event;
+	INIT_EPOLL;
 	for (std::list<server>::iterator serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
-		event.data.fd = serv->listen_fd;
-		event.events = EPOLLIN;
-		if (epoll_ctl(_epoll_fd, EPOLL_CTL_ADD, serv->listen_fd, &event) < 0)
-			throw std::runtime_error("epoll_ctl EPOLL_CTL_ADD");
+		MOD_READ(serv->listen_fd);
 	}
 }
 
+#if (defined (LINUX) || defined (__linux__))
 void ServerManager::handleNewConnection(int socket, const server *serv) {
 	struct epoll_event event;
 	struct sockaddr_in client_addr;
@@ -129,18 +123,6 @@ void ServerManager::eventManager() {
 	}
 }
 #else
-
-void ServerManager::epollInit() {
-	_kqueue_fd = kqueue();
-	if (_kqueue_fd < 0)
-		throw std::runtime_error("kqueue");
-	struct kevent event;
-	for (std::list<server>::iterator serv = _server_list.begin(); serv != _server_list.end(); ++serv) {
-		EV_SET(&event, serv->listen_fd, EVFILT_READ, EV_ADD, 0, 0, NULL);
-		if (kevent(_kqueue_fd, &event, 1, NULL, 0, NULL) < 0)
-			throw std::runtime_error("kevent EV_ADD");
-	}
-}
 
 void ServerManager::handleNewConnection(int socket, const server *serv) {
 	struct kevent event;

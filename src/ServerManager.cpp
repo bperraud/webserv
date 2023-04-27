@@ -1,6 +1,5 @@
 #include "ServerManager.hpp"
 
-
 const int* ServerManager::hostLevel(int port)  {
 	struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
@@ -38,7 +37,7 @@ ServerManager::ServerManager(const ServerConfig &config) {
 			serv.is_default = true;
 			_list_server_map[*server_fd][serv.host].insert(std::make_pair(serv.name, serv));
 		}
-		else {	// new fd
+		else {	// new socket
 			setupSocket(serv);
 			serv.is_default = true;
 			_list_server_map.insert(std::make_pair(serv.listen_fd, host_level2()));
@@ -108,7 +107,6 @@ host_level2* ServerManager::isPartOfListenFd(int fd)  {
 
 void ServerManager::epollInit() {
 	INIT_EPOLL;
-	struct epoll_event event;
 	for (fd_port_level1::const_iterator serv_it = _list_server_map.begin(); serv_it != _list_server_map.end(); ++serv_it) {
 		MOD_READ(serv_it->first);
 	}
@@ -301,9 +299,5 @@ ServerManager::~ServerManager() {
 			stack.pop();
 		}
 	}
-	#if (defined (LINUX) || defined (__linux__))
-		close(_epoll_fd);
-	#else
-		close(_kqueue_fd);
-	#endif
+	CLOSE_EPOLL;
 }

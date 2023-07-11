@@ -292,7 +292,11 @@ void HttpHandler::unchunckMessage()
 
 void HttpHandler::handleCGI(const std::string &original_url)
 {
-	std::string extension = _request.url.substr(_request.url.find_last_of('.'));
+	std::string extension;
+	size_t dotPos = _request.url.find_last_of('.');
+	if (dotPos != std::string::npos) {
+		extension = _request.url.substr(dotPos);
+	}
 	std::string cookies = "";
 	_response.map_headers["Cookie"] = "";
 	int err = CGIExecutor::run(_request, &_response_body_stream, &cookies, _active_route->handler, _active_route->cgi[extension], original_url);

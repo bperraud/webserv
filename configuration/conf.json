@@ -12,6 +12,11 @@
 		  "index": "index.html",
 		  "methods": ["GET"]
 		},
+		"/minishell": {
+			"root": "www",
+			"handler": "www/cgi/minishell",
+			"methods": ["GET"]
+		  },
 		"/form/add": {
 		  "root": "www",
 		  "handler": "www/cgi/add.py",

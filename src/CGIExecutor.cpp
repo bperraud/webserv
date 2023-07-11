@@ -14,7 +14,6 @@ void CGIExecutor::setupEnv(const HttpMessage &request, const std::string &url)
 	std::string query_string = url.substr(url.find("?") + 1);
 	setenv("QUERY_STRING", query_string.c_str(), 1);
 
-
 	if (request.body_length)
 	{
 		std::string content_length = "CONTENT_LENGTH=" + (request.body_length ? request.map_headers.at("Content-Length") : 0);
@@ -31,11 +30,73 @@ int CGIExecutor::_run(const HttpMessage &request, std::stringstream *response_st
 {
 	setupEnv(request, url);
 	std::string script_name = request.url.substr(0, request.url.find("?"));
+
+	if (script_name == "www/cgi/minishell") {
+		std::string input = getenv("QUERY_STRING");
+		if (input != "" && _minishell.running)
+			return run_minishell_cmd(input, response_stream, cookies);
+		else
+			return run_minishell(request, response_stream, cookies);
+	}
+
 	if (!Utils::hasExecutePermissions(script_name.c_str())) {
 	    return 403;
 	}
+	if (!Utils::pathToFileExist(script_name.c_str())) {
+	    return 404;
+	}
 	return execute(response_stream, cookies, path, interpreter, request);
 }
+
+int CGIExecutor::run_minishell(const HttpMessage &request, std::stringstream *response_stream, std::string *cookies)
+{
+	pid_t pid;
+
+	pid = fork();
+	if (pid < 0) {
+		perror("fork");
+		return 1;
+	} else if (pid == 0) {
+		execl("www/cgi/minishell", "www/cgi/minishell", NULL);
+		perror("execl");
+		exit(1);
+	}
+	else {
+		const char* writingPipe = "pipeA";
+		const char* readingPipe = "pipeB";
+		mkfifo(writingPipe, 0666);
+		mkfifo(readingPipe, 0666);
+		_minishell.writer = open(writingPipe, O_RDWR);
+		_minishell.reader = open(readingPipe, O_RDWR);
+		_minishell.running = true;
+	}
+	parse_response(response_stream, cookies, "success");
+	return 0;
+}
+
+int CGIExecutor::run_minishell_cmd(const std::string &input, std::stringstream *response_stream, std::string *cookies) {
+	char character;
+	char MESSAGE_DELIMITER = '\0';
+	std::string res;
+
+	write(_minishell.writer, input.c_str(), input.length() + 1);
+
+	if (input == "exit") {
+		_minishell.running = false;
+		close(_minishell.reader);
+		close(_minishell.writer);
+		return 0;
+	}
+	while (read(_minishell.reader, &character, sizeof(character))) {
+		if (character == MESSAGE_DELIMITER) {
+			break;
+		}
+		res += character;
+	}
+	parse_response(response_stream, cookies, res);
+	return 0;
+}
+
 
 int CGIExecutor::execute(std::stringstream *response_stream, std::string *cookies, const std::string &path, const std::string &interpreter, const HttpMessage &request)
 {
@@ -86,7 +147,7 @@ void CGIExecutor::parse_response(std::stringstream *response_stream, std::string
 	std::string::size_type pos = output.find("\r\n\r\n");
 	std::istringstream headerStream(output.substr(0, pos));
 	std::string headerLine;
-	
+
 	if (pos == std::string::npos) {
 		*response_stream << output;
 		return ;

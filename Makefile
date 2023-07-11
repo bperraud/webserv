@@ -4,8 +4,8 @@ SRC = $(wildcard src/*.cpp)
 
 CXX = c++
 
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -Iinclude -O3
-
+CXXFLAGS = -std=c++98 -Iinclude -O3
+#CXXFLAGS = -Wall -Wextra -Werror -std=c++98 -Iinclude -O3
 OBJ = $(SRC:.cpp=.o)
 
 $(NAME): $(OBJ)

@@ -6,13 +6,35 @@ CGIExecutor::CGIExecutor()
 {
 }
 
+std::string CGIExecutor::url_decode(const std::string& input) {
+    std::ostringstream decoded;
+    std::istringstream encoded(input);
+
+    char c;
+    int hex;
+    while (encoded.get(c)) {
+        if (c == '%') {
+            if (encoded >> std::hex >> hex) {
+                decoded << static_cast<char>(hex);
+            } else {
+                // Invalid encoding, handle error
+            }
+        } else if (c == '+') {
+            decoded << ' ';
+        } else {
+            decoded << c;
+        }
+    }
+
+    return decoded.str();
+}
+
 void CGIExecutor::setupEnv(const HttpMessage &request, const std::string &url)
 {
 	std::string request_method = "REQUEST_METHOD=" + request.method;
 	putenv(const_cast<char *>(request_method.c_str()));
-
 	std::string query_string = url.substr(url.find("?") + 1);
-	setenv("QUERY_STRING", query_string.c_str(), 1);
+	setenv("QUERY_STRING", url_decode(query_string).c_str(), 1);
 
 	if (request.body_length)
 	{
@@ -79,7 +101,8 @@ int CGIExecutor::run_minishell_cmd(const std::string &input, std::stringstream *
 	char MESSAGE_DELIMITER = '\0';
 	std::string res;
 
-	write(_minishell.writer, input.c_str(), input.length() + 1);
+	if (write(_minishell.writer, input.c_str(), input.length() + 1) < 0)
+		perror("write");
 
 	if (input == "exit") {
 		_minishell.running = false;

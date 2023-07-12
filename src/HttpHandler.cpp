@@ -576,6 +576,7 @@ void HttpHandler::DELETE()
 void HttpHandler::constructStringResponse()
 {
 	bool first = true;
+	_response.map_headers["Access-Control-Allow-Origin"] = "*";
 	_response_header_stream << _response.version << " " << _response.status_code << " " << _response.status_phrase << "\r\n";
 	for (std::map<std::string, std::string>::const_iterator it = _response.map_headers.begin(); it != _response.map_headers.end(); ++it)
 	{

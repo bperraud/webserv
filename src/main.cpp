@@ -41,6 +41,7 @@ int main(int argc, char **argv, char ** envp)
 	CGIExecutor::getCgiInstance().setEnv(envp);
 	JsonParser parser(argv[1]);
 	ServerConfig config(parser);
+	//std::unique_ptr<ServerManager> g_serverManager (new ServerManager(config));
 	g_serverManager = new ServerManager(config);
 
 	std::signal(SIGINT, (void (*)(int))signalHandler);

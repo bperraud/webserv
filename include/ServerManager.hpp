@@ -70,6 +70,8 @@ private:
 
 typedef std::pair<int, HttpHandler*> fd_client_pair;
 
+//typedef std::pair<int, std::unique_ptr<HttpHandler>> fd_client_pair;
+
 public:
     ServerManager(const ServerConfig &config);
     ~ServerManager();

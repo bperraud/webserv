@@ -5,15 +5,12 @@ const int* ServerManager::hostLevel(int port)  {
     socklen_t addrlen = sizeof(addr);
 	for (fd_port_level1::iterator it = _list_server_map.begin(); it != _list_server_map.end(); ++it) {
 		int status = getsockname(it->first, (struct sockaddr *)&addr, &addrlen);
-		if (status != 0) {
+		if (status != 0)
 			throw std::runtime_error("getsockname error");
-		}
 		char address_str[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &(addr.sin_addr), address_str, INET_ADDRSTRLEN);
 		if (port == ntohs(addr.sin_port))
-		{
 			return &it->first;
-		}
 	}
 	return NULL;
 }
@@ -26,9 +23,9 @@ ServerManager::ServerManager(const ServerConfig &config) {
 		const int* server_fd = hostLevel(serv.PORT);
 		if ( server_fd ) { // port exist on the config
 			serv.listen_fd = *server_fd;
-			if (_list_server_map[*server_fd].find(serv.host) != _list_server_map[*server_fd].end()) {  // host exist on the config
+			if (_list_server_map[*server_fd].count(serv.host)) {  // host exist on the config
 				server_name_level3 server_name_map = _list_server_map[*server_fd][serv.host];
-				if (server_name_map.find(serv.name) != server_name_map.end()) {
+				if (server_name_map.count(serv.name)) {
 					throw std::runtime_error("server name already exist");
 				}
 				server_name_map.insert(std::make_pair(serv.name, serv));
@@ -97,18 +94,17 @@ void ServerManager::timeoutCheck() {
 }
 
 host_level2* ServerManager::isPartOfListenFd(int fd)  {
-	for (fd_port_level1::iterator serv_it = _list_server_map.begin(); serv_it != _list_server_map.end(); ++serv_it) {
-		if (fd == serv_it->first)
-			return &(serv_it->second);
+	for (auto &[_fd, port] : _list_server_map) {
+		if (fd == _fd)
+			return &(port);
 	}
 	return NULL;
 }
 
-
 void ServerManager::epollInit() {
 	INIT_EPOLL;
-	for (fd_port_level1::const_iterator serv_it = _list_server_map.begin(); serv_it != _list_server_map.end(); ++serv_it) {
-		MOD_READ(serv_it->first);
+	for (auto &[fd, port] : _list_server_map) {
+		MOD_READ(fd);
 	}
 }
 
@@ -152,17 +148,14 @@ void ServerManager::eventManager() {
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].data.fd;
 			host_level2* serv = isPartOfListenFd(fd);
-			if (serv) {
+			if (serv)
 				handleNewConnection(fd, serv);
-			}
 			else {
 				fd_client_pair client = *_client_map.find(fd);
-				if (events[i].events & EPOLLIN) {
+				if (events[i].events & EPOLLIN)
 					handleReadEvent(client);
-				}
-				else if (events[i].events & EPOLLOUT) {
+				else if (events[i].events & EPOLLOUT)
 					handleWriteEvent(client);
-				}
 			}
 		}
 		timeoutCheck();
@@ -181,17 +174,14 @@ void ServerManager::eventManager() {
 		for (int i = 0; i < n_ready; i++) {
 			int fd = events[i].ident;
 			host_level2* serv = isPartOfListenFd(fd);
-			if (serv) {
+			if (serv)
 				handleNewConnection(fd, serv);
-			}
 			else {
 				fd_client_pair client = *_client_map.find(fd);
-				if (events[i].filter == EVFILT_READ) {
+				if (events[i].filter == EVFILT_READ)
 					handleReadEvent(client);
-				}
-				else if (events[i].filter == EVFILT_WRITE) {
+				else if (events[i].filter == EVFILT_WRITE)
 					handleWriteEvent(client);
-				}
 			}
 		}
 		timeoutCheck();
@@ -269,9 +259,8 @@ int	ServerManager::readFromClient(fd_client_pair client) {
 		closeClientConnection(client);
 		return 1;
 	}
-	else {
+	else
 		return (treatReceiveData(buffer, nbytes, client.second));
-	}
 	return 1;
 }
 
@@ -285,18 +274,14 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 }
 
 ServerManager::~ServerManager() {
-	for (fd_port_level1::iterator it = _list_server_map.begin(); it != _list_server_map.end(); ++it) {
-		std::cout << "connection closed ->" << RED << " server " << it->first << RESET << std::endl;
-		close(it->first);
+	for (auto &[fd, port] : _list_server_map) {
+		std::cout << "connection closed ->" << RED << " server " << fd << RESET << std::endl;
+		close(fd);
 	}
+
 	if (!_client_map.empty()) {
-		std::stack<fd_client_pair> stack;
-		for (map_iterator_type it = _client_map.begin(); it != _client_map.end(); ++it) {
-			stack.push(*it);
-		}
-		while (!stack.empty()) {
-			closeClientConnection(stack.top());
-			stack.pop();
+		for (auto client : _client_map) {
+			closeClientConnection(client);
 		}
 	}
 	CLOSE_EPOLL;

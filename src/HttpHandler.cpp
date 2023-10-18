@@ -55,8 +55,8 @@ bool HttpHandler::isReadyToWrite() const { return _ready_to_write; }
 std::string HttpHandler::getContentType(const std::string &path) const
 {
 	std::string::size_type dot_pos = path.find_last_of('.');
-	if (dot_pos == std::string::npos)
-	{ // no extension, assume directory
+	if (dot_pos == std::string::npos) // no extension, assume directory
+	{
 		if (_active_route->autoindex)
 			return "text/html";
 		return "text/plain";
@@ -155,11 +155,9 @@ void HttpHandler::copyLast4Char(char *buffer, ssize_t nbytes)
 	if (nbytes >= 4)
 	{
 		if (_last_4_char[0])
-		{
 			std::memcpy(buffer, _last_4_char, 4);
-		}
 		else
-			std::memcpy(buffer, buffer + 4, 4);		   // ..
+			std::memcpy(buffer, buffer + 4, 4);
 		std::memcpy(_last_4_char, buffer + nbytes, 4); // save last 4 char
 	}
 	else if (nbytes > 0)
@@ -235,14 +233,10 @@ void HttpHandler::parseRequest()
 		_close_keep_alive = true;
 	std::string transfer_encoding_header;
 	if (findHeader("Transfer-Encoding", transfer_encoding_header))
-	{
 		_transfer_chunked = transfer_encoding_header == "chunked";
-	}
 	std::string host_header;
 	if (findHeader("Host", host_header))
-	{
 		_request.host = host_header.substr(0, host_header.find(":"));
-	}
 	_left_to_read = _request.body_length;
 	assignServerConfig();
 }
@@ -273,9 +267,7 @@ void HttpHandler::unchunckMessage()
 	{
 		int chunk_size = std::atoi(line.c_str());
 		if (chunk_size == 0)
-		{
 			break;
-		}
 		std::string chunk;
 		chunk.resize(chunk_size);
 		_request_body_stream.read(&chunk[0], chunk_size);
@@ -294,9 +286,8 @@ void HttpHandler::handleCGI(const std::string &original_url)
 {
 	std::string extension;
 	size_t dotPos = _request.url.find_last_of('.');
-	if (dotPos != std::string::npos) {
+	if (dotPos != std::string::npos)
 		extension = _request.url.substr(dotPos);
-	}
 	std::string cookies = "";
 	_response.map_headers["Cookie"] = "";
 	int err = CGIExecutor::run(_request, &_response_body_stream, &cookies, _active_route->handler, _active_route->cgi[extension], original_url);
@@ -305,9 +296,7 @@ void HttpHandler::handleCGI(const std::string &original_url)
 	else
 	{
 		if (!cookies.empty())
-		{
 			_response.map_headers["Set-Cookie"] = cookies;
-		}
 		_response.status_code = "200";
 		_response.status_phrase = "OK";
 		_response.map_headers["Content-Type"] = "text/html";
@@ -333,9 +322,7 @@ void HttpHandler::assignServerConfig()
 	for (; it != _serv_map->end(); ++it)
 	{
 		if (it->second.is_default || it->second.host == "")
-		{
 			_server = &it->second;
-		}
 		if (it->second.host == _request.host)
 		{
 			_server = &it->second;
@@ -355,26 +342,18 @@ void HttpHandler::createHttpResponse()
 		throw std::runtime_error("No server found");
 	setupRoute(_request.url);
 	if (_transfer_chunked)
-	{
 		unchunckMessage();
-	}
 	if (invalidRequest())
-	{
 		error(400);
-	}
 	else if (_body_size_exceeded)
 	{
 		_body_size_exceeded = false;
 		error(413);
 	}
 	else if (!_active_route->handler.empty())
-	{
 		handleCGI(original_url);
-	}
 	else if (!_active_route->redir.empty())
-	{
 		redirection();
-	}
 	else
 	{
 		for (index = 0; index < 4; index++)

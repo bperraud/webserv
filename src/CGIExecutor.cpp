@@ -2,8 +2,8 @@
 #include "HttpHandler.hpp"
 extern char **environ;
 
-CGIExecutor::CGIExecutor()
-{
+CGIExecutor::CGIExecutor() {
+
 }
 
 std::string CGIExecutor::url_decode(const std::string& input) {

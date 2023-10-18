@@ -518,7 +518,6 @@ void HttpHandler::uploadFile(const std::string &contentType, size_t pos_boundary
 void HttpHandler::POST()
 {
 	createStatusResponse(200);
-
 	std::string request_content_type;
 	findHeader("Content-Type", request_content_type);
 	size_t pos_boundary = request_content_type.find("boundary=");

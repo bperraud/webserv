@@ -110,7 +110,7 @@ public:
 	void 	redirection();
 	void	uploadFile(const std::string& contentType, size_t pos_boundary);
 	void	setupRoute(const std::string &url);
-	void	generate_directory_listing_html(const std::string& directory_path);
+	void	generateDirectoryListing(const std::string& directory_path);
 
 	void	parseRequest();
 	void	createHttpResponse();

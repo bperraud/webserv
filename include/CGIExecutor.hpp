@@ -41,7 +41,7 @@ public:
 		return CGIExecutor::getCgiInstance()._run(request, response_stream, cookies, path, interpreter, url);
 	}
 
-	std::string url_decode(const std::string& input);
+	std::string decodeUrl(const std::string& input);
 	void setEnv(char **env);
     // Execute the CGI script with the given environment variables and input data
 	int run_minishell(const HttpMessage &request, std::stringstream *response_stream, std::string *cookies);

@@ -407,7 +407,7 @@ void HttpHandler::error(int error)
 	error_handler.errorProcess(error);
 }
 
-void HttpHandler::generate_directory_listing_html(const std::string &directory_path)
+void HttpHandler::generateDirectoryListing(const std::string &directory_path)
 {
 	DIR *dir = opendir(directory_path.c_str());
 	if (dir == NULL)
@@ -454,7 +454,7 @@ void HttpHandler::GET()
 	if (Utils::isDirectory(_request.url))
 	{ // directory
 		if (_active_route->autoindex)
-			generate_directory_listing_html(_request.url);
+			generateDirectoryListing(_request.url);
 		else
 		{
 			if (_active_route->index == "")

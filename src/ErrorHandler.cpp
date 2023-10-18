@@ -29,11 +29,6 @@ ClientError::ClientError(HttpResponse& response, std::stringstream& stream, cons
 }
 
 void ErrorHandler::errorProcess(int error_code) {
-	_error_page = "";
-	if (!_error_page.empty() && Utils::pathToFileExist(_error_page)) {
-		Utils::loadFile(_error_page, _body_stream);
-	}
-
 	_response.status_code = std::to_string(error_code);
 	try {
 		_response.status_phrase = ERROR_MAP.at(error_code);

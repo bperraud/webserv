@@ -401,8 +401,8 @@ void HttpHandler::error(int error)
 {
 	resetRequestContext();
 	ErrorHandler *error_handler = NULL;
-	std::string error_page;
-	if (_server->error_pages.find(Utils::intToString(error)) != _server->error_pages.end())
+	std::string error_page = "";
+	if (_server->error_pages.count(Utils::intToString(error)))
 		error_page = _server->error_pages[Utils::intToString(error)];
 	if (error >= 500)
 		error_handler = new ServerError(_response, _response_body_stream, error_page);

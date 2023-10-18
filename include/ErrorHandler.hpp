@@ -16,7 +16,6 @@ protected:
 	std::string			_error_page;
 public:
 	ErrorHandler(HttpResponse& response, std::stringstream& body_stream, const std::string &error_page);
-	ErrorHandler();
 	void errorProcess(int error);
 	virtual ~ErrorHandler() {};
 };

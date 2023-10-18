@@ -55,7 +55,11 @@ private:
 	HttpResponse		_response;
 	char				_last_4_char[4];
 	ssize_t				_left_to_read;
-	std::map<std::string, std::string> _MIME_TYPES;
+	//std::map<std::string, std::string> _MIME_TYPES;
+
+	static const std::map<std::string, std::string> _MIME_TYPES;
+	static const std::map<int, std::string> _SUCCESS_STATUS;
+
 	server_name_level3*	_serv_map;
 	server_config*		_server;
 
@@ -97,6 +101,8 @@ public:
 	void	startTimer();
 	void	stopTimer();
 	bool	hasTimeOut();
+
+	void	createStatusResponse(int code);
 
 	void	unchunckMessage();
 	void	handleCGI(const std::string &original_url);

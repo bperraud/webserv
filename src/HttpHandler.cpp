@@ -1,34 +1,50 @@
 #include "HttpHandler.hpp"
 #include "ServerManager.hpp"
 
+const std::map<std::string, std::string> HttpHandler::_MIME_TYPES = {
+    {"html", "text/html"},
+    {"css", "text/css"},
+    {"js", "text/javascript"},
+    {"png", "image/png"},
+    {"jpg", "image/jpeg"},
+    {"gif", "image/gif"},
+    {"json", "application/json"},
+    {"webmanifest", "application/manifest+json"},
+    {"ico", "image/x-icon"},
+    {"txt", "text/plain"},
+    {"pdf", "application/pdf"},
+    {"mp3", "audio/mpeg"},
+    {"mp4", "video/mp4"},
+    {"mov", "video/quicktime"},
+    {"xml", "application/xml"},
+    {"wav", "audio/x-wav"},
+    {"webp", "image/webp"},
+    {"doc", "application/msword"},
+    {"php", "text/html"},
+    {"py", "text/html"}
+};
+
+const std::map<int, std::string> HttpHandler::_SUCCESS_STATUS = {
+    {200, "OK"},
+    {201, "Created"},
+    {202, "Accepted"},
+    {203, "Non-Authoritative Information"},
+    {204, "No Content"},
+    {205, "Reset Content"},
+    {206, "Partial Content"},
+    {207, "Multi-Status"},
+    {208, "Already Reported"},
+    {209, "IM Used"},
+	{301, "Moved Permanently"}
+};
+
 HttpHandler::HttpHandler(int timeout_seconds, server_name_level3 *serv_map) : _timer(timeout_seconds),
 																			  _readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(), _left_to_read(0),
-																			  _MIME_TYPES(), _serv_map(serv_map), _server(NULL),
+																			  _serv_map(serv_map), _server(NULL),
 																			  _close_keep_alive(false), _body_size_exceeded(false), _ready_to_write(false), _transfer_chunked(false),
 																			  _default_route(), _active_route(&_default_route)
 {
 	_last_4_char[0] = '\0';
-	_MIME_TYPES["html"] = "text/html";
-	_MIME_TYPES["css"] = "text/css";
-	_MIME_TYPES["js"] = "text/javascript";
-	_MIME_TYPES["png"] = "image/png";
-	_MIME_TYPES["jpg"] = "image/jpeg";
-	_MIME_TYPES["gif"] = "image/gif";
-	_MIME_TYPES["json"] = "application/json";
-	_MIME_TYPES["webmanifest"] = "application/manifest+json";
-	_MIME_TYPES["ico"] = "image/x-icon";
-	_MIME_TYPES["txt"] = "text/plain";
-	_MIME_TYPES["pdf"] = "application/pdf";
-	_MIME_TYPES["mp3"] = "audio/mpeg";
-	_MIME_TYPES["mp4"] = "video/mp4";
-	_MIME_TYPES["mov"] = "video/quicktime";
-	_MIME_TYPES["xml"] = "application/xml";
-	_MIME_TYPES["wav"] = "audio/x-wav";
-	_MIME_TYPES["webp"] = "image/webp";
-	_MIME_TYPES["doc"] = "application/msword";
-	_MIME_TYPES["php"] = "text/html";
-	_MIME_TYPES["py"] = "text/html";
-
 	_default_route.index = "";
 	_default_route.autoindex = false;
 	_default_route.methods[0] = "GET";
@@ -39,6 +55,7 @@ HttpHandler::HttpHandler(int timeout_seconds, server_name_level3 *serv_map) : _t
 
 HttpHandler::~HttpHandler()
 {
+
 }
 
 // --------------------------------- GETTERS --------------------------------- //
@@ -128,6 +145,16 @@ bool HttpHandler::hasTimeOut()
 }
 
 // --------------------------------- METHODS --------------------------------- //
+
+void HttpHandler::createStatusResponse(int code) {
+	_response.status_code = std::to_string(code);
+	try {
+		_response.status_phrase = _SUCCESS_STATUS.at(code);
+	}
+	catch (std::out_of_range) {
+		std::cout << "Status code not found\n";
+	}
+}
 
 void HttpHandler::resetRequestContext()
 {
@@ -297,8 +324,8 @@ void HttpHandler::handleCGI(const std::string &original_url)
 
 void HttpHandler::redirection()
 {
-	_response.status_code = "301";
-	_response.status_phrase = "Moved Permanently";
+	createStatusResponse(301);
+
 	_response.map_headers["Location"] = _active_route->redir;
 	_response_body_stream << "<html><body><h1>301 Moved Permanently</h1></body></html>";
 	_response.map_headers["Content-Type"] = "text/html";
@@ -428,8 +455,7 @@ void HttpHandler::generate_directory_listing_html(const std::string &directory_p
 
 void HttpHandler::GET()
 {
-	_response.status_code = "200";
-	_response.status_phrase = "OK";
+	createStatusResponse(200);
 
 	if (Utils::isDirectory(_request.url))
 	{ // directory
@@ -465,42 +491,33 @@ void HttpHandler::uploadFile(const std::string &contentType, size_t pos_boundary
 	size_t pos2 = pos1 != std::string::npos ? messageBody.find("\"", pos1 + headerPrefixLength) : std::string::npos;
 	std::string fileName = pos2 != std::string::npos ? messageBody.substr(pos1 + headerPrefixLength, pos2 - pos1 - headerPrefixLength) : "";
 	if (pos1 == std::string::npos || pos2 == std::string::npos || fileName.empty())
-	{
 		return error(400);
-	}
 	size_t start = messageBody.find(CRLF);
 	size_t end = messageBody.find("\r\n--" + contentType.substr(pos_boundary + 9) + "--", start);
 	if (start == std::string::npos || end == std::string::npos)
 		return error(400);
 	start += std::strlen(CRLF);
 	messageBody = messageBody.substr(start, end - start);
-
 	std::string path = _active_route->root + "/" + fileName;
 	std::ofstream *outfile = Utils::createOrEraseFile(path);
-	if (outfile)
-	{
-		outfile->write(messageBody.c_str(), messageBody.length());
-		outfile->close();
-		delete outfile;
-	}
-	else
+	if (!outfile)
 		return error(403);
-	_response.status_code = "201";
-	_response.status_phrase = "Created";
+	outfile->write(messageBody.c_str(), messageBody.length());
+	outfile->close();
+	delete outfile;
+	createStatusResponse(201);
 	_response_body_stream << messageBody;
 	std::string content_type = getContentType(fileName);
 	if (content_type.empty())
 		return error(415);
-	else
-		_response.map_headers["Content-Type"] = content_type;
+	_response.map_headers["Content-Type"] = content_type;
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
 	_response.map_headers["Location"] = path;
 }
 
 void HttpHandler::POST()
 {
-	_response.status_code = "200";
-	_response.status_phrase = "OK";
+	createStatusResponse(200);
 
 	std::string request_content_type;
 	findHeader("Content-Type", request_content_type);
@@ -518,8 +535,7 @@ void HttpHandler::POST()
 
 void HttpHandler::DELETE()
 {
-	_response.status_code = "204";
-	_response.status_phrase = "No Content";
+	createStatusResponse(204);
 
 	std::string decoded_file_path = Utils::urlDecode(_request.url);
 	if (!Utils::pathToFileExist(decoded_file_path))

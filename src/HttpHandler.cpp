@@ -63,9 +63,7 @@ std::string HttpHandler::getContentType(const std::string &path) const
 	}
 	std::map<std::string, std::string>::const_iterator it = _MIME_TYPES.find(path.substr(dot_pos + 1));
 	if (it == _MIME_TYPES.end())
-	{
 		return "";
-	}
 	return it->second;
 }
 
@@ -76,9 +74,9 @@ bool HttpHandler::isBodyUnfinished() const
 
 bool HttpHandler::isAllowedMethod(const std::string &method) const
 {
-	for (size_t i = 0; i < _active_route->methods->length(); i++)
+	for (auto &allowed_method : _active_route->methods)
 	{
-		if (_active_route->methods[i] == method)
+		if (allowed_method == method)
 			return true;
 	}
 	return false;
@@ -172,9 +170,7 @@ void HttpHandler::writeToStream(char *buffer, ssize_t nbytes)
 {
 	_readStream.write(buffer, nbytes);
 	if (_readStream.fail())
-	{
 		throw std::runtime_error("writing to read stream");
-	}
 }
 
 int HttpHandler::writeToBody(char *buffer, ssize_t nbytes)
@@ -189,19 +185,14 @@ int HttpHandler::writeToBody(char *buffer, ssize_t nbytes)
 	}
 	_request_body_stream.write(buffer, nbytes);
 	if (_request_body_stream.fail())
-	{
 		throw std::runtime_error("writing to request body stream");
-	}
 	if (_left_to_read) // not chunked
 	{
 		_left_to_read -= nbytes;
 		return _left_to_read > 0;
 	}
 	else if (_transfer_chunked) // chunked
-	{
-		bool found = _request_body_stream.str().find(EOF_CHUNKED) != std::string::npos;
-		return !found;
-	}
+		return _request_body_stream.str().find(EOF_CHUNKED) == std::string::npos;
 	return 0;
 }
 
@@ -319,13 +310,13 @@ void HttpHandler::assignServerConfig()
 	std::map<std::string, server>::iterator it = _serv_map->begin();
 	if (_serv_map->empty())
 		throw std::runtime_error("empty map");
-	for (; it != _serv_map->end(); ++it)
+	for (auto &[name, server] : *_serv_map)
 	{
-		if (it->second.is_default || it->second.host == "")
-			_server = &it->second;
-		if (it->second.host == _request.host)
+		if (server.is_default || server.host == "")
+			_server = &server;
+		if (server.host == _request.host)
 		{
-			_server = &it->second;
+			_server = &server;
 			return;
 		}
 	}
@@ -420,9 +411,7 @@ void HttpHandler::generate_directory_listing_html(const std::string &directory_p
 			}
 		}
 		else
-		{
 			size_str = "-";
-		}
 		// Format the directory entry as an HTML table row with a link to the file or subdirectory
 		std::string row;
 		if (entry->d_type != DT_DIR)
@@ -444,10 +433,8 @@ void HttpHandler::GET()
 
 	if (Utils::isDirectory(_request.url))
 	{ // directory
-		if (_active_route->autoindex == true)
-		{
+		if (_active_route->autoindex)
 			generate_directory_listing_html(_request.url);
-		}
 		else
 		{
 			if (_active_route->index == "")
@@ -460,9 +447,7 @@ void HttpHandler::GET()
 		}
 	}
 	else if (Utils::pathToFileExist(_request.url))
-	{ // file
 		Utils::loadFile(_request.url, _response_body_stream);
-	}
 	else
 		return error(404);
 	std::string content_type = getContentType(_request.url);
@@ -520,24 +505,15 @@ void HttpHandler::POST()
 	std::string request_content_type;
 	findHeader("Content-Type", request_content_type);
 	size_t pos_boundary = request_content_type.find("boundary=");
-	if (pos_boundary != std::string::npos)
-	{ // multipart/form-data
+	if (pos_boundary != std::string::npos) // multipart/form-data
 		uploadFile(request_content_type, pos_boundary);
-	}
 	else if (_request.url == "www/sendback")
-	{
 		_response_body_stream << _request_body_stream.str();
-	}
 	else if (request_content_type.find("application/x-www-form-urlencoded") != std::string::npos)
-	{
 		_response_body_stream << "Response to application/x-www-form-urlencoded";
-	}
 	else
-	{
 		return error(501);
-	}
 	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
-	return;
 }
 
 void HttpHandler::DELETE()
@@ -557,11 +533,11 @@ void HttpHandler::constructStringResponse()
 	bool first = true;
 	_response.map_headers["Access-Control-Allow-Origin"] = "*";
 	_response_header_stream << _response.version << " " << _response.status_code << " " << _response.status_phrase << "\r\n";
-	for (std::map<std::string, std::string>::const_iterator it = _response.map_headers.begin(); it != _response.map_headers.end(); ++it)
+	for (auto &[header, value] : _response.map_headers)
 	{
 		if (!first)
 			_response_header_stream << "\r\n";
-		_response_header_stream << it->first << ": " << it->second;
+		_response_header_stream << header << ": " << value;
 		first = false;
 	}
 	_response_header_stream << "\r\n\r\n";

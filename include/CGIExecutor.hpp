@@ -14,10 +14,10 @@
 struct HttpMessage;
 
 struct minishell {
-		int		reader;
-		int		writer;
-		bool	running;
-	};
+	int		reader;
+	int		writer;
+	bool	running;
+};
 
 class CGIExecutor {
 private:

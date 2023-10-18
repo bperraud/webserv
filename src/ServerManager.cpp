@@ -3,21 +3,20 @@
 const int* ServerManager::hostLevel(int port)  {
 	struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
-	for (fd_port_level1::iterator it = _list_server_map.begin(); it != _list_server_map.end(); ++it) {
-		int status = getsockname(it->first, (struct sockaddr *)&addr, &addrlen);
-		if (status != 0)
+	for (auto &[fd, _port] : _list_server_map) {
+		if (getsockname(fd, (struct sockaddr *)&addr, &addrlen) != 0)
 			throw std::runtime_error("getsockname error");
 		char address_str[INET_ADDRSTRLEN];
 		inet_ntop(AF_INET, &(addr.sin_addr), address_str, INET_ADDRSTRLEN);
 		if (port == ntohs(addr.sin_port))
-			return &it->first;
+			return &fd;
 	}
 	return NULL;
 }
 
 ServerManager::ServerManager(const ServerConfig &config) {
 	std::list<server_config> server_list = config.getServerList();
-	for (std::list<server_config>::iterator it = server_list.begin(); it != server_list.end(); ++it) {
+	for (auto it = server_list.begin(); it != server_list.end(); ++it) {
 		server serv(*it);
 		serv.is_default = false;
 		const int* server_fd = hostLevel(serv.PORT);
@@ -25,9 +24,8 @@ ServerManager::ServerManager(const ServerConfig &config) {
 			serv.listen_fd = *server_fd;
 			if (_list_server_map[*server_fd].count(serv.host)) {  // host exist on the config
 				server_name_level3 server_name_map = _list_server_map[*server_fd][serv.host];
-				if (server_name_map.count(serv.name)) {
+				if (server_name_map.count(serv.name))
 					throw std::runtime_error("server name already exist");
-				}
 				server_name_map.insert(std::make_pair(serv.name, serv));
 			}
 			_list_server_map[*server_fd].insert(std::make_pair(serv.host, server_name_level3()));
@@ -81,10 +79,10 @@ void ServerManager::setNonBlockingMode(int socket) {
 }
 
 void ServerManager::timeoutCheck() {
-	for (map_iterator_type it = _client_map.begin(); it != _client_map.end();) {
+	for (auto it = _client_map.begin(); it != _client_map.end();) {
 		if (it->second->hasTimeOut()) {
 			fd_client_pair client = *it;
-			map_iterator_type to_delete = it;
+			auto to_delete = it;
 			++it;
 			closeClientConnection(client, to_delete);
 		}

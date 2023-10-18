@@ -23,7 +23,7 @@
 
 struct server;
 
-typedef std::map<std::string, server>		server_name_level3;
+typedef std::map<std::string, server>	server_name_level3;
 
 struct HttpMessage {
     std::string method;

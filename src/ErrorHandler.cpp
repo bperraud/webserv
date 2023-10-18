@@ -20,14 +20,6 @@ const std::map<int, std::string>ErrorHandler::ERROR_MAP = {
 	{505, "HTTP Version Not Supported"},
 };
 
-ServerError::ServerError(HttpResponse& response, std::stringstream& body_stream, const std::string &error_page)
-	: ErrorHandler(response, body_stream, error_page) {
-}
-
-ClientError::ClientError(HttpResponse& response, std::stringstream& stream, const std::string &error_page)
-	: ErrorHandler(response, stream, error_page) {
-}
-
 void ErrorHandler::errorProcess(int error_code) {
 	_response.status_code = std::to_string(error_code);
 	try {
@@ -40,11 +32,8 @@ void ErrorHandler::errorProcess(int error_code) {
 		std::string html_body = "<html><body><h1>" + _response.status_phrase + "</h1></body></html>";
 		_body_stream << html_body ;
 	}
+	else if (Utils::pathToFileExist(_error_page))
+		Utils::loadFile(_error_page, _body_stream);
 	_response.map_headers["Content-Type"] = "text/html";
 	_response.map_headers["Content-Length"] = Utils::intToString(_body_stream.str().length());
 }
-
-// ----------------------------- ClientError -----------------------------
-
-ClientError::~ClientError() {}
-ServerError::~ServerError() {}

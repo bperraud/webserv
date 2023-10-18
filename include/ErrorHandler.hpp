@@ -20,18 +20,4 @@ public:
 	virtual ~ErrorHandler() {};
 };
 
-class ClientError : public ErrorHandler {
-
-public:
-	ClientError(HttpResponse& response, std::stringstream& body_stream, const std::string &error_page);
-	~ClientError();
-};
-
-class ServerError : public ErrorHandler {
-
-public:
-	ServerError(HttpResponse& request, std::stringstream& body_stream, const std::string &error_page);
-	~ServerError();
-};
-
 #endif

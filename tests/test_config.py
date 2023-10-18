@@ -3,10 +3,21 @@ import socket
 import os
 
 # get the directory of the current Python script
-script_dir = os.path.dirname(os.path.abspath(__file__))
-script_dir = script_dir + "/"
+script_dir = os.path.dirname(os.path.abspath(__file__)) + "/"
 
 URL = 'http://localhost:8080/'
+
+def compare_string_to_file(string_to_compare, file_path):
+	try:
+		with open(file_path, 'r') as file:
+			file_content = file.read()
+		return file_content == string_to_compare
+	except FileNotFoundError:
+		print("File not found.")
+		return False
+	except Exception as e:
+		print(f"An error occurred: {str(e)}")
+		return False
 
 # Send a GET request
 def test_get():
@@ -15,6 +26,7 @@ def test_get():
 	assert(response.headers['content-type'] == 'text/html')
 	response = requests.get(URL + '/random')
 	assert(response.status_code == 404)
+	assert(compare_string_to_file(response.text, script_dir + "../www/404.html"))
 
 # Send a POST request with data
 def test_post():

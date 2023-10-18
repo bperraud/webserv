@@ -400,17 +400,11 @@ void HttpHandler::createHttpResponse()
 void HttpHandler::error(int error)
 {
 	resetRequestContext();
-	ErrorHandler *error_handler = NULL;
 	std::string error_page = "";
 	if (_server->error_pages.count(Utils::intToString(error)))
 		error_page = _server->error_pages[Utils::intToString(error)];
-	if (error >= 500)
-		error_handler = new ServerError(_response, _response_body_stream, error_page);
-	else if (error >= 400)
-		error_handler = new ClientError(_response, _response_body_stream, error_page);
-	if (error_handler)
-		error_handler->errorProcess(error);
-	delete error_handler;
+	ErrorHandler error_handler = ErrorHandler(_response, _response_body_stream, error_page);
+	error_handler.errorProcess(error);
 }
 
 void HttpHandler::generate_directory_listing_html(const std::string &directory_path)

@@ -227,39 +227,36 @@ void ServerManager::connectionCloseMode(fd_client_pair client) {
 		closeClientConnection(client);
 }
 
-int ServerManager::treatReceiveData(char *buffer, const ssize_t nbytes, HttpHandler *client) {
+int ServerManager::treatReceivedData(char *buffer, const ssize_t nbytes, HttpHandler *client) {
 	client->startTimer();
-	client->copyLast4Char(buffer, nbytes);
+	client->saveOverlap(buffer, nbytes);
 	bool isBodyUnfinished = client->isBodyUnfinished();
 	if (isBodyUnfinished)
 	{
-		isBodyUnfinished = client->writeToBody(buffer + 4, nbytes);
+		isBodyUnfinished = client->writeToBody(buffer + OVERLAP, nbytes);
 		return (isBodyUnfinished);
 	}
 	const size_t pos_end_header = ((std::string)buffer).find(CRLF);
 	if (pos_end_header == std::string::npos) {
-		client->writeToStream(buffer + 4, nbytes);
+		client->writeToStream(buffer + OVERLAP, nbytes);
 		return 1;
 	}
 	else {
-		client->writeToStream(buffer + 4, pos_end_header);
-		client->resetLast4();
+		client->writeToStream(buffer + OVERLAP, pos_end_header);
 		client->parseRequest();
-		isBodyUnfinished = client->writeToBody(buffer + 4 + pos_end_header, nbytes - pos_end_header);
+		isBodyUnfinished = client->writeToBody(buffer + OVERLAP + pos_end_header, nbytes - pos_end_header);
 		return (isBodyUnfinished);
 	}
 }
 
 int	ServerManager::readFromClient(fd_client_pair client) {
-	char buffer[BUFFER_SIZE + 4];
-	const ssize_t nbytes = recv(client.first, buffer + 4, BUFFER_SIZE, 0);
+	char buffer[BUFFER_SIZE + OVERLAP];
+	const ssize_t nbytes = recv(client.first, buffer + OVERLAP, BUFFER_SIZE, 0);
 	if (nbytes <= 0) {
 		closeClientConnection(client);
 		return 1;
 	}
-	else
-		return (treatReceiveData(buffer, nbytes, client.second));
-	return 1;
+	return (treatReceivedData(buffer, nbytes, client.second));
 }
 
 void ServerManager::writeToClient(int client_fd, const std::string &str) {

@@ -44,7 +44,7 @@ HttpHandler::HttpHandler(int timeout_seconds, server_name_level3 *serv_map) : _t
 																			  _close_keep_alive(false), _body_size_exceeded(false), _ready_to_write(false), _transfer_chunked(false),
 																			  _default_route(), _active_route(&_default_route)
 {
-	_last_4_char[0] = '\0';
+	_overlapBuffer[0] = '\0';
 	_default_route.index = "";
 	_default_route.autoindex = false;
 	_default_route.methods[0] = "GET";
@@ -122,11 +122,6 @@ void HttpHandler::setReadyToWrite(bool ready)
 	_ready_to_write = ready;
 }
 
-void HttpHandler::resetLast4()
-{
-	bzero(_last_4_char, 4);
-}
-
 // ---------------------------------- TIMER ---------------------------------- //
 
 void HttpHandler::startTimer()
@@ -171,25 +166,25 @@ void HttpHandler::resetRequestContext()
 	_response_body_stream.clear();
 	_response_header_stream.str(std::string());
 	_response_header_stream.clear();
-	bzero(_last_4_char, 4);
+	bzero(_overlapBuffer, OVERLAP);
 	_active_route = &_default_route;
 }
 
-void HttpHandler::copyLast4Char(char *buffer, ssize_t nbytes)
+void HttpHandler::saveOverlap(char *buffer, ssize_t nbytes)
 {
-	if (nbytes >= 4)
+	if (nbytes >= OVERLAP)
 	{
-		if (_last_4_char[0])
-			std::memcpy(buffer, _last_4_char, 4);
+		if (_overlapBuffer[0])
+			std::memcpy(buffer, _overlapBuffer, OVERLAP);
 		else
-			std::memcpy(buffer, buffer + 4, 4);
-		std::memcpy(_last_4_char, buffer + nbytes, 4); // save last 4 char
+			std::memcpy(buffer, buffer + OVERLAP, OVERLAP);
+		std::memcpy(_overlapBuffer, buffer + nbytes, OVERLAP); // save last 4 char
 	}
-	else if (nbytes > 0)
+	else if (nbytes)
 	{
-		std::memcpy(buffer, _last_4_char, 4);
-		std::memmove(_last_4_char, _last_4_char + nbytes, 4 - nbytes); // moves left by nbytes
-		std::memcpy(_last_4_char + 4 - nbytes, buffer + 4, nbytes);	   // save last nbytes char
+		std::memcpy(buffer, _overlapBuffer, OVERLAP);
+		std::memmove(_overlapBuffer, _overlapBuffer + nbytes, OVERLAP - nbytes); // moves left by nbytes
+		std::memcpy(_overlapBuffer + OVERLAP - nbytes, buffer + OVERLAP, nbytes);	// save last nbytes char
 	}
 }
 

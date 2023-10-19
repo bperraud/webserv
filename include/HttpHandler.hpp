@@ -20,6 +20,7 @@
 # define EOF_CHUNKED "\r\n0\r\n\r\n"
 # define CRLF "\r\n\r\n"
 # define ROOT_PATH "www"
+# define OVERLAP 4
 
 struct server;
 
@@ -53,7 +54,7 @@ private:
 	std::stringstream   _response_body_stream;
 	HttpMessage			_request;
 	HttpResponse		_response;
-	char				_last_4_char[4];
+	char				_overlapBuffer[4];
 	ssize_t				_left_to_read;
 	//std::map<std::string, std::string> _MIME_TYPES;
 
@@ -95,9 +96,8 @@ public:
 	void	writeToStream(char *buffer, ssize_t nbytes) ;
 	int		writeToBody(char *buffer, ssize_t nbytes);
 
-	void	copyLast4Char(char *buffer, ssize_t nbytes);
+	void	saveOverlap(char *buffer, ssize_t nbytes);
 	void	resetRequestContext();
-	void 	resetLast4();
 	void	startTimer();
 	void	stopTimer();
 	bool	hasTimeOut();

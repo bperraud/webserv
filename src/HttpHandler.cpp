@@ -39,9 +39,9 @@ const std::map<int, std::string> HttpHandler::_SUCCESS_STATUS = {
 };
 
 HttpHandler::HttpHandler(int timeout_seconds, server_name_level3 *serv_map) : _timer(timeout_seconds),
-																			  _readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(), _left_to_read(0),
-																			  _serv_map(serv_map), _server(NULL),
-																			  _close_keep_alive(false), _body_size_exceeded(false), _ready_to_write(false), _transfer_chunked(false),
+																			  _readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(), _leftToRead(0),
+																			  _serverMap(serv_map), _server(NULL),
+																			  _keepAlive(false), _body_size_exceeded(false), _ready_to_write(false), _transfer_chunked(false),
 																			  _default_route(), _active_route(&_default_route)
 {
 	_overlapBuffer[0] = '\0';
@@ -60,33 +60,23 @@ HttpHandler::~HttpHandler()
 
 // --------------------------------- GETTERS --------------------------------- //
 
-HttpMessage HttpHandler::getStructRequest() const { return _request; }
-std::string HttpHandler::getRequest() const { return _readStream.str(); }
-std::string HttpHandler::getBody() const { return _request_body_stream.str(); }
-ssize_t HttpHandler::getLeftToRead() const { return _left_to_read; }
 std::string HttpHandler::getResponseHeader() const { return _response_header_stream.str(); }
 std::string HttpHandler::getResponseBody() const { return _response_body_stream.str(); }
-bool HttpHandler::isKeepAlive() const { return _close_keep_alive; }
+bool HttpHandler::isKeepAlive() const { return _keepAlive; }
 bool HttpHandler::isReadyToWrite() const { return _ready_to_write; }
 
 std::string HttpHandler::getContentType(const std::string &path) const
 {
 	std::string::size_type dot_pos = path.find_last_of('.');
 	if (dot_pos == std::string::npos) // no extension, assume directory
-	{
-		if (_active_route->autoindex)
-			return "text/html";
-		return "text/plain";
-	}
+		return _active_route->autoindex ?  "text/html" : "text/plain";
 	std::map<std::string, std::string>::const_iterator it = _MIME_TYPES.find(path.substr(dot_pos + 1));
-	if (it == _MIME_TYPES.end())
-		return "";
-	return it->second;
+	return it == _MIME_TYPES.end() ? "" : it->second;
 }
 
 bool HttpHandler::isBodyUnfinished() const
 {
-	return (_left_to_read || _transfer_chunked);
+	return (_leftToRead || _transfer_chunked);
 }
 
 bool HttpHandler::isAllowedMethod(const std::string &method) const
@@ -144,7 +134,7 @@ bool HttpHandler::hasTimeOut()
 void HttpHandler::createStatusResponse(int code) {
 	_response.status_code = std::to_string(code);
 	try {
-		_response.status_phrase = _SUCCESS_STATUS.at(code);
+		_response.statusPhrase = _SUCCESS_STATUS.at(code);
 	}
 	catch (std::out_of_range) {
 		std::cout << "Status code not found\n";
@@ -197,21 +187,21 @@ void HttpHandler::writeToStream(char *buffer, ssize_t nbytes)
 
 int HttpHandler::writeToBody(char *buffer, ssize_t nbytes)
 {
-	if (!_left_to_read && !_transfer_chunked)
+	if (!_leftToRead && !_transfer_chunked)
 		return 0;
 	if (_server->max_body_size && static_cast<ssize_t>(_request_body_stream.tellp()) + nbytes > _server->max_body_size)
 	{
-		_left_to_read = 0;
+		_leftToRead = 0;
 		_body_size_exceeded = true;
 		return 0;
 	}
 	_request_body_stream.write(buffer, nbytes);
 	if (_request_body_stream.fail())
 		throw std::runtime_error("writing to request body stream");
-	if (_left_to_read) // not chunked
+	if (_leftToRead) // not chunked
 	{
-		_left_to_read -= nbytes;
-		return _left_to_read > 0;
+		_leftToRead -= nbytes;
+		return _leftToRead > 0;
 	}
 	else if (_transfer_chunked) // chunked
 		return _request_body_stream.str().find(EOF_CHUNKED) == std::string::npos;
@@ -232,25 +222,25 @@ void HttpHandler::parseRequest()
 		header_name.erase(0, header_name.find_first_not_of(" \r\n\t"));
 		_request.map_headers[header_name] = header_value;
 	}
-	_request.body_length = 0;
+	_request.bodyLength = 0;
 	std::string content_length_header;
 	if (findHeader("Content-Length", content_length_header))
 	{
 		std::stringstream ss(content_length_header);
-		ss >> _request.body_length;
+		ss >> _request.bodyLength;
 	}
 	std::string connection_header;
+	_keepAlive = true;
+	_transfer_chunked = false;
 	if (findHeader("Connection", connection_header))
-		_close_keep_alive = connection_header == "keep-alive";
-	else
-		_close_keep_alive = true;
+		_keepAlive = connection_header == "keep-alive";
 	std::string transfer_encoding_header;
 	if (findHeader("Transfer-Encoding", transfer_encoding_header))
 		_transfer_chunked = transfer_encoding_header == "chunked";
 	std::string host_header;
 	if (findHeader("Host", host_header))
 		_request.host = host_header.substr(0, host_header.find(":"));
-	_left_to_read = _request.body_length;
+	_leftToRead = _request.bodyLength;
 	assignServerConfig();
 }
 
@@ -311,7 +301,7 @@ void HttpHandler::handleCGI(const std::string &original_url)
 		if (!cookies.empty())
 			_response.map_headers["Set-Cookie"] = cookies;
 		_response.status_code = "200";
-		_response.status_phrase = "OK";
+		_response.statusPhrase = "OK";
 		_response.map_headers["Content-Type"] = "text/html";
 		_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
 	}
@@ -320,7 +310,6 @@ void HttpHandler::handleCGI(const std::string &original_url)
 void HttpHandler::redirection()
 {
 	createStatusResponse(301);
-
 	_response.map_headers["Location"] = _active_route->redir;
 	_response_body_stream << "<html><body><h1>301 Moved Permanently</h1></body></html>";
 	_response.map_headers["Content-Type"] = "text/html";
@@ -329,15 +318,12 @@ void HttpHandler::redirection()
 
 void HttpHandler::assignServerConfig()
 {
-	std::map<std::string, server>::iterator it = _serv_map->begin();
-	if (_serv_map->empty())
+	if (_serverMap->empty())
 		throw std::runtime_error("empty map");
-	for (auto &[name, server] : *_serv_map)
-	{
+	for (auto &[name, server] : *_serverMap) {
 		if (server.is_default || server.host == "")
 			_server = &server;
-		if (server.host == _request.host)
-		{
+		if (server.host == _request.host) {
 			_server = &server;
 			return;
 		}
@@ -536,7 +522,7 @@ void HttpHandler::constructStringResponse()
 {
 	bool first = true;
 	_response.map_headers["Access-Control-Allow-Origin"] = "*";
-	_response_header_stream << _response.version << " " << _response.status_code << " " << _response.status_phrase << "\r\n";
+	_response_header_stream << _response.version << " " << _response.status_code << " " << _response.statusPhrase << "\r\n";
 	for (auto &[header, value] : _response.map_headers)
 	{
 		if (!first)

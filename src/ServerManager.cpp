@@ -109,7 +109,6 @@ void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 	int new_sockfd = accept(socket, (struct sockaddr *)&client_addr, &client_addrlen);
 	if (new_sockfd < 0)
 		throw std::runtime_error("accept()");
-
 	getsockname( new_sockfd, (struct sockaddr *)( &client_addr ), &client_addrlen );
 	std::ostringstream client_ip_stream;
 	client_ip_stream << ((client_addr.sin_addr.s_addr >> 0) & 0xFF) << ".";
@@ -268,7 +267,6 @@ ServerManager::~ServerManager() {
 		std::cout << "connection closed ->" << RED << " server " << fd << RESET << std::endl;
 		close(fd);
 	}
-
 	if (!_client_map.empty()) {
 		for (auto client : _client_map) {
 			closeClientConnection(client);

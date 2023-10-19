@@ -86,6 +86,7 @@ def test_chunked():
 	response = requests.post(URL + 'sendback', headers=headers, data=chunker(data, 5))
 	assert response.text == data
 	assert response.status_code == 200
+	test_get()
 
 # Testing cgi with addition and substraction
 def test_cgi():

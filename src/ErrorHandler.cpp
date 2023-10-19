@@ -23,13 +23,13 @@ const std::map<int, std::string>ErrorHandler::ERROR_MAP = {
 void ErrorHandler::errorProcess(int error_code) {
 	_response.status_code = std::to_string(error_code);
 	try {
-		_response.status_phrase = ERROR_MAP.at(error_code);
+		_response.statusPhrase = ERROR_MAP.at(error_code);
 	}
 	catch (std::out_of_range) {
 		std::cout << "Error code not found\n";
 	}
 	if (_error_page.empty()) {
-		std::string html_body = "<html><body><h1>" + _response.status_phrase + "</h1></body></html>";
+		std::string html_body = "<html><body><h1>" + _response.statusPhrase + "</h1></body></html>";
 		_body_stream << html_body ;
 	}
 	else if (Utils::pathToFileExist(_error_page))

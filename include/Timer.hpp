@@ -7,12 +7,12 @@
 class Timer {
 
 private:
-	int 			_timeout_seconds;
-	struct timeval	_last_read;
+	int 			_timeoutSeconds;
+	struct timeval	_lastRead;
 	bool			_running;
 
 public:
-    Timer(int _timeout_seconds);
+    Timer(int _timeoutSeconds);
 	void start();
 	void stop();
 	bool hasTimeOut();

@@ -42,9 +42,9 @@ void CGIExecutor::setupEnv(const HttpMessage &request, const std::string &url)
 	std::string decode = decodeUrl(query_string);
 	setenv("QUERY_STRING", decodeUrl(query_string).c_str(), 1);
 
-	if (request.body_length)
+	if (request.bodyLength)
 	{
-		std::string content_length = "CONTENT_LENGTH=" + (request.body_length ? request.map_headers.at("Content-Length") : 0);
+		std::string content_length = "CONTENT_LENGTH=" + (request.bodyLength ? request.map_headers.at("Content-Length") : 0);
 		putenv(const_cast<char *>(content_length.c_str()));
 	}
 }

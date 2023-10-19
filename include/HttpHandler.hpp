@@ -106,7 +106,7 @@ public:
 
 	void	unchunckMessage();
 	void	handleCGI(const std::string &original_url);
-	void	error(int error) ;
+	void	error(int error);
 	void 	redirection();
 	void	uploadFile(const std::string& contentType, size_t pos_boundary);
 	void	setupRoute(const std::string &url);

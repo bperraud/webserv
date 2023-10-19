@@ -20,9 +20,9 @@ ServerManager::ServerManager(const ServerConfig &config) {
 		server serv(*it);
 		serv.is_default = false;
 		const int* server_fd = hostLevel(serv.PORT);
-		if ( server_fd ) { // port exist on the config
+		if (server_fd) { // port exist on the config
 			serv.listen_fd = *server_fd;
-			if (_list_server_map[*server_fd].count(serv.host)) {  // host exist on the config
+			if (_list_server_map[*server_fd].count(serv.host)) { // host exist on the config
 				server_name_level3 server_name_map = _list_server_map[*server_fd][serv.host];
 				if (server_name_map.count(serv.name))
 					throw std::runtime_error("server name already exist");
@@ -31,8 +31,7 @@ ServerManager::ServerManager(const ServerConfig &config) {
 			_list_server_map[*server_fd].insert(std::make_pair(serv.host, server_name_level3()));
 			serv.is_default = true;
 			_list_server_map[*server_fd][serv.host].insert(std::make_pair(serv.name, serv));
-		}
-		else {	// new socket
+		} else { // new socket
 			setupSocket(serv);
 			serv.is_default = true;
 			_list_server_map.insert(std::make_pair(serv.listen_fd, host_level2()));
@@ -69,7 +68,7 @@ void	ServerManager::setupSocket(server &serv) {
 	if (listen(serv.listen_fd, SOMAXCONN) < 0)
 		throw std::runtime_error("listen failed");
 	std::cout << BLACK << "[" <<  serv.listen_fd  << "] " << RESET ;
-	std::cout <<  "server listening for connections -> "
+	std::cout << "server listening for connections -> "
 	<< YELLOW << "[" << serv.host << ", " << serv.PORT << "] " <<  RESET << std::endl;
 }
 
@@ -85,9 +84,7 @@ void ServerManager::timeoutCheck() {
 			auto to_delete = it;
 			++it;
 			closeClientConnection(client, to_delete);
-		}
-		else
-			++it;
+		} else ++it;
 	}
 }
 
@@ -231,8 +228,7 @@ int ServerManager::treatReceivedData(char *buffer, const ssize_t nbytes, HttpHan
 	client->startTimer();
 	client->saveOverlap(buffer, nbytes);
 	bool isBodyUnfinished = client->isBodyUnfinished();
-	if (isBodyUnfinished)
-	{
+	if (isBodyUnfinished) {
 		isBodyUnfinished = client->writeToBody(buffer + OVERLAP, nbytes);
 		return (isBodyUnfinished);
 	}
@@ -240,8 +236,7 @@ int ServerManager::treatReceivedData(char *buffer, const ssize_t nbytes, HttpHan
 	if (pos_end_header == std::string::npos) {
 		client->writeToStream(buffer + OVERLAP, nbytes);
 		return 1;
-	}
-	else {
+	} else {
 		client->writeToStream(buffer + OVERLAP, pos_end_header);
 		client->parseRequest();
 		isBodyUnfinished = client->writeToBody(buffer + OVERLAP + pos_end_header, nbytes - pos_end_header);
@@ -263,7 +258,7 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 	const ssize_t nbytes = send(client_fd, str.c_str(), str.length(), 0);
 	if (nbytes == -1)
 		throw std::runtime_error("send()");
-	else if ((size_t) nbytes < str.length()) {
+	else if (static_cast<size_t>(nbytes) < str.length()) {
 		writeToClient(client_fd, str.substr(nbytes));
 	}
 }

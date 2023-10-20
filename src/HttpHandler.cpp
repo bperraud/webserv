@@ -49,7 +49,6 @@ HttpHandler::HttpHandler(int timeout_seconds, server_name_level3 *serv_map) :  _
 																			  _keepAlive(false), _body_size_exceeded(false), _transfer_chunked(false),
 																			  _default_route(), _active_route(&_default_route)
 {
-	//_overlapBuffer[0] = '\0';
 	_default_route.index = "";
 	_default_route.autoindex = false;
 	_default_route.methods[0] = "GET";
@@ -67,7 +66,6 @@ HttpHandler::~HttpHandler() {
 std::string HttpHandler::getResponseHeader() const { return _response_header_stream.str(); }
 std::string HttpHandler::getResponseBody() const { return _response_body_stream.str(); }
 bool HttpHandler::isKeepAlive() const { return _keepAlive; }
-//bool HttpHandler::isReadyToWrite() const { return _ready_to_write; }
 
 std::string HttpHandler::getContentType(const std::string &path) const {
 	std::string::size_type dot_pos = path.find_last_of('.');

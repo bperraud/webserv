@@ -41,10 +41,10 @@ const std::map<int, std::string> HttpHandler::_SUCCESS_STATUS = {
 HttpHandler::HttpHandler(int timeout_seconds, server_name_level3 *serv_map) : _timer(timeout_seconds),
 																			  _readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(), _leftToRead(0),
 																			  _serverMap(serv_map), _server(NULL),
-																			  _keepAlive(false), _body_size_exceeded(false), _ready_to_write(false), _transfer_chunked(false),
+																			  _keepAlive(false), _body_size_exceeded(false), _transfer_chunked(false),
 																			  _default_route(), _active_route(&_default_route)
 {
-	_overlapBuffer[0] = '\0';
+	//_overlapBuffer[0] = '\0';
 	_default_route.index = "";
 	_default_route.autoindex = false;
 	_default_route.methods[0] = "GET";
@@ -63,7 +63,7 @@ HttpHandler::~HttpHandler()
 std::string HttpHandler::getResponseHeader() const { return _response_header_stream.str(); }
 std::string HttpHandler::getResponseBody() const { return _response_body_stream.str(); }
 bool HttpHandler::isKeepAlive() const { return _keepAlive; }
-bool HttpHandler::isReadyToWrite() const { return _ready_to_write; }
+//bool HttpHandler::isReadyToWrite() const { return _ready_to_write; }
 
 std::string HttpHandler::getContentType(const std::string &path) const
 {
@@ -107,27 +107,27 @@ bool HttpHandler::invalidRequest() const
 
 // --------------------------------- SETTERS --------------------------------- //
 
-void HttpHandler::setReadyToWrite(bool ready)
-{
-	_ready_to_write = ready;
-}
+//void HttpHandler::setReadyToWrite(bool ready)
+//{
+//	_ready_to_write = ready;
+//}
 
 // ---------------------------------- TIMER ---------------------------------- //
 
-void HttpHandler::startTimer()
-{
-	_timer.start();
-}
+//void HttpHandler::startTimer()
+//{
+//	_timer.start();
+//}
 
-void HttpHandler::stopTimer()
-{
-	_timer.stop();
-}
+//void HttpHandler::stopTimer()
+//{
+//	_timer.stop();
+//}
 
-bool HttpHandler::hasTimeOut()
-{
-	return _timer.hasTimeOut();
-}
+//bool HttpHandler::hasTimeOut()
+//{
+//	return _timer.hasTimeOut();
+//}
 
 // --------------------------------- METHODS --------------------------------- //
 
@@ -156,27 +156,27 @@ void HttpHandler::resetRequestContext()
 	_response_body_stream.clear();
 	_response_header_stream.str(std::string());
 	_response_header_stream.clear();
-	bzero(_overlapBuffer, OVERLAP);
+	//bzero(_overlapBuffer, OVERLAP);
 	_active_route = &_default_route;
 }
 
-void HttpHandler::saveOverlap(char *buffer, ssize_t nbytes)
-{
-	if (nbytes >= OVERLAP)
-	{
-		if (_overlapBuffer[0])
-			std::memcpy(buffer, _overlapBuffer, OVERLAP);
-		else
-			std::memcpy(buffer, buffer + OVERLAP, OVERLAP);
-		std::memcpy(_overlapBuffer, buffer + nbytes, OVERLAP); // save last 4 char
-	}
-	else if (nbytes)
-	{
-		std::memcpy(buffer, _overlapBuffer, OVERLAP);
-		std::memmove(_overlapBuffer, _overlapBuffer + nbytes, OVERLAP - nbytes); // moves left by nbytes
-		std::memcpy(_overlapBuffer + OVERLAP - nbytes, buffer + OVERLAP, nbytes);	// save last nbytes char
-	}
-}
+//void HttpHandler::saveOverlap(char *buffer, ssize_t nbytes)
+//{
+//	if (nbytes >= OVERLAP)
+//	{
+//		if (_overlapBuffer[0])
+//			std::memcpy(buffer, _overlapBuffer, OVERLAP);
+//		else
+//			std::memcpy(buffer, buffer + OVERLAP, OVERLAP);
+//		std::memcpy(_overlapBuffer, buffer + nbytes, OVERLAP); // save last 4 char
+//	}
+//	else if (nbytes)
+//	{
+//		std::memcpy(buffer, _overlapBuffer, OVERLAP);
+//		std::memmove(_overlapBuffer, _overlapBuffer + nbytes, OVERLAP - nbytes); // moves left by nbytes
+//		std::memcpy(_overlapBuffer + OVERLAP - nbytes, buffer + OVERLAP, nbytes);	// save last nbytes char
+//	}
+//}
 
 void HttpHandler::writeToStream(char *buffer, ssize_t nbytes)
 {

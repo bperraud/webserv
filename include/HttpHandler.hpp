@@ -48,13 +48,17 @@ class HttpHandler {
 private:
 	Timer				_timer;
 	std::stringstream	_readStream;
+
+	bool				_keepAlive;
+	bool				_body_size_exceeded;
+	bool				_transfer_chunked;
+	ssize_t				_leftToRead;
+
 	std::stringstream   _request_body_stream;
 	std::stringstream   _response_header_stream;
 	std::stringstream   _response_body_stream;
 	HttpMessage			_request;
 	HttpResponse		_response;
-	char				_overlapBuffer[4];
-	ssize_t				_leftToRead;
 
 	static const std::map<std::string, std::string> _MIME_TYPES;
 	static const std::map<int, std::string> _SUCCESS_STATUS;
@@ -62,13 +66,11 @@ private:
 	server_name_level3*	_serverMap;
 	server_config*		_server;
 
-	bool				_keepAlive;
-	bool				_body_size_exceeded;
-	bool				_ready_to_write;
-	bool				_transfer_chunked;
-
 	routes				_default_route;
 	routes*				_active_route;
+
+//public:
+//can be private
 
 	void	assignServerConfig();
 	void	createStatusResponse(int code);
@@ -85,6 +87,9 @@ private:
 	bool	isAllowedMethod(const std::string &method) const;
 	void	constructStringResponse();
 	void	generateDirectoryListing(const std::string& directory_path);
+	void	handleCGI(const std::string &original_url);
+	void	error(int error);
+	std::string		getContentType(const std::string& path) const;
 
 public:
 	HttpHandler(int timeout_seconds, server_name_level3 *serv_map);
@@ -92,25 +97,15 @@ public:
 
 	bool	isBodyUnfinished() const ;
 	bool	isKeepAlive() const;
-	bool	isReadyToWrite() const;
 	void	createHttpResponse();
 
 	std::string		getResponseHeader() const;
 	std::string		getResponseBody() const;
-	std::string		getContentType(const std::string& path) const;
 
-	void	setReadyToWrite(bool ready);
 	void	writeToStream(char *buffer, ssize_t nbytes) ;
 	int		writeToBody(char *buffer, ssize_t nbytes);
 
-	void	saveOverlap(char *buffer, ssize_t nbytes);
 	void	resetRequestContext();
-	void	startTimer();
-	void	stopTimer();
-	bool	hasTimeOut();
-
-	void	handleCGI(const std::string &original_url);
-	void	error(int error);
 
 	void	parseRequest();
 

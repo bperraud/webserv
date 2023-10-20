@@ -128,7 +128,7 @@ void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 		server_name = &host_map->find(client_ip)->second;
 	setNonBlockingMode(new_sockfd);
 	MOD_WRITE_READ(new_sockfd);
-	_client_map.insert(std::make_pair(new_sockfd, new HttpHandler(TIMEOUT_SECS, server_name)));
+	_client_map.insert(std::make_pair(new_sockfd, new Client(TIMEOUT_SECS, server_name)));
 	std::cout << "new connection -> " <<  GREEN << "client " << new_sockfd << RESET << std::endl;
 }
 
@@ -223,7 +223,7 @@ void ServerManager::connectionCloseMode(fd_client_pair client) {
 		closeClientConnection(client);
 }
 
-int ServerManager::treatReceivedData(char *buffer, const ssize_t nbytes, HttpHandler *client) {
+int ServerManager::treatReceivedData(char *buffer, const ssize_t nbytes, Client *client) {
 	client->startTimer();
 	client->saveOverlap(buffer, nbytes);
 	bool isBodyUnfinished = client->isBodyUnfinished();

@@ -3,6 +3,7 @@
 
 #include "HttpHandler.hpp"
 #include "ServerConfig.hpp"
+#include "Client.hpp"
 
 #include <iostream>
 #include <errno.h>
@@ -47,8 +48,13 @@ struct server : public server_config {
     server(const server_config& info) : server_config(info) {};
 };
 
-typedef std::map<int, HttpHandler*> map_type;
-typedef std::map<int, HttpHandler*>::iterator 			map_iterator_type;
+//typedef std::map<int, HttpHandler*> map_type;
+//typedef std::map<int, HttpHandler*>::iterator 			map_iterator_type;
+//typedef std::pair<int, HttpHandler*> fd_client_pair;
+
+typedef std::map<int, Client*> map_type;
+typedef std::map<int, Client*>::iterator 			map_iterator_type;
+typedef std::pair<int, Client*> fd_client_pair;
 
 typedef std::map<std::string, server>					server_name_level3;
 typedef std::map<std::string, server_name_level3>		host_level2;
@@ -68,7 +74,6 @@ private:
 
 #include "macros.hpp"
 
-typedef std::pair<int, HttpHandler*> fd_client_pair;
 
 //typedef std::pair<int, std::unique_ptr<HttpHandler>> fd_client_pair;
 
@@ -85,7 +90,7 @@ public:
 	void	epollInit();
 	host_level2*	isPartOfListenFd(int fd) ;
 
-	int 	treatReceivedData(char *buffer, const ssize_t nbytes, HttpHandler *client);
+	int 	treatReceivedData(char *buffer, const ssize_t nbytes, Client *client);
 	int		readFromClient(fd_client_pair client);
 	void	writeToClient(int client_fd, const std::string &str);
 

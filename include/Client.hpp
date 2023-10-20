@@ -42,6 +42,8 @@ private:
 public:
 
 	Client(int timeout_seconds, server_name_level3 *serv_map);
+	~Client();
+
 
 	bool	isBodyUnfinished() const ;
 	bool	isKeepAlive() const;

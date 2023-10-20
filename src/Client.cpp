@@ -21,40 +21,26 @@ bool Client::isBodyUnfinished() const {
 
 // --------------------------------- SETTERS --------------------------------- //
 
-void Client::setReadyToWrite(bool ready) {
-	_ready_to_write = ready;
-}
+void Client::setReadyToWrite(bool ready) { _ready_to_write = ready; }
 
 // ---------------------------------- TIMER ---------------------------------- //
 
-void Client::startTimer()
-{
-	_timer.start();
-}
+void Client::startTimer() { _timer.start(); }
 
-void Client::stopTimer()
-{
-	_timer.stop();
-}
+void Client::stopTimer() { _timer.stop(); }
 
-bool Client::hasTimeOut()
-{
-	return _timer.hasTimeOut();
-}
+bool Client::hasTimeOut() { return _timer.hasTimeOut(); }
 
-void Client::resetRequestContext()
-{
+void Client::resetRequestContext() {
 	bzero(_overlapBuffer, OVERLAP);
 	_httpHandler->resetRequestContext();
 }
 
-void Client::writeToStream(char *buffer, ssize_t nbytes)
-{
+void Client::writeToStream(char *buffer, ssize_t nbytes) {
 	_httpHandler->writeToStream(buffer, nbytes);
 }
 
-int Client::writeToBody(char *buffer, ssize_t nbytes)
-{
+int Client::writeToBody(char *buffer, ssize_t nbytes) {
 	return _httpHandler->writeToBody(buffer, nbytes);
 }
 
@@ -82,4 +68,8 @@ void Client::createHttpResponse() {
 
 void Client::parseRequest() {
 	_httpHandler->parseRequest();
+}
+
+Client::~Client() {
+	delete _httpHandler;
 }

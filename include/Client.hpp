@@ -24,12 +24,11 @@ class Client {
 
 private:
 	Timer				_timer;
+	HttpHandler			*_httpHandler;
 
 	bool				_ready_to_write;
 	ssize_t				_leftToRead;
-
 	char				_overlapBuffer[4];
-	HttpHandler			*_httpHandler;
 
 	//bool				_keepAlive;
 	//bool				_body_size_exceeded;

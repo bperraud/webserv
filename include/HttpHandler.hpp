@@ -10,6 +10,7 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <functional>
 
 #include "Utils.hpp"
 #include "ServerConfig.hpp"
@@ -46,7 +47,7 @@ struct HttpResponse {
 class HttpHandler {
 
 private:
-	Timer				_timer;
+
 	std::stringstream	_readStream;
 
 	bool				_keepAlive;
@@ -62,6 +63,7 @@ private:
 
 	static const std::map<std::string, std::string> _MIME_TYPES;
 	static const std::map<int, std::string> _SUCCESS_STATUS;
+	static const std::map<std::string, void (HttpHandler::*)()> _HTTP_METHOD;
 
 	server_name_level3*	_serverMap;
 	server_config*		_server;

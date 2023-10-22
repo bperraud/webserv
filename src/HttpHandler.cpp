@@ -88,15 +88,6 @@ bool HttpHandler::isAllowedMethod(const std::string &method) const {
 	return false;
 }
 
-bool HttpHandler::findHeader(const std::string &header, std::string &value) const {
-	std::map<std::string, std::string>::const_iterator it = _request.map_headers.find(header);
-	if (it != _request.map_headers.end()) {
-		value = it->second;
-		return true;
-	}
-	return false;
-}
-
 std::string HttpHandler::getHeaderValue(const std::string &header) const {
 	std::map<std::string, std::string>::const_iterator it = _request.map_headers.find(header);
 	if (it != _request.map_headers.end()) {
@@ -179,8 +170,8 @@ void HttpHandler::parseRequest()
 		_request.map_headers[header_name] = header_value;
 	}
 	_request.bodyLength = 0;
-	std::string content_length_header;
-	if (findHeader("Content-Length", content_length_header))
+	std::string content_length_header = getHeaderValue("Content-Length");
+	if (!content_length_header.empty())
 		_request.bodyLength = std::stoi(content_length_header);
 	_keepAlive = getHeaderValue("Connection") == "keep-alive";
 	_transfer_chunked = getHeaderValue("Transfer-Encoding") == "chunked";
@@ -349,33 +340,6 @@ void HttpHandler::generateDirectoryListing(const std::string &directory_path) {
 	closedir(dir);
 }
 
-void HttpHandler::GET() {
-	createStatusResponse(200);
-
-	if (Utils::isDirectory(_request.url)) { // directory
-		if (_active_route->autoindex)
-			generateDirectoryListing(_request.url);
-		else {
-			if (_active_route->index == "")
-				return error(404); // no index file
-			_request.url += "/" + _active_route->index;
-			if (Utils::pathToFileExist(_request.url))
-				Utils::loadFile(_request.url, _response_body_stream);
-			else
-				return error(404);
-		}
-	}
-	else if (Utils::pathToFileExist(_request.url))
-		Utils::loadFile(_request.url, _response_body_stream);
-	else
-		return error(404);
-	std::string content_type = getContentType(_request.url);
-	if (content_type.empty())
-		return error(415);
-	_response.map_headers["Content-Type"] = content_type;
-	_response.map_headers["Content-Length"] = std::to_string(_response_body_stream.str().length());
-}
-
 void HttpHandler::uploadFile(const std::string &contentType, size_t pos_boundary) {
 	std::string messageBody = _request_body_stream.str();
 	const size_t headerPrefixLength = strlen("filename=\"");
@@ -407,10 +371,36 @@ void HttpHandler::uploadFile(const std::string &contentType, size_t pos_boundary
 	_response.map_headers["Location"] = path;
 }
 
+void HttpHandler::GET() {
+	createStatusResponse(200);
+
+	if (Utils::isDirectory(_request.url)) { // directory
+		if (_active_route->autoindex)
+			generateDirectoryListing(_request.url);
+		else {
+			if (_active_route->index == "")
+				return error(404); // no index file
+			_request.url += "/" + _active_route->index;
+			if (Utils::pathToFileExist(_request.url))
+				Utils::loadFile(_request.url, _response_body_stream);
+			else
+				return error(404);
+		}
+	}
+	else if (Utils::pathToFileExist(_request.url))
+		Utils::loadFile(_request.url, _response_body_stream);
+	else
+		return error(404);
+	std::string content_type = getContentType(_request.url);
+	if (content_type.empty())
+		return error(415);
+	_response.map_headers["Content-Type"] = content_type;
+	_response.map_headers["Content-Length"] = std::to_string(_response_body_stream.str().length());
+}
+
 void HttpHandler::POST() {
 	createStatusResponse(200);
-	std::string request_content_type;
-	findHeader("Content-Type", request_content_type);
+	std::string request_content_type = getHeaderValue("Content-Type");
 	size_t pos_boundary = request_content_type.find("boundary=");
 	if (pos_boundary != std::string::npos) // multipart/form-data
 		uploadFile(request_content_type, pos_boundary);

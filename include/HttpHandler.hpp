@@ -71,8 +71,7 @@ private:
 	routes				_default_route;
 	routes*				_active_route;
 
-//public:
-//can be private
+private:
 
 	void	assignServerConfig();
 	void	createStatusResponse(int code);
@@ -81,7 +80,6 @@ private:
 	void	unchunckMessage();
 
 	std::string getHeaderValue(const std::string &header) const;
-	bool	findHeader(const std::string &header, std::string &value) const;
 	bool	invalidRequest() const;
 
 	void	GET();

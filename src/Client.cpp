@@ -5,11 +5,11 @@
 std::string Client::getResponseHeader() const { return _httpHandler->getResponseHeader(); }
 std::string Client::getResponseBody() const { return _httpHandler->getResponseBody(); }
 bool Client::isKeepAlive() const { return _httpHandler->isKeepAlive(); }
-bool Client::isReadyToWrite() const { return _ready_to_write; }
+bool Client::isReadyToWrite() const { return _readyToWrite; }
 
-Client::Client(int timeout_seconds, server_name_level3 *serv_map) :_timer(timeout_seconds), _ready_to_write(false), _httpHandler(nullptr),
+Client::Client(int timeoutSeconds, server_name_level3 *serv_map) :_timer(timeoutSeconds), _readyToWrite(false), _httpHandler(nullptr),
 	_overlapBuffer() {
-	_httpHandler = new HttpHandler (timeout_seconds, serv_map);
+	_httpHandler = new HttpHandler(timeoutSeconds, serv_map);
 	_overlapBuffer[0] = '\0';
 }
 
@@ -19,7 +19,7 @@ bool Client::isBodyUnfinished() const {
 
 // --------------------------------- SETTERS --------------------------------- //
 
-void Client::setReadyToWrite(bool ready) { _ready_to_write = ready; }
+void Client::setReadyToWrite(bool ready) { _readyToWrite = ready; }
 
 // ---------------------------------- TIMER ---------------------------------- //
 
@@ -30,6 +30,7 @@ bool Client::hasTimeOut() { return _timer.hasTimeOut(); }
 void Client::resetRequestContext() {
 	bzero(_overlapBuffer, OVERLAP);
 	_httpHandler->resetRequestContext();
+	_readyToWrite = false;
 }
 
 void Client::writeToStream(char *buffer, ssize_t nbytes) {

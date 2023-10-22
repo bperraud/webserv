@@ -48,10 +48,6 @@ struct server : public server_config {
     server(const server_config& info) : server_config(info) {};
 };
 
-//typedef std::map<int, HttpHandler*> map_type;
-//typedef std::map<int, HttpHandler*>::iterator 			map_iterator_type;
-//typedef std::pair<int, HttpHandler*> fd_client_pair;
-
 typedef std::map<int, Client*> map_type;
 typedef std::map<int, Client*>::iterator 			map_iterator_type;
 typedef std::pair<int, Client*> fd_client_pair;

@@ -44,7 +44,7 @@ const std::map<int, std::string> HttpHandler::_SUCCESS_STATUS = {
 	{301, "Moved Permanently"}
 };
 
-HttpHandler::HttpHandler(int timeout_seconds, server_name_level3 *serv_map) :  _readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(), _leftToRead(0),
+HttpHandler::HttpHandler(int timeoutSeconds, server_name_level3 *serv_map) :  _readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(), _leftToRead(0),
 																			  _serverMap(serv_map), _server(NULL),
 																			  _keepAlive(false), _body_size_exceeded(false), _transfer_chunked(false),
 																			  _default_route(), _active_route(&_default_route)
@@ -159,6 +159,8 @@ int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 
 void HttpHandler::parseRequest()
 {
+	std::cout << "request : " << _readStream.str() << std::endl;
+
 	// Parse the start-line
 	_readStream >> _request.method >> _request.url >> _request.version;
 	// Parse the headers into a hash table

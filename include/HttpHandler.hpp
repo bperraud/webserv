@@ -61,9 +61,9 @@ private:
 	HttpMessage			_request;
 	HttpResponse		_response;
 
-	static const std::map<std::string, std::string> _MIME_TYPES;
-	static const std::map<int, std::string> _SUCCESS_STATUS;
-	static const std::map<std::string, void (HttpHandler::*)()> _HTTP_METHOD;
+	static const std::map<std::string, std::string>				_MIME_TYPES;
+	static const std::map<int, std::string>						_SUCCESS_STATUS;
+	static const std::map<std::string, void (HttpHandler::*)()>	_HTTP_METHOD;
 
 	server_name_level3*	_serverMap;
 	server_config*		_server;
@@ -94,7 +94,7 @@ private:
 	std::string		getContentType(const std::string& path) const;
 
 public:
-	HttpHandler(int timeout_seconds, server_name_level3 *serv_map);
+	HttpHandler(int timeoutSeconds, server_name_level3 *serv_map);
 	~HttpHandler();
 
 	bool	isBodyUnfinished() const ;

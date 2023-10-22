@@ -78,14 +78,14 @@ void ServerManager::setNonBlockingMode(int socket) {
 }
 
 void ServerManager::timeoutCheck() {
-	for (auto it = _client_map.begin(); it != _client_map.end();) {
-		if (it->second->hasTimeOut()) {
-			fd_client_pair client = *it;
-			auto to_delete = it;
-			++it;
-			closeClientConnection(client, to_delete);
-		} else ++it;
-	}
+	for (auto it = _client_map.begin(); it != _client_map.end(); ) {
+        auto currentIt = it++;
+		if (currentIt->second->hasTimeOut())
+		{
+			std::cout << "timeout on -> " << RED << " client " << currentIt->first << RESET << std::endl;
+			closeClientConnection(*currentIt);
+		}
+    }
 }
 
 host_level2* ServerManager::isPartOfListenFd(int fd)  {
@@ -198,7 +198,6 @@ void ServerManager::handleWriteEvent(fd_client_pair client) {
 		writeToClient(client.first, client.second->getResponseBody());
 		client.second->resetRequestContext();
 		connectionCloseMode(client);
-		client.second->setReadyToWrite(false);
 	}
 }
 
@@ -239,7 +238,8 @@ int ServerManager::treatReceivedData(char *buffer, const ssize_t nbytes, Client 
 		client->writeToStream(buffer + OVERLAP, pos_end_header);
 		client->parseRequest();
 		isBodyUnfinished = client->writeToBody(buffer + OVERLAP + pos_end_header, nbytes - pos_end_header);
-		return (isBodyUnfinished);
+		return 1;
+		//return (isBodyUnfinished);
 	}
 }
 
@@ -263,14 +263,13 @@ void ServerManager::writeToClient(int client_fd, const std::string &str) {
 }
 
 ServerManager::~ServerManager() {
-	for (auto &[fd, port] : _list_server_map) {
-		std::cout << "connection closed ->" << RED << " server " << fd << RESET << std::endl;
-		close(fd);
+	for (fd_port_level1::iterator it = _list_server_map.begin(); it != _list_server_map.end(); ++it) {
+		std::cout << "connection closed ->" << RED << " server " << it->first << RESET << std::endl;
+		close(it->first);
 	}
-	if (!_client_map.empty()) {
-		for (auto client : _client_map) {
-			closeClientConnection(client);
-		}
-	}
+	for (auto it = _client_map.begin(); it != _client_map.end(); ) {
+        auto currentIt = it++;
+		closeClientConnection(*currentIt);
+    }
 	CLOSE_EPOLL;
 }

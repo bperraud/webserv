@@ -26,23 +26,14 @@ private:
 	Timer				_timer;
 	HttpHandler			*_httpHandler;
 
-	bool				_ready_to_write;
+	bool				_readyToWrite;
 	ssize_t				_leftToRead;
 	char				_overlapBuffer[4];
 
-	//bool				_keepAlive;
-	//bool				_body_size_exceeded;
-	//bool				_transfer_chunked;
-
-	//server_config*		_server;
-	//routes				_default_route;
-	//routes*				_active_route;
-
 public:
 
-	Client(int timeout_seconds, server_name_level3 *serv_map);
+	Client(int timeoutSeconds, server_name_level3 *serv_map);
 	~Client();
-
 
 	bool	isBodyUnfinished() const ;
 	bool	isKeepAlive() const;
@@ -55,13 +46,11 @@ public:
 	void	setReadyToWrite(bool ready);
 	void	writeToStream(char *buffer, ssize_t nbytes) ;
 	int		writeToBody(char *buffer, ssize_t nbytes);
-
 	void	saveOverlap(char *buffer, ssize_t nbytes);
 	void	resetRequestContext();
 	void	startTimer();
 	void	stopTimer();
 	bool	hasTimeOut();
-
 	void	parseRequest();
 };
 

@@ -1,6 +1,6 @@
 #include "Timer.hpp"
 
-Timer::Timer(int timeout_seconds) : _timeoutSeconds(timeout_seconds), _running(false){
+Timer::Timer(int timeoutSeconds) : _timeoutSeconds(timeoutSeconds), _running(false){
 
 }
 

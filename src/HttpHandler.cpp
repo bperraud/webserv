@@ -96,7 +96,7 @@ std::string HttpHandler::getHeaderValue(const std::string &header) const {
 	return "";
 }
 
-bool HttpHandler::invalidRequest() const {
+bool HttpHandler::invalidRequestLine() const {
 	return (_request.method.empty() || _request.url.empty() || _request.version.empty());
 }
 
@@ -126,7 +126,6 @@ void HttpHandler::resetRequestContext() {
 	_response_body_stream.clear();
 	_response_header_stream.str(std::string());
 	_response_header_stream.clear();
-	//bzero(_overlapBuffer, OVERLAP);
 	_active_route = &_default_route;
 }
 
@@ -151,16 +150,18 @@ int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 		_leftToRead -= nbytes;
 		return _leftToRead > 0;
 	}
-	else if (_transfer_chunked) // chunked
-		return _request_body_stream.str().find(EOF_CHUNKED) == std::string::npos;
+	else if (_transfer_chunked) {
+		bool unfinished = _request_body_stream.str().find(EOF_CHUNKED) == std::string::npos;
+		if (!unfinished)
+			unchunckMessage();
+		return unfinished;
+	}
 	return 0;
 }
 
 void HttpHandler::parseRequest()
 {
-	//std::cout << "request : " << _readStream.str() << std::endl;
 	_readStream >> _request.method >> _request.url >> _request.version;
-	// Parse the headers into a hash table
 	std::string header_name, header_value;
 	while (getline(_readStream, header_name, ':') && getline(_readStream, header_value, '\r')) {
 		// Remove any leading or trailing whitespace from the header value
@@ -199,7 +200,6 @@ void HttpHandler::setupRoute(const std::string &url)
 void HttpHandler::unchunckMessage()
 {
 	std::string line;
-
 	while (std::getline(_request_body_stream, line)) {
 		int chunk_size = std::atoi(line.c_str());
 		if (chunk_size == 0)
@@ -269,18 +269,13 @@ void HttpHandler::createHttpResponse()
 	if (!_server)
 		throw std::runtime_error("No server found");
 	setupRoute(_request.url);
-	if (_transfer_chunked)
-		unchunckMessage();
-	if (invalidRequest())
-		error(400);
+	if (invalidRequestLine()) error(400);
 	else if (_body_size_exceeded) {
 		_body_size_exceeded = false;
 		error(413);
 	}
-	else if (!_active_route->handler.empty())
-		handleCGI(original_url);
-	else if (!_active_route->redir.empty())
-		redirection();
+	else if (!_active_route->handler.empty()) handleCGI(original_url);
+	else if (!_active_route->redir.empty()) redirection();
 	else {
 		auto it = HttpHandler::_HTTP_METHOD.find(_request.method);
 		if (it != HttpHandler::_HTTP_METHOD.end() && isAllowedMethod(_request.method))

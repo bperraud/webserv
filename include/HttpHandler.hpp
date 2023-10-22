@@ -80,7 +80,7 @@ private:
 	void	unchunckMessage();
 
 	std::string getHeaderValue(const std::string &header) const;
-	bool	invalidRequest() const;
+	bool	invalidRequestLine() const;
 
 	void	GET();
 	void	DELETE();

@@ -238,8 +238,7 @@ int ServerManager::treatReceivedData(char *buffer, const ssize_t nbytes, Client 
 		client->writeToStream(buffer + OVERLAP, pos_end_header);
 		client->parseRequest();
 		isBodyUnfinished = client->writeToBody(buffer + OVERLAP + pos_end_header, nbytes - pos_end_header);
-		return 1;
-		//return (isBodyUnfinished);
+		return (isBodyUnfinished);
 	}
 }
 

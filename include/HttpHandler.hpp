@@ -79,6 +79,8 @@ private:
 	void	uploadFile(const std::string& contentType, size_t pos_boundary);
 	void 	redirection();
 	void	unchunckMessage();
+
+	std::string getHeaderValue(const std::string &header) const;
 	bool	findHeader(const std::string &header, std::string &value) const;
 	bool	invalidRequest() const;
 

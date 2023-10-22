@@ -16,8 +16,6 @@ namespace Utils {
 	bool 			pathToFileExist(const std::string& path);
 	bool 			isDirectory(const std::string& path);
 	bool			correctPath(const std::string& path);
-	std::string		intToString(int value);
-
 	std::string 	urlDecode(const std::string &url);
 	void			loadFile(const std::string &fileName, std::stringstream &stream) ;
 

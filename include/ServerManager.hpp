@@ -70,9 +70,6 @@ private:
 
 #include "macros.hpp"
 
-
-//typedef std::pair<int, std::unique_ptr<HttpHandler>> fd_client_pair;
-
 public:
     ServerManager(const ServerConfig &config);
     ~ServerManager();

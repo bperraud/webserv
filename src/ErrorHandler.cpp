@@ -35,5 +35,5 @@ void ErrorHandler::errorProcess(int error_code) {
 	else if (Utils::pathToFileExist(_error_page))
 		Utils::loadFile(_error_page, _body_stream);
 	_response.map_headers["Content-Type"] = "text/html";
-	_response.map_headers["Content-Length"] = Utils::intToString(_body_stream.str().length());
+	_response.map_headers["Content-Length"] = std::to_string(_body_stream.str().length());
 }

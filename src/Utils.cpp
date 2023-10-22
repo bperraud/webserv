@@ -24,13 +24,6 @@ bool correctPath(const std::string& path) {
 	return isDirectory(path) || pathToFileExist(path);
 }
 
-std::string intToString(int value)
-{
-	std::stringstream ss;
-	ss << value;
-	return ss.str();
-}
-
 void loadFile(const std::string &fileName, std::stringstream &stream) {
 	std::ifstream input_file(fileName.c_str());
 	stream << input_file.rdbuf();

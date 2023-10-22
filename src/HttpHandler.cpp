@@ -97,6 +97,14 @@ bool HttpHandler::findHeader(const std::string &header, std::string &value) cons
 	return false;
 }
 
+std::string HttpHandler::getHeaderValue(const std::string &header) const {
+	std::map<std::string, std::string>::const_iterator it = _request.map_headers.find(header);
+	if (it != _request.map_headers.end()) {
+		return it->second;
+	}
+	return "";
+}
+
 bool HttpHandler::invalidRequest() const {
 	return (_request.method.empty() || _request.url.empty() || _request.version.empty());
 }
@@ -109,7 +117,7 @@ void HttpHandler::createStatusResponse(int code) {
 		_response.statusPhrase = _SUCCESS_STATUS.at(code);
 	}
 	catch (std::out_of_range) {
-		std::cout << "Status code not found\n";
+		std::cout << "status code not found\n";
 	}
 }
 
@@ -159,9 +167,7 @@ int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 
 void HttpHandler::parseRequest()
 {
-	std::cout << "request : " << _readStream.str() << std::endl;
-
-	// Parse the start-line
+	//std::cout << "request : " << _readStream.str() << std::endl;
 	_readStream >> _request.method >> _request.url >> _request.version;
 	// Parse the headers into a hash table
 	std::string header_name, header_value;
@@ -174,21 +180,11 @@ void HttpHandler::parseRequest()
 	}
 	_request.bodyLength = 0;
 	std::string content_length_header;
-	if (findHeader("Content-Length", content_length_header)) {
-		std::stringstream ss(content_length_header);
-		ss >> _request.bodyLength;
-	}
-	std::string connection_header;
-	_keepAlive = true;
-	_transfer_chunked = false;
-	if (findHeader("Connection", connection_header))
-		_keepAlive = connection_header == "keep-alive";
-	std::string transfer_encoding_header;
-	if (findHeader("Transfer-Encoding", transfer_encoding_header))
-		_transfer_chunked = transfer_encoding_header == "chunked";
-	std::string host_header;
-	if (findHeader("Host", host_header))
-		_request.host = host_header.substr(0, host_header.find(":"));
+	if (findHeader("Content-Length", content_length_header))
+		_request.bodyLength = std::stoi(content_length_header);
+	_keepAlive = getHeaderValue("Connection") == "keep-alive";
+	_transfer_chunked = getHeaderValue("Transfer-Encoding") == "chunked";
+	_request.host = getHeaderValue("Host").substr(0, getHeaderValue("Host").find(":"));
 	_leftToRead = _request.bodyLength;
 	assignServerConfig();
 }
@@ -245,10 +241,9 @@ void HttpHandler::handleCGI(const std::string &original_url)
 	else {
 		if (!cookies.empty())
 			_response.map_headers["Set-Cookie"] = cookies;
-		_response.status_code = "200";
-		_response.statusPhrase = "OK";
+		createStatusResponse(200);
 		_response.map_headers["Content-Type"] = "text/html";
-		_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+		_response.map_headers["Content-Length"] = std::to_string(_response_body_stream.str().length());
 	}
 }
 
@@ -258,7 +253,7 @@ void HttpHandler::redirection()
 	_response.map_headers["Location"] = _active_route->redir;
 	_response_body_stream << "<html><body><h1>301 Moved Permanently</h1></body></html>";
 	_response.map_headers["Content-Type"] = "text/html";
-	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+	_response.map_headers["Content-Length"] = std::to_string(_response_body_stream.str().length());
 }
 
 void HttpHandler::assignServerConfig()
@@ -309,8 +304,8 @@ void HttpHandler::error(int error)
 {
 	resetRequestContext();
 	std::string error_page = "";
-	if (_server->error_pages.count(Utils::intToString(error)))
-		error_page = _server->error_pages[Utils::intToString(error)];
+	if (_server->error_pages.count(std::to_string(error)))
+		error_page = _server->error_pages[std::to_string(error)];
 	ErrorHandler error_handler = ErrorHandler(_response, _response_body_stream, error_page);
 	error_handler.errorProcess(error);
 }
@@ -378,7 +373,7 @@ void HttpHandler::GET() {
 	if (content_type.empty())
 		return error(415);
 	_response.map_headers["Content-Type"] = content_type;
-	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+	_response.map_headers["Content-Length"] = std::to_string(_response_body_stream.str().length());
 }
 
 void HttpHandler::uploadFile(const std::string &contentType, size_t pos_boundary) {
@@ -408,7 +403,7 @@ void HttpHandler::uploadFile(const std::string &contentType, size_t pos_boundary
 	if (content_type.empty())
 		return error(415);
 	_response.map_headers["Content-Type"] = content_type;
-	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+	_response.map_headers["Content-Length"] = std::to_string(_response_body_stream.str().length());
 	_response.map_headers["Location"] = path;
 }
 
@@ -425,7 +420,7 @@ void HttpHandler::POST() {
 		_response_body_stream << "Response to application/x-www-form-urlencoded";
 	else
 		return error(501);
-	_response.map_headers["Content-Length"] = Utils::intToString(_response_body_stream.str().length());
+	_response.map_headers["Content-Length"] = std::to_string(_response_body_stream.str().length());
 }
 
 void HttpHandler::DELETE() {

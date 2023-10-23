@@ -31,6 +31,7 @@ const std::map<std::string, void (HttpHandler::*)()> HttpHandler::_HTTP_METHOD =
 };
 
 const std::map<int, std::string> HttpHandler::_SUCCESS_STATUS = {
+	{101, "Switching Protocols"},
     {200, "OK"},
     {201, "Created"},
     {202, "Accepted"},
@@ -44,16 +45,15 @@ const std::map<int, std::string> HttpHandler::_SUCCESS_STATUS = {
 	{301, "Moved Permanently"}
 };
 
-HttpHandler::HttpHandler(int timeoutSeconds, server_name_level3 *serv_map) :  _readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(), _leftToRead(0),
-																			  _serverMap(serv_map), _server(NULL),
-																			  _keepAlive(false), _body_size_exceeded(false), _transfer_chunked(false),
-																			  _default_route(), _active_route(&_default_route)
+HttpHandler::HttpHandler(int timeoutSeconds, server_name_level3 *serv_map) :
+	_readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(),
+ 	_leftToRead(0), _serverMap(serv_map), _server(NULL),
+ 	_keepAlive(false), _bodySizeExceeded(false), _transferChunked(false), _webSocket(false),
+	_default_route(), _active_route(&_default_route)
 {
-	_default_route.index = "";
 	_default_route.autoindex = false;
 	_default_route.methods[0] = "GET";
 	_default_route.methods[1] = "POST";
-	_default_route.methods[2] = "";
 	_default_route.root = ROOT_PATH;
 }
 
@@ -76,7 +76,7 @@ std::string HttpHandler::getContentType(const std::string &path) const {
 }
 
 bool HttpHandler::isBodyUnfinished() const {
-	return (_leftToRead || _transfer_chunked);
+	return (_leftToRead || _transferChunked);
 }
 
 bool HttpHandler::isAllowedMethod(const std::string &method) const {
@@ -136,11 +136,11 @@ void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
 }
 
 int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
-	if (!_leftToRead && !_transfer_chunked)
+	if (!_leftToRead && !_transferChunked)
 		return 0;
 	if (_server->max_body_size && static_cast<ssize_t>(_request_body_stream.tellp()) + nbytes > _server->max_body_size) {
 		_leftToRead = 0;
-		_body_size_exceeded = true;
+		_bodySizeExceeded = true;
 		return 0;
 	}
 	_request_body_stream.write(buffer, nbytes);
@@ -150,7 +150,7 @@ int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 		_leftToRead -= nbytes;
 		return _leftToRead > 0;
 	}
-	else if (_transfer_chunked) {
+	else if (_transferChunked) {
 		bool unfinished = _request_body_stream.str().find(EOF_CHUNKED) == std::string::npos;
 		if (!unfinished)
 			unchunckMessage();
@@ -173,8 +173,11 @@ void HttpHandler::parseRequest()
 	std::string content_length_header = getHeaderValue("Content-Length");
 	if (!content_length_header.empty())
 		_request.bodyLength = std::stoi(content_length_header);
-	_keepAlive = getHeaderValue("Connection") == "keep-alive";
-	_transfer_chunked = getHeaderValue("Transfer-Encoding") == "chunked";
+	std::string connection = getHeaderValue("Connection");
+	_keepAlive = connection == "keep-alive";
+	_webSocketKey = getHeaderValue("Sec-WebSocket-Key");
+	_webSocket = connection == "Upgrage" && getHeaderValue("Upgrade") == "websocket" && !_webSocketKey.empty();
+	_transferChunked = getHeaderValue("Transfer-Encoding") == "chunked";
 	_request.host = getHeaderValue("Host").substr(0, getHeaderValue("Host").find(":"));
 	_leftToRead = _request.bodyLength;
 	assignServerConfig();
@@ -258,6 +261,33 @@ void HttpHandler::assignServerConfig()
 	}
 }
 
+void HttpHandler::upgradeWebsocket() {
+	createStatusResponse(101);
+
+	std::string salt = _webSocketKey + GUID;
+    unsigned char sha1_hash[SHA_DIGEST_LENGTH];
+    SHA1(reinterpret_cast<const unsigned char*>(salt.c_str()), salt.length(), sha1_hash);
+
+    BIO *bio, *b64;
+    BUF_MEM *bptr;
+
+    bio = BIO_new(BIO_s_mem());
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_push(b64, bio);
+    BIO_write(bio, sha1_hash, SHA_DIGEST_LENGTH);
+    BIO_flush(bio);
+    BIO_get_mem_ptr(bio, &bptr);
+
+    std::string encoded(reinterpret_cast<char*>(bptr->data), bptr->length);
+    BIO_free_all(bio);
+
+	std::cout << encoded << std::endl;
+
+	_response.map_headers["Sec-WebSocket-Accept"] = encoded;
+	_response.map_headers["Connection"] = "Upgrade";
+	_response.map_headers["Upgrade"] = "websocket";
+}
+
 void HttpHandler::createHttpResponse()
 {
 	_response.version = _request.version;
@@ -267,12 +297,13 @@ void HttpHandler::createHttpResponse()
 		throw std::runtime_error("No server found");
 	setupRoute(_request.url);
 	if (invalidRequestLine()) error(400);
-	else if (_body_size_exceeded) {
-		_body_size_exceeded = false;
+	else if (_bodySizeExceeded) {
+		_bodySizeExceeded = false;
 		error(413);
 	}
 	else if (!_active_route->handler.empty()) handleCGI(original_url);
 	else if (!_active_route->redir.empty()) redirection();
+	else if (_webSocket) upgradeWebsocket();
 	else {
 		auto it = HttpHandler::_HTTP_METHOD.find(_request.method);
 		if (it != HttpHandler::_HTTP_METHOD.end() && isAllowedMethod(_request.method))

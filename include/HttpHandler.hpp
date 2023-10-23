@@ -11,6 +11,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <functional>
+#include <openssl/sha.h>
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/buffer.h>
 
 #include "Utils.hpp"
 #include "ServerConfig.hpp"
@@ -22,6 +26,7 @@
 # define CRLF "\r\n\r\n"
 # define ROOT_PATH "www"
 # define OVERLAP 4
+# define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 struct server;
 
@@ -51,8 +56,10 @@ private:
 	std::stringstream	_readStream;
 
 	bool				_keepAlive;
-	bool				_body_size_exceeded;
-	bool				_transfer_chunked;
+	bool				_bodySizeExceeded;
+	bool				_transferChunked;
+	bool				_webSocket;
+	std::string 		_webSocketKey;
 	ssize_t				_leftToRead;
 
 	std::stringstream   _request_body_stream;
@@ -67,7 +74,6 @@ private:
 
 	server_name_level3*	_serverMap;
 	server_config*		_server;
-
 	routes				_default_route;
 	routes*				_active_route;
 
@@ -78,10 +84,11 @@ private:
 	void	uploadFile(const std::string& contentType, size_t pos_boundary);
 	void 	redirection();
 	void	unchunckMessage();
+	void	upgradeWebsocket();
 
-	std::string getHeaderValue(const std::string &header) const;
+	std::string		getHeaderValue(const std::string &header) const;
+	std::string		getContentType(const std::string& path) const;
 	bool	invalidRequestLine() const;
-
 	void	GET();
 	void	DELETE();
 	void	POST();
@@ -91,7 +98,6 @@ private:
 	void	generateDirectoryListing(const std::string& directory_path);
 	void	handleCGI(const std::string &original_url);
 	void	error(int error);
-	std::string		getContentType(const std::string& path) const;
 
 public:
 	HttpHandler(int timeoutSeconds, server_name_level3 *serv_map);
@@ -103,12 +109,9 @@ public:
 
 	std::string		getResponseHeader() const;
 	std::string		getResponseBody() const;
-
 	void	writeToStream(char *buffer, ssize_t nbytes) ;
 	int		writeToBody(char *buffer, ssize_t nbytes);
-
 	void	resetRequestContext();
-
 	void	parseRequest();
 
 };

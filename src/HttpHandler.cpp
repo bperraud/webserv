@@ -164,7 +164,6 @@ void HttpHandler::parseRequest()
 	_readStream >> _request.method >> _request.url >> _request.version;
 	std::string header_name, header_value;
 	while (getline(_readStream, header_name, ':') && getline(_readStream, header_value, '\r')) {
-		// Remove any leading or trailing whitespace from the header value
 		header_value.erase(0, header_value.find_first_not_of(" \r\n\t"));
 		header_value.erase(header_value.find_last_not_of(" \r\n\t") + 1, header_value.length());
 		header_name.erase(0, header_name.find_first_not_of(" \r\n\t"));
@@ -227,14 +226,12 @@ void HttpHandler::handleCGI(const std::string &original_url)
 	std::string cookies = "";
 	_response.map_headers["Cookie"] = "";
 	int err = CGIExecutor::run(_request, &_response_body_stream, &cookies, _active_route->handler, _active_route->cgi[extension], original_url);
-	if (err)
-		error(err);
+	if (err) error(err);
 	else {
 		if (!cookies.empty())
 			_response.map_headers["Set-Cookie"] = cookies;
 		createStatusResponse(200);
 		_response.map_headers["Content-Type"] = "text/html";
-		_response.map_headers["Content-Length"] = std::to_string(_response_body_stream.str().length());
 	}
 }
 
@@ -362,7 +359,6 @@ void HttpHandler::uploadFile(const std::string &contentType, size_t pos_boundary
 	if (content_type.empty())
 		return error(415);
 	_response.map_headers["Content-Type"] = content_type;
-	_response.map_headers["Content-Length"] = std::to_string(_response_body_stream.str().length());
 	_response.map_headers["Location"] = path;
 }
 
@@ -390,7 +386,6 @@ void HttpHandler::GET() {
 	if (content_type.empty())
 		return error(415);
 	_response.map_headers["Content-Type"] = content_type;
-	_response.map_headers["Content-Length"] = std::to_string(_response_body_stream.str().length());
 }
 
 void HttpHandler::POST() {
@@ -405,7 +400,6 @@ void HttpHandler::POST() {
 		_response_body_stream << "Response to application/x-www-form-urlencoded";
 	else
 		return error(501);
-	_response.map_headers["Content-Length"] = std::to_string(_response_body_stream.str().length());
 }
 
 void HttpHandler::DELETE() {
@@ -422,6 +416,9 @@ void HttpHandler::constructStringResponse()
 {
 	bool first = true;
 	_response.map_headers["Access-Control-Allow-Origin"] = "*";
+	if (_response.status_code == "200" || _response.status_code == "201") {
+		_response.map_headers["Content-Length"] = std::to_string(_response_body_stream.str().length());
+	}
 	_response_header_stream << _response.version << " " << _response.status_code << " " << _response.statusPhrase << "\r\n";
 	for (auto &[header, value] : _response.map_headers)
 	{

@@ -48,7 +48,7 @@ const std::map<int, std::string> HttpHandler::_SUCCESS_STATUS = {
 HttpHandler::HttpHandler(int timeoutSeconds, server_name_level3 *serv_map) :
 	_readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(),
  	_leftToRead(0), _serverMap(serv_map), _server(NULL),
- 	_keepAlive(false), _bodySizeExceeded(false), _transferChunked(false), _webSocket(false),
+ 	_keepAlive(false), _bodySizeExceeded(false), _transferChunked(false), _isWebSocket(false),
 	_default_route(), _active_route(&_default_route)
 {
 	_default_route.autoindex = false;
@@ -161,6 +161,9 @@ int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 
 void HttpHandler::parseRequest()
 {
+
+	std::cout << _readStream.str() << std::endl;
+
 	_readStream >> _request.method >> _request.url >> _request.version;
 	std::string header_name, header_value;
 	while (getline(_readStream, header_name, ':') && getline(_readStream, header_value, '\r')) {
@@ -176,7 +179,7 @@ void HttpHandler::parseRequest()
 	std::string connection = getHeaderValue("Connection");
 	_keepAlive = connection == "keep-alive";
 	_webSocketKey = getHeaderValue("Sec-WebSocket-Key");
-	_webSocket = connection == "Upgrage" && getHeaderValue("Upgrade") == "websocket" && !_webSocketKey.empty();
+	_isWebSocket = connection == "Upgrade" && getHeaderValue("Upgrade") == "websocket" && !_webSocketKey.empty();
 	_transferChunked = getHeaderValue("Transfer-Encoding") == "chunked";
 	_request.host = getHeaderValue("Host").substr(0, getHeaderValue("Host").find(":"));
 	_leftToRead = _request.bodyLength;
@@ -278,14 +281,12 @@ void HttpHandler::upgradeWebsocket() {
     BIO_flush(bio);
     BIO_get_mem_ptr(bio, &bptr);
 
-    std::string encoded(reinterpret_cast<char*>(bptr->data), bptr->length);
+    std::string encoded(reinterpret_cast<char*>(bptr->data), bptr->length - 1);
     BIO_free_all(bio);
 
-	std::cout << encoded << std::endl;
-
-	_response.map_headers["Sec-WebSocket-Accept"] = encoded;
 	_response.map_headers["Connection"] = "Upgrade";
 	_response.map_headers["Upgrade"] = "websocket";
+	_response.map_headers["Sec-WebSocket-Accept"] = encoded;
 }
 
 void HttpHandler::createHttpResponse()
@@ -303,7 +304,7 @@ void HttpHandler::createHttpResponse()
 	}
 	else if (!_active_route->handler.empty()) handleCGI(original_url);
 	else if (!_active_route->redir.empty()) redirection();
-	else if (_webSocket) upgradeWebsocket();
+	else if (_isWebSocket) upgradeWebsocket();
 	else {
 		auto it = HttpHandler::_HTTP_METHOD.find(_request.method);
 		if (it != HttpHandler::_HTTP_METHOD.end() && isAllowedMethod(_request.method))
@@ -461,4 +462,6 @@ void HttpHandler::constructStringResponse()
 	_response_header_stream << "\r\n\r\n";
 	_response.map_headers.clear();
 	_request.map_headers.clear();
+
+	std::cout << _response_header_stream.str() << std::endl;
 }

@@ -58,7 +58,7 @@ private:
 	bool				_keepAlive;
 	bool				_bodySizeExceeded;
 	bool				_transferChunked;
-	bool				_webSocket;
+	bool				_isWebSocket;
 	std::string 		_webSocketKey;
 	ssize_t				_leftToRead;
 

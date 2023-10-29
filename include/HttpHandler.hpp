@@ -11,22 +11,17 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <functional>
-#include <openssl/sha.h>
-#include <openssl/bio.h>
-#include <openssl/evp.h>
-#include <openssl/buffer.h>
 
 #include "Utils.hpp"
 #include "ServerConfig.hpp"
 #include "ErrorHandler.hpp"
-#include "Timer.hpp"
 #include "CGIExecutor.hpp"
+#include "WebSocketHandler.hpp"
 
 # define EOF_CHUNKED "\r\n0\r\n\r\n"
 # define CRLF "\r\n\r\n"
 # define ROOT_PATH "www"
 # define OVERLAP 4
-# define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 struct server;
 
@@ -59,7 +54,6 @@ private:
 	bool				_bodySizeExceeded;
 	bool				_transferChunked;
 	bool				_isWebSocket;
-	std::string 		_webSocketKey;
 	ssize_t				_leftToRead;
 
 	std::stringstream   _request_body_stream;
@@ -76,6 +70,7 @@ private:
 	server_config*		_server;
 	routes				_default_route;
 	routes*				_active_route;
+	WebSocketHandler	_webSocketHandler;
 
 private:
 
@@ -84,7 +79,6 @@ private:
 	void	uploadFile(const std::string& contentType, size_t pos_boundary);
 	void 	redirection();
 	void	unchunckMessage();
-	void	upgradeWebsocket();
 
 	std::string		getHeaderValue(const std::string &header) const;
 	std::string		getContentType(const std::string& path) const;

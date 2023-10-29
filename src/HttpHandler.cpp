@@ -49,7 +49,7 @@ HttpHandler::HttpHandler(int timeoutSeconds, server_name_level3 *serv_map) :
 	_readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(),
  	_leftToRead(0), _serverMap(serv_map), _server(NULL),
  	_keepAlive(false), _bodySizeExceeded(false), _transferChunked(false), _isWebSocket(false),
-	_default_route(), _active_route(&_default_route)
+	_default_route(), _active_route(&_default_route), _webSocketHandler(_response)
 {
 	_default_route.autoindex = false;
 	_default_route.methods[0] = "GET";
@@ -161,9 +161,7 @@ int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 
 void HttpHandler::parseRequest()
 {
-
 	std::cout << _readStream.str() << std::endl;
-
 	_readStream >> _request.method >> _request.url >> _request.version;
 	std::string header_name, header_value;
 	while (getline(_readStream, header_name, ':') && getline(_readStream, header_value, '\r')) {
@@ -178,8 +176,7 @@ void HttpHandler::parseRequest()
 		_request.bodyLength = std::stoi(content_length_header);
 	std::string connection = getHeaderValue("Connection");
 	_keepAlive = connection == "keep-alive";
-	_webSocketKey = getHeaderValue("Sec-WebSocket-Key");
-	_isWebSocket = connection == "Upgrade" && getHeaderValue("Upgrade") == "websocket" && !_webSocketKey.empty();
+	_isWebSocket = connection == "Upgrade" && getHeaderValue("Upgrade") == "websocket";
 	_transferChunked = getHeaderValue("Transfer-Encoding") == "chunked";
 	_request.host = getHeaderValue("Host").substr(0, getHeaderValue("Host").find(":"));
 	_leftToRead = _request.bodyLength;
@@ -231,7 +228,7 @@ void HttpHandler::handleCGI(const std::string &original_url)
 		extension = _request.url.substr(dotPos);
 	std::string cookies = "";
 	_response.map_headers["Cookie"] = "";
-	int err = CGIExecutor::run(_request, &_response_body_stream, &cookies, _active_route->handler, _active_route->cgi[extension], original_url);
+	int err = CGIExecutor::run(_request, _response_body_stream, &cookies, _active_route->handler, _active_route->cgi[extension], original_url);
 	if (err) error(err);
 	else {
 		if (!cookies.empty())
@@ -264,36 +261,10 @@ void HttpHandler::assignServerConfig()
 	}
 }
 
-void HttpHandler::upgradeWebsocket() {
-	createStatusResponse(101);
-
-	std::string salt = _webSocketKey + GUID;
-    unsigned char sha1_hash[SHA_DIGEST_LENGTH];
-    SHA1(reinterpret_cast<const unsigned char*>(salt.c_str()), salt.length(), sha1_hash);
-
-    BIO *bio, *b64;
-    BUF_MEM *bptr;
-
-    bio = BIO_new(BIO_s_mem());
-    b64 = BIO_new(BIO_f_base64());
-    bio = BIO_push(b64, bio);
-    BIO_write(bio, sha1_hash, SHA_DIGEST_LENGTH);
-    BIO_flush(bio);
-    BIO_get_mem_ptr(bio, &bptr);
-
-    std::string encoded(reinterpret_cast<char*>(bptr->data), bptr->length - 1);
-    BIO_free_all(bio);
-
-	_response.map_headers["Connection"] = "Upgrade";
-	_response.map_headers["Upgrade"] = "websocket";
-	_response.map_headers["Sec-WebSocket-Accept"] = encoded;
-}
-
 void HttpHandler::createHttpResponse()
 {
 	_response.version = _request.version;
 	std::string original_url = _request.url;
-
 	if (!_server)
 		throw std::runtime_error("No server found");
 	setupRoute(_request.url);
@@ -304,7 +275,10 @@ void HttpHandler::createHttpResponse()
 	}
 	else if (!_active_route->handler.empty()) handleCGI(original_url);
 	else if (!_active_route->redir.empty()) redirection();
-	else if (_isWebSocket) upgradeWebsocket();
+	else if (_isWebSocket) {
+		createStatusResponse(101);
+		_webSocketHandler.upgradeWebsocket(getHeaderValue("Sec-WebSocket-Key"));
+	}
 	else {
 		auto it = HttpHandler::_HTTP_METHOD.find(_request.method);
 		if (it != HttpHandler::_HTTP_METHOD.end() && isAllowedMethod(_request.method))
@@ -436,7 +410,6 @@ void HttpHandler::POST() {
 
 void HttpHandler::DELETE() {
 	createStatusResponse(204);
-
 	std::string decoded_file_path = Utils::urlDecode(_request.url);
 	if (!Utils::pathToFileExist(decoded_file_path))
 		return error(404);

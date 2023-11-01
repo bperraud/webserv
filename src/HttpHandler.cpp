@@ -81,10 +81,7 @@ bool HttpHandler::isBodyUnfinished() const {
 
 bool HttpHandler::isAllowedMethod(const std::string &method) const {
 	for (auto &allowed_method : _active_route->methods)
-	{
-		if (allowed_method == method)
-			return true;
-	}
+		if (allowed_method == method) return true;
 	return false;
 }
 
@@ -119,9 +116,6 @@ void HttpHandler::resetRequestContext() {
 	_request_body_stream.str(std::string());
 	_request_body_stream.seekp(0, std::ios_base::beg);
 	_request_body_stream.clear();
-	_request.method = "";
-	_request.url = "";
-	_request.version = "";
 	_response_body_stream.str(std::string());
 	_response_body_stream.clear();
 	_response_header_stream.str(std::string());
@@ -152,8 +146,7 @@ int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	}
 	else if (_transferChunked) {
 		bool unfinished = _request_body_stream.str().find(EOF_CHUNKED) == std::string::npos;
-		if (!unfinished)
-			unchunckMessage();
+		if (!unfinished) unchunckMessage();
 		return unfinished;
 	}
 	return 0;
@@ -162,6 +155,7 @@ int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 void HttpHandler::parseRequest()
 {
 	std::cout << _readStream.str() << std::endl;
+
 	_readStream >> _request.method >> _request.url >> _request.version;
 	std::string header_name, header_value;
 	while (getline(_readStream, header_name, ':') && getline(_readStream, header_value, '\r')) {

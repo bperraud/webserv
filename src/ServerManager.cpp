@@ -245,6 +245,8 @@ int ServerManager::treatReceivedData(char *buffer, const ssize_t nbytes, Client 
 int	ServerManager::readFromClient(fd_client_pair client) {
 	char buffer[BUFFER_SIZE + OVERLAP];
 	const ssize_t nbytes = recv(client.first, buffer + OVERLAP, BUFFER_SIZE, 0);
+	if (client.second->hasBodyExceeded())	// ignore incoming data
+		return 1;
 	if (nbytes <= 0) {
 		closeClientConnection(client);
 		return 1;

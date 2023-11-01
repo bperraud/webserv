@@ -35,8 +35,8 @@ def test_post():
 	assert(response.status_code == 200)
 	assert(response.text == "Response to application/x-www-form-urlencoded")
 	# large file
-	files = {'file': open(script_dir + 'files/large_file.txt', 'rb')}
-	response = requests.post(URL + 'form/upload', files=files)
+	large_file = {'file': open(script_dir + 'files/large_file.txt', 'rb')}
+	response = requests.post(URL + 'form/upload', files=large_file)
 	assert(response.status_code == 413)
 
 # Send a DELETE request
@@ -48,8 +48,8 @@ def test_delete():
 
 # Upload file -> GET file -> DELETE file
 def test_upload_file():
-	files = {'file': open(script_dir + 'files/upload.txt', 'rb')}
-	response = requests.post(URL + 'form/upload', files=files)
+	small_file = {'file': open(script_dir + 'files/upload.txt', 'rb')}
+	response = requests.post(URL + 'form/upload', files=small_file)
 	assert(response.status_code == 201)
 	response = requests.get(URL + 'upload/upload.txt')
 	assert(response.status_code == 200)

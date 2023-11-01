@@ -48,7 +48,7 @@ class HttpHandler {
 
 private:
 
-	std::stringstream	_readStream;
+	//std::stringstream	_readStream;
 
 	bool				_keepAlive;
 	bool				_bodySizeExceeded;
@@ -98,6 +98,7 @@ public:
 	~HttpHandler();
 
 	bool	isBodyUnfinished() const ;
+	bool	hasBodyExceeded() const;
 	bool	isKeepAlive() const;
 	void	createHttpResponse();
 
@@ -106,7 +107,7 @@ public:
 	void	writeToStream(char *buffer, ssize_t nbytes) ;
 	int		writeToBody(char *buffer, ssize_t nbytes);
 	void	resetRequestContext();
-	void	parseRequest();
+	void	parseRequest(std::stringstream &_readStream);
 
 };
 

@@ -7,7 +7,7 @@ std::string Client::getResponseBody() const { return _httpHandler->getResponseBo
 bool Client::isKeepAlive() const { return _httpHandler->isKeepAlive(); }
 bool Client::isReadyToWrite() const { return _readyToWrite; }
 
-Client::Client(int timeoutSeconds, server_name_level3 *serv_map) :_timer(timeoutSeconds), _readyToWrite(false), _httpHandler(nullptr),
+Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _readWriteStream(std::ios::in | std::ios::out), _timer(timeoutSeconds), _readyToWrite(false), _httpHandler(nullptr),
 	_overlapBuffer() {
 	_httpHandler = new HttpHandler(timeoutSeconds, serv_map);
 	_overlapBuffer[0] = '\0';
@@ -15,6 +15,10 @@ Client::Client(int timeoutSeconds, server_name_level3 *serv_map) :_timer(timeout
 
 bool Client::isBodyUnfinished() const {
 	return _httpHandler->isBodyUnfinished();
+}
+
+bool Client::hasBodyExceeded() const {
+	return _httpHandler->hasBodyExceeded();
 }
 
 // --------------------------------- SETTERS --------------------------------- //
@@ -31,10 +35,18 @@ void Client::resetRequestContext() {
 	bzero(_overlapBuffer, OVERLAP);
 	_httpHandler->resetRequestContext();
 	_readyToWrite = false;
+	_readWriteStream.str(std::string());
+	_readWriteStream.seekp(0, std::ios_base::beg);
+	_readWriteStream.clear();
 }
 
 void Client::writeToStream(char *buffer, ssize_t nbytes) {
-	_httpHandler->writeToStream(buffer, nbytes);
+	_readWriteStream.write(buffer, nbytes);
+	if (_readWriteStream.fail()) {
+		std::ios::iostate state = _readWriteStream.rdstate();
+		std::cout << state << std::endl;
+		throw std::runtime_error("writing to read stream");
+	}
 }
 
 int Client::writeToBody(char *buffer, ssize_t nbytes) {
@@ -63,7 +75,7 @@ void Client::createHttpResponse() {
 }
 
 void Client::parseRequest() {
-	_httpHandler->parseRequest();
+	_httpHandler->parseRequest(_readWriteStream);
 }
 
 Client::~Client() {

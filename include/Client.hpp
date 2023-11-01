@@ -23,8 +23,11 @@ struct server;
 class Client {
 
 private:
+	std::stringstream 	_readWriteStream;
+
 	Timer				_timer;
 	HttpHandler			*_httpHandler;
+
 
 	bool				_readyToWrite;
 	ssize_t				_leftToRead;
@@ -36,6 +39,7 @@ public:
 	~Client();
 
 	bool	isBodyUnfinished() const ;
+	bool	hasBodyExceeded() const;
 	bool	isKeepAlive() const;
 	bool	isReadyToWrite() const;
 	void	createHttpResponse();

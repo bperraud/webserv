@@ -46,7 +46,7 @@ const std::map<int, std::string> HttpHandler::_SUCCESS_STATUS = {
 };
 
 HttpHandler::HttpHandler(int timeoutSeconds, server_name_level3 *serv_map) :
-	_readStream(), _request_body_stream(), _response_header_stream(), _response_body_stream(),
+	_request_body_stream(), _response_header_stream(), _response_body_stream(),
  	_leftToRead(0), _serverMap(serv_map), _server(NULL),
  	_keepAlive(false), _bodySizeExceeded(false), _transferChunked(false), _isWebSocket(false),
 	_default_route(), _active_route(&_default_route), _webSocketHandler(_response)
@@ -77,6 +77,11 @@ std::string HttpHandler::getContentType(const std::string &path) const {
 
 bool HttpHandler::isBodyUnfinished() const {
 	return (_leftToRead || _transferChunked);
+}
+
+bool HttpHandler::hasBodyExceeded() const
+{
+	return _bodySizeExceeded;
 }
 
 bool HttpHandler::isAllowedMethod(const std::string &method) const {
@@ -110,9 +115,10 @@ void HttpHandler::createStatusResponse(int code) {
 }
 
 void HttpHandler::resetRequestContext() {
-	_readStream.str(std::string());
-	_readStream.seekp(0, std::ios_base::beg);
-	_readStream.clear();
+
+	_request.method = "";
+	_request.url = "";
+	_request.version = "";
 	_request_body_stream.str(std::string());
 	_request_body_stream.seekp(0, std::ios_base::beg);
 	_request_body_stream.clear();
@@ -121,12 +127,6 @@ void HttpHandler::resetRequestContext() {
 	_response_header_stream.str(std::string());
 	_response_header_stream.clear();
 	_active_route = &_default_route;
-}
-
-void HttpHandler::writeToStream(char *buffer, ssize_t nbytes) {
-	_readStream.write(buffer, nbytes);
-	if (_readStream.fail())
-		throw std::runtime_error("writing to read stream");
 }
 
 int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
@@ -152,10 +152,8 @@ int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 	return 0;
 }
 
-void HttpHandler::parseRequest()
+void HttpHandler::parseRequest(std::stringstream &_readStream)
 {
-	std::cout << _readStream.str() << std::endl;
-
 	_readStream >> _request.method >> _request.url >> _request.version;
 	std::string header_name, header_value;
 	while (getline(_readStream, header_name, ':') && getline(_readStream, header_value, '\r')) {
@@ -263,10 +261,7 @@ void HttpHandler::createHttpResponse()
 		throw std::runtime_error("No server found");
 	setupRoute(_request.url);
 	if (invalidRequestLine()) error(400);
-	else if (_bodySizeExceeded) {
-		_bodySizeExceeded = false;
-		error(413);
-	}
+	else if (_bodySizeExceeded) error(413);
 	else if (!_active_route->handler.empty()) handleCGI(original_url);
 	else if (!_active_route->redir.empty()) redirection();
 	else if (_isWebSocket) {

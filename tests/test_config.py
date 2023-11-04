@@ -61,10 +61,10 @@ def test_redir():
 	ADDRESS = "0.0.0.0"
 	PORT = 8080
 	REQUEST = """\
-	GET /redir HTTP/1.1\r
-	Host: 0.0.0.0\r
-	\r
-	"""
+GET /redir HTTP/1.1\r
+Host: 0.0.0.0\r
+\r
+"""
 	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 	s.connect((ADDRESS, PORT))
 	s.send(REQUEST.encode())

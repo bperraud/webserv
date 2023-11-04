@@ -25,8 +25,13 @@ class Client {
 private:
 	std::stringstream 	_readWriteStream;
 
+
+	//std::stringstream   _request_body_stream;
+
+
 	Timer				_timer;
 	HttpHandler			*_httpHandler;
+
 
 
 	bool				_readyToWrite;

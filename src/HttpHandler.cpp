@@ -130,8 +130,6 @@ void HttpHandler::resetRequestContext() {
 }
 
 int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
-	if (!_leftToRead && !_transferChunked)
-		return 0;
 	if (_server->max_body_size && static_cast<ssize_t>(_request_body_stream.tellp()) + nbytes > _server->max_body_size) {
 		_leftToRead = 0;
 		_bodySizeExceeded = true;
@@ -155,6 +153,9 @@ int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
 void HttpHandler::parseRequest(std::stringstream &_readStream)
 {
 	_readStream >> _request.method >> _request.url >> _request.version;
+
+	std::cout << _readStream.str() << std::endl;
+
 	std::string header_name, header_value;
 	while (getline(_readStream, header_name, ':') && getline(_readStream, header_value, '\r')) {
 		header_value.erase(0, header_value.find_first_not_of(" \r\n\t"));

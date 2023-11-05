@@ -101,6 +101,9 @@ public:
 	~HttpHandler();
 
 	bool	isBodyUnfinished() const ;
+
+	bool 	bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes)  ;
+
 	bool	hasBodyExceeded() const;
 	bool	isKeepAlive() const;
 	void	createHttpResponse(std::stringstream &bodyStream);

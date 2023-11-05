@@ -96,6 +96,9 @@ int Client::treatReceivedData(char *buffer, ssize_t nbytes) {
 int Client::writeToBody(char *buffer, ssize_t nbytes) {
 	//return
 
+	if (_httpHandler->bodyExceeded(_request_body_stream, nbytes))
+		return 0;
+
 	_request_body_stream.write(buffer, nbytes);
 	if (_request_body_stream.fail())
 		throw std::runtime_error("writing to request body stream");

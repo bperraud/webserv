@@ -129,12 +129,20 @@ void HttpHandler::resetRequestContext() {
 	_active_route = &_default_route;
 }
 
-//int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
-int HttpHandler::writeToBody(std::stringstream &bodyStream, ssize_t nbytes) {
+bool HttpHandler::bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes) {
 	if (_server->max_body_size && static_cast<ssize_t>(bodyStream.tellp()) + nbytes > _server->max_body_size) {
 		_bodySizeExceeded = true;
-		return 0;
+		return true;
 	}
+	return false;
+}
+
+//int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
+int HttpHandler::writeToBody(std::stringstream &bodyStream, ssize_t nbytes) {
+	//if (_server->max_body_size && static_cast<ssize_t>(bodyStream.tellp()) + nbytes > _server->max_body_size) {
+	//	_bodySizeExceeded = true;
+	//	return 0;
+	//}
 	//_request_body_stream.write(buffer, nbytes);
 	//if (_request_body_stream.fail())
 	//	throw std::runtime_error("writing to request body stream");
@@ -142,7 +150,7 @@ int HttpHandler::writeToBody(std::stringstream &bodyStream, ssize_t nbytes) {
 	//	_leftToRead -= nbytes;
 	//	return _leftToRead > 0;
 	//}
-	else if (_transferChunked) {
+	if (_transferChunked) {
 		bool unfinished = bodyStream.str().find(EOF_CHUNKED) == std::string::npos;
 		if (!unfinished) unchunckMessage(bodyStream);
 		return unfinished;
@@ -209,9 +217,11 @@ void HttpHandler::unchunckMessage(std::stringstream &bodyStream)
 	}
 	bodyStream.str("");
 	bodyStream.clear();
+
+	// for now write to _response_body_stream for sendback
+
 	//bodyStream << _response_body_stream.str();
 	//_response_body = _response_body_stream.str();
-
 	//_response_body_stream.str("");
 	//_response_body_stream.clear();
 	_request.map_headers.clear();

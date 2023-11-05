@@ -196,9 +196,6 @@ void HttpHandler::setupRoute(const std::string &url)
 
 void HttpHandler::unchunckMessage(std::stringstream &bodyStream)
 {
-
-	std::cout << "UNCHUNK\n" << std::endl;
-
 	std::string line;
 	while (std::getline(bodyStream, line)) {
 		int chunk_size = std::atoi(line.c_str());
@@ -213,10 +210,10 @@ void HttpHandler::unchunckMessage(std::stringstream &bodyStream)
 	bodyStream.str("");
 	bodyStream.clear();
 	//bodyStream << _response_body_stream.str();
-	_response_body = _response_body_stream.str();
+	//_response_body = _response_body_stream.str();
 
-	_response_body_stream.str("");
-	_response_body_stream.clear();
+	//_response_body_stream.str("");
+	//_response_body_stream.clear();
 	_request.map_headers.clear();
 }
 
@@ -399,7 +396,8 @@ void HttpHandler::POST() {
 	if (pos_boundary != std::string::npos) // multipart/form-data
 		uploadFile(request_content_type, pos_boundary);
 	else if (_request.url == "www/sendback")
-		_response_body_stream << _response_body;
+		//_response_body_stream << _response_body;
+		;
 	else if (request_content_type.find("application/x-www-form-urlencoded") != std::string::npos)
 		_response_body_stream << "Response to application/x-www-form-urlencoded";
 	else

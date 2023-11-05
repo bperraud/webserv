@@ -100,20 +100,16 @@ public:
 	HttpHandler(int timeoutSeconds, server_name_level3 *serv_map);
 	~HttpHandler();
 
-	bool	isBodyUnfinished() const ;
-
-	bool 	bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes)  ;
-
+	bool	isTransferChunked() const ;
 	bool	hasBodyExceeded() const;
 	bool	isKeepAlive() const;
+
+	bool 	bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes);
+	int		transferChunked(std::stringstream &bodyStream);
 	void	createHttpResponse(std::stringstream &bodyStream);
 
 	std::string		getResponseHeader() const;
 	std::string		getResponseBody() const;
-	//void	writeToStream(char *buffer, ssize_t nbytes) ;
-	//int		writeToBody(char *buffer, ssize_t nbytes);
-
-	int		writeToBody(std::stringstream &bodyStream, ssize_t nbytes);
 
 	void	resetRequestContext();
 	int		parseRequest(std::stringstream &_readStream);

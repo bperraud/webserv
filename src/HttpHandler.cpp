@@ -75,7 +75,7 @@ std::string HttpHandler::getContentType(const std::string &path) const {
 	return it == _MIME_TYPES.end() ? "" : it->second;
 }
 
-bool HttpHandler::isBodyUnfinished() const {
+bool HttpHandler::isTransferChunked() const {
 	return _transferChunked;
 }
 
@@ -115,13 +115,9 @@ void HttpHandler::createStatusResponse(int code) {
 }
 
 void HttpHandler::resetRequestContext() {
-
 	_request.method = "";
 	_request.url = "";
 	_request.version = "";
-	//_request_body_stream.str(std::string());
-	//_request_body_stream.seekp(0, std::ios_base::beg);
-	//_request_body_stream.clear();
 	_response_body_stream.str(std::string());
 	_response_body_stream.clear();
 	_response_header_stream.str(std::string());
@@ -137,19 +133,7 @@ bool HttpHandler::bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes) {
 	return false;
 }
 
-//int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
-int HttpHandler::writeToBody(std::stringstream &bodyStream, ssize_t nbytes) {
-	//if (_server->max_body_size && static_cast<ssize_t>(bodyStream.tellp()) + nbytes > _server->max_body_size) {
-	//	_bodySizeExceeded = true;
-	//	return 0;
-	//}
-	//_request_body_stream.write(buffer, nbytes);
-	//if (_request_body_stream.fail())
-	//	throw std::runtime_error("writing to request body stream");
-	//if (_leftToRead) { // not chunked
-	//	_leftToRead -= nbytes;
-	//	return _leftToRead > 0;
-	//}
+int HttpHandler::transferChunked(std::stringstream &bodyStream) {
 	if (_transferChunked) {
 		bool unfinished = bodyStream.str().find(EOF_CHUNKED) == std::string::npos;
 		if (!unfinished) unchunckMessage(bodyStream);
@@ -180,9 +164,7 @@ int HttpHandler::parseRequest(std::stringstream &headerStream)
 	_isWebSocket = connection == "Upgrade" && getHeaderValue("Upgrade") == "websocket";
 	_transferChunked = getHeaderValue("Transfer-Encoding") == "chunked";
 	_request.host = getHeaderValue("Host").substr(0, getHeaderValue("Host").find(":"));
-	//_leftToRead = _request.bodyLength;
 	assignServerConfig();
-
 	return _request.bodyLength;
 }
 
@@ -219,7 +201,6 @@ void HttpHandler::unchunckMessage(std::stringstream &bodyStream)
 	bodyStream.clear();
 
 	// for now write to _response_body_stream for sendback
-
 	//bodyStream << _response_body_stream.str();
 	//_response_body = _response_body_stream.str();
 	//_response_body_stream.str("");

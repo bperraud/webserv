@@ -76,7 +76,7 @@ void Client::writeToHeader(char *buffer, ssize_t nbytes) {
 int Client::treatReceivedData(char *buffer, ssize_t nbytes) {
 	startTimer();
 	saveOverlap(buffer, nbytes);
-	bool isBodyUnfinished = (_leftToRead || _httpHandler->isBodyUnfinished());
+	bool isBodyUnfinished = (_leftToRead || _httpHandler->isTransferChunked());
 	if (isBodyUnfinished) {
 		isBodyUnfinished = writeToBody(buffer + OVERLAP, nbytes);
 		return (isBodyUnfinished);
@@ -94,8 +94,6 @@ int Client::treatReceivedData(char *buffer, ssize_t nbytes) {
 }
 
 int Client::writeToBody(char *buffer, ssize_t nbytes) {
-	//return
-
 	if (_httpHandler->bodyExceeded(_request_body_stream, nbytes))
 		return 0;
 
@@ -108,7 +106,7 @@ int Client::writeToBody(char *buffer, ssize_t nbytes) {
 		return _leftToRead > 0;
 	}
 	// chunked
-	return _httpHandler->writeToBody(_request_body_stream, nbytes);
+	return _httpHandler->transferChunked(_request_body_stream);
 }
 
 void Client::saveOverlap(char *buffer, ssize_t nbytes) {
@@ -131,10 +129,6 @@ void Client::saveOverlap(char *buffer, ssize_t nbytes) {
 void Client::createHttpResponse() {
 	_httpHandler->createHttpResponse(_request_body_stream);
 }
-
-//void Client::parseRequest() {
-//	_httpHandler->parseRequest(_readWriteStream);
-//}
 
 Client::~Client() {
 	delete _httpHandler;

@@ -54,9 +54,12 @@ private:
 	bool				_bodySizeExceeded;
 	bool				_transferChunked;
 	bool				_isWebSocket;
-	ssize_t				_leftToRead;
+	//ssize_t				_leftToRead;
 
-	std::stringstream   _request_body_stream;
+	//std::stringstream   _request_body_stream;
+
+	std::string			_response_body;
+
 	std::stringstream   _response_header_stream;
 	std::stringstream   _response_body_stream;
 	HttpMessage			_request;
@@ -78,7 +81,7 @@ private:
 	void	createStatusResponse(int code);
 	void	uploadFile(const std::string& contentType, size_t pos_boundary);
 	void 	redirection();
-	void	unchunckMessage();
+	void	unchunckMessage(std::stringstream &bodyStream);
 
 	std::string		getHeaderValue(const std::string &header) const;
 	std::string		getContentType(const std::string& path) const;
@@ -100,14 +103,17 @@ public:
 	bool	isBodyUnfinished() const ;
 	bool	hasBodyExceeded() const;
 	bool	isKeepAlive() const;
-	void	createHttpResponse();
+	void	createHttpResponse(std::stringstream &bodyStream);
 
 	std::string		getResponseHeader() const;
 	std::string		getResponseBody() const;
-	void	writeToStream(char *buffer, ssize_t nbytes) ;
-	int		writeToBody(char *buffer, ssize_t nbytes);
+	//void	writeToStream(char *buffer, ssize_t nbytes) ;
+	//int		writeToBody(char *buffer, ssize_t nbytes);
+
+	int		writeToBody(std::stringstream &bodyStream, ssize_t nbytes);
+
 	void	resetRequestContext();
-	void	parseRequest(std::stringstream &_readStream);
+	int		parseRequest(std::stringstream &_readStream);
 
 };
 

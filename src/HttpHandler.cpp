@@ -46,8 +46,8 @@ const std::map<int, std::string> HttpHandler::_SUCCESS_STATUS = {
 };
 
 HttpHandler::HttpHandler(int timeoutSeconds, server_name_level3 *serv_map) :
-	_request_body_stream(), _response_header_stream(), _response_body_stream(),
- 	_leftToRead(0), _serverMap(serv_map), _server(NULL),
+	_response_header_stream(), _response_body_stream(),
+ 	_serverMap(serv_map), _server(NULL),
  	_keepAlive(false), _bodySizeExceeded(false), _transferChunked(false), _isWebSocket(false),
 	_default_route(), _active_route(&_default_route), _webSocketHandler(_response)
 {
@@ -76,7 +76,7 @@ std::string HttpHandler::getContentType(const std::string &path) const {
 }
 
 bool HttpHandler::isBodyUnfinished() const {
-	return (_leftToRead || _transferChunked);
+	return _transferChunked;
 }
 
 bool HttpHandler::hasBodyExceeded() const
@@ -119,9 +119,9 @@ void HttpHandler::resetRequestContext() {
 	_request.method = "";
 	_request.url = "";
 	_request.version = "";
-	_request_body_stream.str(std::string());
-	_request_body_stream.seekp(0, std::ios_base::beg);
-	_request_body_stream.clear();
+	//_request_body_stream.str(std::string());
+	//_request_body_stream.seekp(0, std::ios_base::beg);
+	//_request_body_stream.clear();
 	_response_body_stream.str(std::string());
 	_response_body_stream.clear();
 	_response_header_stream.str(std::string());
@@ -129,37 +129,35 @@ void HttpHandler::resetRequestContext() {
 	_active_route = &_default_route;
 }
 
-int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
-	//if (!_leftToRead && !_transferChunked)
-	//	return 0;
-	if (_server->max_body_size && static_cast<ssize_t>(_request_body_stream.tellp()) + nbytes > _server->max_body_size) {
-		_leftToRead = 0;
+//int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
+int HttpHandler::writeToBody(std::stringstream &bodyStream, ssize_t nbytes) {
+	if (_server->max_body_size && static_cast<ssize_t>(bodyStream.tellp()) + nbytes > _server->max_body_size) {
 		_bodySizeExceeded = true;
 		return 0;
 	}
-	_request_body_stream.write(buffer, nbytes);
-	if (_request_body_stream.fail())
-		throw std::runtime_error("writing to request body stream");
-	if (_leftToRead) { // not chunked
-		_leftToRead -= nbytes;
-		return _leftToRead > 0;
-	}
+	//_request_body_stream.write(buffer, nbytes);
+	//if (_request_body_stream.fail())
+	//	throw std::runtime_error("writing to request body stream");
+	//if (_leftToRead) { // not chunked
+	//	_leftToRead -= nbytes;
+	//	return _leftToRead > 0;
+	//}
 	else if (_transferChunked) {
-		bool unfinished = _request_body_stream.str().find(EOF_CHUNKED) == std::string::npos;
-		if (!unfinished) unchunckMessage();
+		bool unfinished = bodyStream.str().find(EOF_CHUNKED) == std::string::npos;
+		if (!unfinished) unchunckMessage(bodyStream);
 		return unfinished;
 	}
 	return 0;
 }
 
-void HttpHandler::parseRequest(std::stringstream &_readStream)
+int HttpHandler::parseRequest(std::stringstream &headerStream)
 {
-	_readStream >> _request.method >> _request.url >> _request.version;
+	headerStream >> _request.method >> _request.url >> _request.version;
 
-	std::cout << _readStream.str() << std::endl;
+	std::cout << headerStream.str() << std::endl;
 
 	std::string header_name, header_value;
-	while (getline(_readStream, header_name, ':') && getline(_readStream, header_value, '\r')) {
+	while (getline(headerStream, header_name, ':') && getline(headerStream, header_value, '\r')) {
 		header_value.erase(0, header_value.find_first_not_of(" \r\n\t"));
 		header_value.erase(header_value.find_last_not_of(" \r\n\t") + 1, header_value.length());
 		header_name.erase(0, header_name.find_first_not_of(" \r\n\t"));
@@ -174,8 +172,10 @@ void HttpHandler::parseRequest(std::stringstream &_readStream)
 	_isWebSocket = connection == "Upgrade" && getHeaderValue("Upgrade") == "websocket";
 	_transferChunked = getHeaderValue("Transfer-Encoding") == "chunked";
 	_request.host = getHeaderValue("Host").substr(0, getHeaderValue("Host").find(":"));
-	_leftToRead = _request.bodyLength;
+	//_leftToRead = _request.bodyLength;
 	assignServerConfig();
+
+	return _request.bodyLength;
 }
 
 void HttpHandler::setupRoute(const std::string &url)
@@ -194,22 +194,27 @@ void HttpHandler::setupRoute(const std::string &url)
 	_request.url = _active_route->root + _request.url;
 }
 
-void HttpHandler::unchunckMessage()
+void HttpHandler::unchunckMessage(std::stringstream &bodyStream)
 {
+
+	std::cout << "UNCHUNK\n" << std::endl;
+
 	std::string line;
-	while (std::getline(_request_body_stream, line)) {
+	while (std::getline(bodyStream, line)) {
 		int chunk_size = std::atoi(line.c_str());
 		if (chunk_size == 0)
 			break;
 		std::string chunk;
 		chunk.resize(chunk_size);
-		_request_body_stream.read(&chunk[0], chunk_size);
-		_request_body_stream.ignore(2);
+		bodyStream.read(&chunk[0], chunk_size);
+		bodyStream.ignore(2);
 		_response_body_stream.write(chunk.data(), chunk_size);
 	}
-	_request_body_stream.str("");
-	_request_body_stream.clear();
-	_request_body_stream << _response_body_stream.str();
+	bodyStream.str("");
+	bodyStream.clear();
+	//bodyStream << _response_body_stream.str();
+	_response_body = _response_body_stream.str();
+
 	_response_body_stream.str("");
 	_response_body_stream.clear();
 	_request.map_headers.clear();
@@ -256,8 +261,9 @@ void HttpHandler::assignServerConfig()
 	}
 }
 
-void HttpHandler::createHttpResponse()
+void HttpHandler::createHttpResponse(std::stringstream &bodyStream)
 {
+	_response_body = bodyStream.str();
 	_response.version = _request.version;
 	std::string original_url = _request.url;
 	if (!_server)
@@ -331,7 +337,7 @@ void HttpHandler::generateDirectoryListing(const std::string &directory_path) {
 }
 
 void HttpHandler::uploadFile(const std::string &contentType, size_t pos_boundary) {
-	std::string messageBody = _request_body_stream.str();
+	std::string messageBody = _response_body;
 	const size_t headerPrefixLength = strlen("filename=\"");
 	size_t pos1 = messageBody.find("filename=\"");
 	size_t pos2 = pos1 != std::string::npos ? messageBody.find("\"", pos1 + headerPrefixLength) : std::string::npos;
@@ -393,7 +399,7 @@ void HttpHandler::POST() {
 	if (pos_boundary != std::string::npos) // multipart/form-data
 		uploadFile(request_content_type, pos_boundary);
 	else if (_request.url == "www/sendback")
-		_response_body_stream << _request_body_stream.str();
+		_response_body_stream << _response_body;
 	else if (request_content_type.find("application/x-www-form-urlencoded") != std::string::npos)
 		_response_body_stream << "Response to application/x-www-form-urlencoded";
 	else

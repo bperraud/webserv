@@ -24,11 +24,12 @@ class Client {
 
 private:
 	std::stringstream 	_readWriteStream;
+	std::stringstream   _request_body_stream;
 
-	//std::stringstream   _request_body_stream;
 
 	Timer				_timer;
 	HttpHandler			*_httpHandler;
+	WebSocketHandler	*_webSocketHandler;
 
 	bool				_isHttpRequest;
 
@@ -47,9 +48,10 @@ public:
 	Client(int timeoutSeconds, server_name_level3 *serv_map);
 	~Client();
 
-
 	std::string		getResponseHeader() const;
 	std::string		getResponseBody() const;
+
+
 	bool	hasBodyExceeded() const;
 	bool	isKeepAlive() const;
 	bool	isReadyToWrite() const;
@@ -58,6 +60,7 @@ public:
 	int		treatReceivedData(char *buffer, ssize_t nbytes);
 	void	setReadyToWrite(bool ready);
 	int		writeToBody(char *buffer, ssize_t nbytes);
+
 	void	saveOverlap(char *buffer, ssize_t nbytes);
 	void	resetRequestContext();
 	void	startTimer();

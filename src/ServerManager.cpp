@@ -186,7 +186,7 @@ void ServerManager::eventManager() {
 void ServerManager::handleReadEvent(fd_client_pair client)  {
 	if (!readFromClient(client)) {
 		client.second->stopTimer();
-		client.second->createHttpResponse();
+		client.second->createResponse();
 		client.second->setReadyToWrite(true);
 	}
 }

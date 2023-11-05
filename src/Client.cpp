@@ -8,9 +8,10 @@ std::string Client::getResponseBody() const { return _httpHandler->getResponseBo
 bool Client::isKeepAlive() const { return _httpHandler->isKeepAlive(); }
 bool Client::isReadyToWrite() const { return _readyToWrite; }
 
-Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _readWriteStream(std::ios::in | std::ios::out), _request_body_stream(std::ios::in | std::ios::out),
-	 _timer(timeoutSeconds), _readyToWrite(false), _httpHandler(nullptr),
-	_isHttpRequest(true), _lenStream(0), _overlapBuffer(), _leftToRead(0) {
+Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _readWriteStream(std::ios::in | std::ios::out),
+	_request_body_stream(std::ios::in | std::ios::out), _timer(timeoutSeconds), _httpHandler(nullptr),
+	_webSocketHandler(nullptr),  _isHttpRequest(true), _readyToWrite(false), _lenStream(0),
+	_overlapBuffer(), _leftToRead(0) {
 	_httpHandler = new HttpHandler(timeoutSeconds, serv_map);
 	//_webSocketHandler = new WebSocketHandler();
 	_overlapBuffer[0] = '\0';
@@ -73,6 +74,20 @@ void Client::writeToHeader(char *buffer, ssize_t nbytes) {
 	}
 }
 
+int Client::writeToBody(char *buffer, ssize_t nbytes) {
+	if (_httpHandler->bodyExceeded(_request_body_stream, nbytes))
+		return 0;
+	_request_body_stream.write(buffer, nbytes);
+	if (_request_body_stream.fail())
+		throw std::runtime_error("writing to request body stream");
+
+	if (_leftToRead) { // not chunked
+		_leftToRead -= nbytes;
+		return _leftToRead > 0;
+	}
+	return _httpHandler->transferChunked(_request_body_stream); // chunked
+}
+
 int Client::treatReceivedData(char *buffer, ssize_t nbytes) {
 	startTimer();
 	saveOverlap(buffer, nbytes);
@@ -93,20 +108,6 @@ int Client::treatReceivedData(char *buffer, ssize_t nbytes) {
 	}
 }
 
-int Client::writeToBody(char *buffer, ssize_t nbytes) {
-	if (_httpHandler->bodyExceeded(_request_body_stream, nbytes))
-		return 0;
-	_request_body_stream.write(buffer, nbytes);
-	if (_request_body_stream.fail())
-		throw std::runtime_error("writing to request body stream");
-
-	if (_leftToRead) { // not chunked
-		_leftToRead -= nbytes;
-		return _leftToRead > 0;
-	}
-	return _httpHandler->transferChunked(_request_body_stream); // chunked
-}
-
 void Client::saveOverlap(char *buffer, ssize_t nbytes) {
 	if (nbytes >= OVERLAP)
 	{
@@ -124,7 +125,7 @@ void Client::saveOverlap(char *buffer, ssize_t nbytes) {
 	}
 }
 
-void Client::createHttpResponse() {
+void Client::createResponse() {
 	_httpHandler->createHttpResponse(_request_body_stream);
 }
 

@@ -26,14 +26,13 @@ private:
 	std::stringstream 	_readWriteStream;
 	std::stringstream   _request_body_stream;
 
-
 	Timer				_timer;
 	HttpHandler			*_httpHandler;
 	WebSocketHandler	*_webSocketHandler;
 
 	bool				_isHttpRequest;
-	ssize_t				_lenStream;
 	bool				_readyToWrite;
+	ssize_t				_lenStream;
 	ssize_t				_leftToRead;
 	char				_overlapBuffer[4];
 
@@ -48,13 +47,11 @@ public:
 
 	std::string		getResponseHeader() const;
 	std::string		getResponseBody() const;
-
-
 	bool	hasBodyExceeded() const;
 	bool	isKeepAlive() const;
 	bool	isReadyToWrite() const;
 
-	void	createHttpResponse();
+	void	createResponse();
 	int		treatReceivedData(char *buffer, ssize_t nbytes);
 	void	setReadyToWrite(bool ready);
 	int		writeToBody(char *buffer, ssize_t nbytes);

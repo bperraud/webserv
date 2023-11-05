@@ -32,9 +32,7 @@ private:
 	WebSocketHandler	*_webSocketHandler;
 
 	bool				_isHttpRequest;
-
 	ssize_t				_lenStream;
-
 	bool				_readyToWrite;
 	ssize_t				_leftToRead;
 	char				_overlapBuffer[4];

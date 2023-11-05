@@ -48,17 +48,13 @@ class HttpHandler {
 
 private:
 
-	//std::stringstream	_readStream;
-
 	bool				_keepAlive;
 	bool				_bodySizeExceeded;
 	bool				_transferChunked;
 	bool				_isWebSocket;
-	//ssize_t				_leftToRead;
 
-	//std::stringstream   _request_body_stream;
+	std::string			_request_body;
 
-	std::string			_response_body;
 
 	std::stringstream   _response_header_stream;
 	std::stringstream   _response_body_stream;

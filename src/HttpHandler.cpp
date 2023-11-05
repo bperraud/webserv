@@ -46,8 +46,7 @@ const std::map<int, std::string> HttpHandler::_SUCCESS_STATUS = {
 };
 
 HttpHandler::HttpHandler(int timeoutSeconds, server_name_level3 *serv_map) :
-	_response_header_stream(), _response_body_stream(),
- 	_serverMap(serv_map), _server(NULL),
+	_response_header_stream(), _serverMap(serv_map), _server(NULL),
  	_keepAlive(false), _bodySizeExceeded(false), _transferChunked(false), _isWebSocket(false),
 	_default_route(), _active_route(&_default_route), _webSocketHandler(_response)
 {
@@ -118,6 +117,7 @@ void HttpHandler::resetRequestContext() {
 	_request.method = "";
 	_request.url = "";
 	_request.version = "";
+	_request_body = "";
 	_response_body_stream.str(std::string());
 	_response_body_stream.clear();
 	_response_header_stream.str(std::string());
@@ -187,6 +187,7 @@ void HttpHandler::setupRoute(const std::string &url)
 void HttpHandler::unchunckMessage(std::stringstream &bodyStream)
 {
 	std::string line;
+	std::stringstream requestBodyStream(std::ios::in | std::ios::out);
 	while (std::getline(bodyStream, line)) {
 		int chunk_size = std::atoi(line.c_str());
 		if (chunk_size == 0)
@@ -195,16 +196,11 @@ void HttpHandler::unchunckMessage(std::stringstream &bodyStream)
 		chunk.resize(chunk_size);
 		bodyStream.read(&chunk[0], chunk_size);
 		bodyStream.ignore(2);
-		_response_body_stream.write(chunk.data(), chunk_size);
+		requestBodyStream.write(chunk.data(), chunk_size);
 	}
 	bodyStream.str("");
 	bodyStream.clear();
-
-	// for now write to _response_body_stream for sendback
-	//bodyStream << _response_body_stream.str();
-	//_response_body = _response_body_stream.str();
-	//_response_body_stream.str("");
-	//_response_body_stream.clear();
+	_request_body = requestBodyStream.str();
 	_request.map_headers.clear();
 }
 
@@ -251,7 +247,7 @@ void HttpHandler::assignServerConfig()
 
 void HttpHandler::createHttpResponse(std::stringstream &bodyStream)
 {
-	_response_body = bodyStream.str();
+	if (!_transferChunked) _request_body = bodyStream.str();
 	_response.version = _request.version;
 	std::string original_url = _request.url;
 	if (!_server)
@@ -325,7 +321,7 @@ void HttpHandler::generateDirectoryListing(const std::string &directory_path) {
 }
 
 void HttpHandler::uploadFile(const std::string &contentType, size_t pos_boundary) {
-	std::string messageBody = _response_body;
+	std::string messageBody = _request_body;
 	const size_t headerPrefixLength = strlen("filename=\"");
 	size_t pos1 = messageBody.find("filename=\"");
 	size_t pos2 = pos1 != std::string::npos ? messageBody.find("\"", pos1 + headerPrefixLength) : std::string::npos;
@@ -356,7 +352,6 @@ void HttpHandler::uploadFile(const std::string &contentType, size_t pos_boundary
 
 void HttpHandler::GET() {
 	createStatusResponse(200);
-
 	if (Utils::isDirectory(_request.url)) { // directory
 		if (_active_route->autoindex)
 			generateDirectoryListing(_request.url);
@@ -387,8 +382,7 @@ void HttpHandler::POST() {
 	if (pos_boundary != std::string::npos) // multipart/form-data
 		uploadFile(request_content_type, pos_boundary);
 	else if (_request.url == "www/sendback")
-		//_response_body_stream << _response_body;
-		;
+		_response_body_stream << _request_body;
 	else if (request_content_type.find("application/x-www-form-urlencoded") != std::string::npos)
 		_response_body_stream << "Response to application/x-www-form-urlencoded";
 	else

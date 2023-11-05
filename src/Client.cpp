@@ -69,7 +69,7 @@ void Client::writeToHeader(char *buffer, ssize_t nbytes) {
 	if (_readWriteStream.fail()) {
 		std::ios::iostate state = _readWriteStream.rdstate();
 		std::cout << state << std::endl;
-		//throw std::runtime_error("writing to read stream");
+		throw std::runtime_error("writing to read stream");
 	}
 }
 
@@ -96,7 +96,6 @@ int Client::treatReceivedData(char *buffer, ssize_t nbytes) {
 int Client::writeToBody(char *buffer, ssize_t nbytes) {
 	if (_httpHandler->bodyExceeded(_request_body_stream, nbytes))
 		return 0;
-
 	_request_body_stream.write(buffer, nbytes);
 	if (_request_body_stream.fail())
 		throw std::runtime_error("writing to request body stream");
@@ -105,8 +104,7 @@ int Client::writeToBody(char *buffer, ssize_t nbytes) {
 		_leftToRead -= nbytes;
 		return _leftToRead > 0;
 	}
-	// chunked
-	return _httpHandler->transferChunked(_request_body_stream);
+	return _httpHandler->transferChunked(_request_body_stream); // chunked
 }
 
 void Client::saveOverlap(char *buffer, ssize_t nbytes) {

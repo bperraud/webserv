@@ -55,7 +55,6 @@ private:
 
 	std::string			_request_body;
 
-
 	std::stringstream   _response_header_stream;
 	std::stringstream   _response_body_stream;
 	HttpMessage			_request;
@@ -69,7 +68,6 @@ private:
 	server_config*		_server;
 	routes				_default_route;
 	routes*				_active_route;
-	WebSocketHandler	_webSocketHandler;
 
 private:
 
@@ -91,6 +89,7 @@ private:
 	void	generateDirectoryListing(const std::string& directory_path);
 	void	handleCGI(const std::string &original_url);
 	void	error(int error);
+	void	upgradeWebsocket(const std::string &webSocketKey);
 
 public:
 	HttpHandler(int timeoutSeconds, server_name_level3 *serv_map);

@@ -48,7 +48,7 @@ const std::map<int, std::string> HttpHandler::_SUCCESS_STATUS = {
 HttpHandler::HttpHandler(int timeoutSeconds, server_name_level3 *serv_map) :
 	_response_header_stream(), _serverMap(serv_map), _server(NULL),
  	_keepAlive(false), _bodySizeExceeded(false), _transferChunked(false), _isWebSocket(false),
-	_default_route(), _active_route(&_default_route), _webSocketHandler(_response)
+	_default_route(), _active_route(&_default_route)
 {
 	_default_route.autoindex = false;
 	_default_route.methods[0] = "GET";
@@ -245,6 +245,27 @@ void HttpHandler::assignServerConfig()
 	}
 }
 
+void HttpHandler::upgradeWebsocket(const std::string &webSocketKey) {
+
+    BIO *bio, *b64;
+    BUF_MEM *bptr;
+
+	std::string salt = webSocketKey + GUID;
+    unsigned char sha1_hash[SHA_DIGEST_LENGTH];
+    SHA1(reinterpret_cast<const unsigned char*>(salt.c_str()), salt.length(), sha1_hash);
+    bio = BIO_new(BIO_s_mem());
+    b64 = BIO_new(BIO_f_base64());
+    bio = BIO_push(b64, bio);
+    BIO_write(bio, sha1_hash, SHA_DIGEST_LENGTH);
+    BIO_flush(bio);
+    BIO_get_mem_ptr(bio, &bptr);
+    std::string encoded(reinterpret_cast<char*>(bptr->data), bptr->length - 1);
+    BIO_free_all(bio);
+	_response.map_headers["Connection"] = "Upgrade";
+	_response.map_headers["Upgrade"] = "websocket";
+	_response.map_headers["Sec-WebSocket-Accept"] = encoded;
+}
+
 void HttpHandler::createHttpResponse(std::stringstream &bodyStream)
 {
 	if (!_transferChunked) _request_body = bodyStream.str();
@@ -259,7 +280,7 @@ void HttpHandler::createHttpResponse(std::stringstream &bodyStream)
 	else if (!_active_route->redir.empty()) redirection();
 	else if (_isWebSocket) {
 		createStatusResponse(101);
-		_webSocketHandler.upgradeWebsocket(getHeaderValue("Sec-WebSocket-Key"));
+		upgradeWebsocket(getHeaderValue("Sec-WebSocket-Key"));
 	}
 	else {
 		auto it = HttpHandler::_HTTP_METHOD.find(_request.method);

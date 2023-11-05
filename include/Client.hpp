@@ -10,6 +10,7 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "bitset"
 
 #include "Utils.hpp"
 #include "ServerConfig.hpp"

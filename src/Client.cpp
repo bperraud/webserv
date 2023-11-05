@@ -1,5 +1,4 @@
 #include "Client.hpp"
-#include "bitset"
 
 // --------------------------------- GETTERS --------------------------------- //
 
@@ -13,7 +12,7 @@ Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _readWriteStr
 	_webSocketHandler(nullptr),  _isHttpRequest(true), _readyToWrite(false), _lenStream(0),
 	_overlapBuffer(), _leftToRead(0) {
 	_httpHandler = new HttpHandler(timeoutSeconds, serv_map);
-	//_webSocketHandler = new WebSocketHandler();
+	_webSocketHandler = new WebSocketHandler();
 	_overlapBuffer[0] = '\0';
 }
 

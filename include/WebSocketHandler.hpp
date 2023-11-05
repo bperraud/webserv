@@ -16,10 +16,10 @@ struct HttpResponse;
 class WebSocketHandler {
 
 private:
-	HttpResponse	&_response;
+	//HttpResponse	&_response;
 
 public:
-    WebSocketHandler() = default;
+    WebSocketHandler();
     WebSocketHandler(HttpResponse &response);
 
 	void upgradeWebsocket(const std::string &webSocketKey);

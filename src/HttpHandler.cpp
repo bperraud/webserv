@@ -130,6 +130,8 @@ void HttpHandler::resetRequestContext() {
 }
 
 int HttpHandler::writeToBody(char *buffer, ssize_t nbytes) {
+	//if (!_leftToRead && !_transferChunked)
+	//	return 0;
 	if (_server->max_body_size && static_cast<ssize_t>(_request_body_stream.tellp()) + nbytes > _server->max_body_size) {
 		_leftToRead = 0;
 		_bodySizeExceeded = true;
@@ -168,7 +170,7 @@ void HttpHandler::parseRequest(std::stringstream &_readStream)
 	if (!content_length_header.empty())
 		_request.bodyLength = std::stoi(content_length_header);
 	std::string connection = getHeaderValue("Connection");
-	_keepAlive = connection == "keep-alive";
+	_keepAlive = connection == "keep-alive" | connection == "Upgrade";
 	_isWebSocket = connection == "Upgrade" && getHeaderValue("Upgrade") == "websocket";
 	_transferChunked = getHeaderValue("Transfer-Encoding") == "chunked";
 	_request.host = getHeaderValue("Host").substr(0, getHeaderValue("Host").find(":"));

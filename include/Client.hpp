@@ -25,42 +25,45 @@ class Client {
 private:
 	std::stringstream 	_readWriteStream;
 
-
 	//std::stringstream   _request_body_stream;
-
 
 	Timer				_timer;
 	HttpHandler			*_httpHandler;
 
+	bool				_isHttpRequest;
 
+	ssize_t				_lenStream;
 
 	bool				_readyToWrite;
 	ssize_t				_leftToRead;
 	char				_overlapBuffer[4];
+
+private :
+	void	writeToHeader(char *buffer, ssize_t nbytes);
+	void	parseRequest();
 
 public:
 
 	Client(int timeoutSeconds, server_name_level3 *serv_map);
 	~Client();
 
-	bool	isBodyUnfinished() const ;
-	bool	hasBodyExceeded() const;
-	bool	isKeepAlive() const;
-	bool	isReadyToWrite() const;
-	void	createHttpResponse();
 
 	std::string		getResponseHeader() const;
 	std::string		getResponseBody() const;
+	bool	hasBodyExceeded() const;
+	bool	isKeepAlive() const;
+	bool	isReadyToWrite() const;
 
+	void	createHttpResponse();
+	int		treatReceivedData(char *buffer, ssize_t nbytes);
 	void	setReadyToWrite(bool ready);
-	void	writeToStream(char *buffer, ssize_t nbytes) ;
 	int		writeToBody(char *buffer, ssize_t nbytes);
 	void	saveOverlap(char *buffer, ssize_t nbytes);
 	void	resetRequestContext();
 	void	startTimer();
 	void	stopTimer();
 	bool	hasTimeOut();
-	void	parseRequest();
+
 };
 
 #endif

@@ -83,7 +83,6 @@ public:
 	void	epollInit();
 	host_level2*	isPartOfListenFd(int fd) ;
 
-	int 	treatReceivedData(char *buffer, const ssize_t nbytes, Client *client);
 	int		readFromClient(fd_client_pair client);
 	void	writeToClient(int client_fd, const std::string &str);
 

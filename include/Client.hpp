@@ -24,12 +24,14 @@ struct server;
 class Client {
 
 private:
-	std::stringstream 	_readWriteStream;
-	std::stringstream   _request_body_stream;
+	std::stringstream 	_requestHeaderStream;
+	std::stringstream   _requestBodyStream;
 
 	Timer				_timer;
 	HttpHandler			*_httpHandler;
 	WebSocketHandler	*_webSocketHandler;
+
+	char				_maskingKey[4];
 
 	bool				_isHttpRequest;
 	bool				_readyToWrite;
@@ -39,7 +41,7 @@ private:
 
 private :
 	void	writeToHeader(char *buffer, ssize_t nbytes);
-	void	parseRequest();
+	int		writeToStream(char *buffer, ssize_t nbytes);
 
 public:
 
@@ -52,9 +54,12 @@ public:
 	bool	isKeepAlive() const;
 	bool	isReadyToWrite() const;
 
+	void	determineRequestType(char *buffer);
+
 	void	createResponse();
 	int		treatReceivedData(char *buffer, ssize_t nbytes);
 	void	setReadyToWrite(bool ready);
+
 	int		writeToBody(char *buffer, ssize_t nbytes);
 
 	void	saveOverlap(char *buffer, ssize_t nbytes);

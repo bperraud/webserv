@@ -7,9 +7,9 @@ std::string Client::getResponseBody() const { return _httpHandler->getResponseBo
 bool Client::isKeepAlive() const { return _httpHandler->isKeepAlive(); }
 bool Client::isReadyToWrite() const { return _readyToWrite; }
 
-Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _readWriteStream(std::ios::in | std::ios::out),
-	_request_body_stream(std::ios::in | std::ios::out), _timer(timeoutSeconds), _httpHandler(nullptr),
-	_webSocketHandler(nullptr),  _isHttpRequest(true), _readyToWrite(false), _lenStream(0),
+Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _requestHeaderStream(std::ios::in | std::ios::out),
+	_requestBodyStream(std::ios::in | std::ios::out), _timer(timeoutSeconds), _httpHandler(nullptr),
+	_webSocketHandler(nullptr), _isHttpRequest(true), _readyToWrite(false), _lenStream(0),
 	_overlapBuffer(), _leftToRead(0) {
 	_httpHandler = new HttpHandler(timeoutSeconds, serv_map);
 	_webSocketHandler = new WebSocketHandler();
@@ -36,60 +36,73 @@ void Client::resetRequestContext() {
 	bzero(_overlapBuffer, OVERLAP);
 	_httpHandler->resetRequestContext();
 	_readyToWrite = false;
-	_readWriteStream.str(std::string());
-	_readWriteStream.seekp(0, std::ios_base::beg);
-	_readWriteStream.clear();
-	_request_body_stream.str(std::string());
-	_request_body_stream.seekp(0, std::ios_base::beg);
-	_request_body_stream.clear();
+	_requestHeaderStream.str(std::string());
+	_requestHeaderStream.seekp(0, std::ios_base::beg);
+	_requestHeaderStream.clear();
+	_requestBodyStream.str(std::string());
+	_requestBodyStream.seekp(0, std::ios_base::beg);
+	_requestBodyStream.clear();
+}
+
+void Client::determineRequestType(char *buffer) {
+	std::bitset<8> firstByte(buffer[0]);
+	std::bitset<8> secondByte(buffer[1]);
+	std::cout << firstByte << " ";
+	std::cout << secondByte << " " << std::endl;
+
+	const bool mask_bit = secondByte[7];
+	if (mask_bit == 1)	{ // bit Mask 1 = websocket
+		secondByte[7] = 0;
+		_leftToRead = secondByte.to_ulong();
+		std::memcpy(_maskingKey, buffer + OVERLAP + 2, 4);
+		std::cout << "payloadLength : " << _leftToRead << std::endl;
+		_isHttpRequest = false;
+	}
+	else
+		_isHttpRequest = true;
 }
 
 void Client::writeToHeader(char *buffer, ssize_t nbytes) {
-	_readWriteStream.write(buffer, nbytes);
-
-	std::cout << nbytes << std::endl;
-
-	if (_lenStream == 0 && nbytes >= 2) { // socket frame or http ?
-
-		std::bitset<8> firstByte(buffer[0]);
-		std::bitset<8> secondByte(buffer[1]);
-		std::cout << firstByte << " ";
-		std::cout << secondByte << " " << std::endl;
-
-		bool mask_bit = secondByte[7];
-		secondByte[7] = 0;
-		unsigned int payloadLength = secondByte.to_ulong();
-		std::cout << "payloadLength : " << payloadLength << std::endl;
-		if (mask_bit == 1)	{ // bit Mask 1 = websocket
-			std::cout << "websocket" << std::endl;
-			_isHttpRequest = false;
-		}
-	}
+	_requestHeaderStream.write(buffer, nbytes);
 	_lenStream += nbytes;
-	if (_readWriteStream.fail()) {
-		std::ios::iostate state = _readWriteStream.rdstate();
+	if (_requestHeaderStream.fail()) {
+		std::ios::iostate state = _requestHeaderStream.rdstate();
 		std::cout << state << std::endl;
 		throw std::runtime_error("writing to read stream");
 	}
 }
 
 int Client::writeToBody(char *buffer, ssize_t nbytes) {
-	if (_httpHandler->bodyExceeded(_request_body_stream, nbytes))
+	if (_httpHandler->bodyExceeded(_requestBodyStream, nbytes))
 		return 0;
-	_request_body_stream.write(buffer, nbytes);
-	if (_request_body_stream.fail())
+	_requestBodyStream.write(buffer, nbytes);
+	if (_requestBodyStream.fail())
 		throw std::runtime_error("writing to request body stream");
-
 	if (_leftToRead) { // not chunked
 		_leftToRead -= nbytes;
 		return _leftToRead > 0;
 	}
-	return _httpHandler->transferChunked(_request_body_stream); // chunked
+	return _httpHandler->transferChunked(_requestBodyStream); // chunked
 }
 
-int Client::treatReceivedData(char *buffer, ssize_t nbytes) {
-	startTimer();
-	saveOverlap(buffer, nbytes);
+int Client::writeToStream(char *buffer, ssize_t nbytes) {
+
+	if (!_isHttpRequest) {
+		buffer += OVERLAP + 6;
+		std::cout << "writetostream : " << nbytes << std::endl;
+
+		std::string res;
+		for (int i = 0; i < _leftToRead; i++) {
+			unsigned char unmaskedByte = buffer[i] ^ _maskingKey[i % 4];
+			res += unmaskedByte;
+		}
+
+		std::cout << res << std::endl;
+
+		writeToBody(buffer, _leftToRead);
+		return (0);
+	}
+
 	bool isBodyUnfinished = (_leftToRead || _httpHandler->isTransferChunked());
 	if (isBodyUnfinished) {
 		isBodyUnfinished = writeToBody(buffer + OVERLAP, nbytes);
@@ -99,12 +112,19 @@ int Client::treatReceivedData(char *buffer, ssize_t nbytes) {
 	if (pos_end_header == std::string::npos) {
 		writeToHeader(buffer + OVERLAP, nbytes);
 		return (1);
-	} else {
-		writeToHeader(buffer + OVERLAP, pos_end_header);
-		_leftToRead = _httpHandler->parseRequest(_readWriteStream);
-		isBodyUnfinished = writeToBody(buffer + OVERLAP + pos_end_header, nbytes - pos_end_header);
-		return (isBodyUnfinished);
 	}
+	writeToHeader(buffer + OVERLAP, pos_end_header);
+	_leftToRead = _httpHandler->parseRequest(_requestHeaderStream);
+	isBodyUnfinished = writeToBody(buffer + OVERLAP + pos_end_header, nbytes - pos_end_header);
+	return (isBodyUnfinished);
+}
+
+int Client::treatReceivedData(char *buffer, ssize_t nbytes) {
+	startTimer();
+	saveOverlap(buffer, nbytes);
+	if (_lenStream == 0 && nbytes >= 2) // socket frame or http ?
+		determineRequestType(buffer);
+	return (writeToStream(buffer, nbytes));
 }
 
 void Client::saveOverlap(char *buffer, ssize_t nbytes) {
@@ -125,7 +145,7 @@ void Client::saveOverlap(char *buffer, ssize_t nbytes) {
 }
 
 void Client::createResponse() {
-	_httpHandler->createHttpResponse(_request_body_stream);
+	_httpHandler->createHttpResponse(_requestBodyStream);
 }
 
 Client::~Client() {

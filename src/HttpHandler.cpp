@@ -78,8 +78,7 @@ bool HttpHandler::isTransferChunked() const {
 	return _transferChunked;
 }
 
-bool HttpHandler::hasBodyExceeded() const
-{
+bool HttpHandler::hasBodyExceeded() const {
 	return _bodySizeExceeded;
 }
 
@@ -198,10 +197,7 @@ void HttpHandler::unchunckMessage(std::stringstream &bodyStream)
 		bodyStream.ignore(2);
 		requestBodyStream.write(chunk.data(), chunk_size);
 	}
-	bodyStream.str("");
-	bodyStream.clear();
 	_request_body = requestBodyStream.str();
-	_request.map_headers.clear();
 }
 
 void HttpHandler::handleCGI(const std::string &original_url)
@@ -250,7 +246,7 @@ void HttpHandler::upgradeWebsocket(const std::string &webSocketKey) {
     BIO *bio, *b64;
     BUF_MEM *bptr;
 
-	std::string salt = webSocketKey + GUID;
+	const std::string salt = webSocketKey + GUID;
     unsigned char sha1_hash[SHA_DIGEST_LENGTH];
     SHA1(reinterpret_cast<const unsigned char*>(salt.c_str()), salt.length(), sha1_hash);
     bio = BIO_new(BIO_s_mem());
@@ -259,7 +255,7 @@ void HttpHandler::upgradeWebsocket(const std::string &webSocketKey) {
     BIO_write(bio, sha1_hash, SHA_DIGEST_LENGTH);
     BIO_flush(bio);
     BIO_get_mem_ptr(bio, &bptr);
-    std::string encoded(reinterpret_cast<char*>(bptr->data), bptr->length - 1);
+    const std::string encoded(reinterpret_cast<char*>(bptr->data), bptr->length - 1);
     BIO_free_all(bio);
 	_response.map_headers["Connection"] = "Upgrade";
 	_response.map_headers["Upgrade"] = "websocket";
@@ -270,7 +266,7 @@ void HttpHandler::createHttpResponse(std::stringstream &bodyStream)
 {
 	if (!_transferChunked) _request_body = bodyStream.str();
 	_response.version = _request.version;
-	std::string original_url = _request.url;
+	const std::string original_url = _request.url;
 	if (!_server)
 		throw std::runtime_error("No server found");
 	setupRoute(_request.url);
@@ -364,7 +360,7 @@ void HttpHandler::uploadFile(const std::string &contentType, size_t pos_boundary
 	delete outfile;
 	createStatusResponse(201);
 	_response_body_stream << messageBody;
-	std::string content_type = getContentType(fileName);
+	const std::string content_type = getContentType(fileName);
 	if (content_type.empty())
 		return error(415);
 	_response.map_headers["Content-Type"] = content_type;
@@ -390,7 +386,7 @@ void HttpHandler::GET() {
 		Utils::loadFile(_request.url, _response_body_stream);
 	else
 		return error(404);
-	std::string content_type = getContentType(_request.url);
+	const std::string content_type = getContentType(_request.url);
 	if (content_type.empty())
 		return error(415);
 	_response.map_headers["Content-Type"] = content_type;
@@ -398,8 +394,8 @@ void HttpHandler::GET() {
 
 void HttpHandler::POST() {
 	createStatusResponse(200);
-	std::string request_content_type = getHeaderValue("Content-Type");
-	size_t pos_boundary = request_content_type.find("boundary=");
+	const std::string request_content_type = getHeaderValue("Content-Type");
+	const size_t pos_boundary = request_content_type.find("boundary=");
 	if (pos_boundary != std::string::npos) // multipart/form-data
 		uploadFile(request_content_type, pos_boundary);
 	else if (_request.url == "www/sendback")
@@ -412,7 +408,7 @@ void HttpHandler::POST() {
 
 void HttpHandler::DELETE() {
 	createStatusResponse(204);
-	std::string decoded_file_path = Utils::urlDecode(_request.url);
+	const std::string decoded_file_path = Utils::urlDecode(_request.url);
 	if (!Utils::pathToFileExist(decoded_file_path))
 		return error(404);
 	if (std::remove(decoded_file_path.c_str()) != 0)
@@ -429,8 +425,7 @@ void HttpHandler::constructStringResponse()
 	_response_header_stream << _response.version << " " << _response.status_code << " " << _response.statusPhrase << "\r\n";
 	for (auto &[header, value] : _response.map_headers)
 	{
-		if (!first)
-			_response_header_stream << "\r\n";
+		if (!first) _response_header_stream << "\r\n";
 		_response_header_stream << header << ": " << value;
 		first = false;
 	}

@@ -19,6 +19,9 @@
 #include "CGIExecutor.hpp"
 #include "HttpHandler.hpp"
 
+#define MASKING_KEY_LENGTH 4
+//#define MASKING_KEY_LENGTH 2
+
 struct server;
 
 class Client {

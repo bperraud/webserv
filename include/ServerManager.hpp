@@ -24,23 +24,22 @@
 #include <csignal>
 #include <stack>
 
-#define YELLOW  "\033[33m"
-#define CYAN    "\033[36m"
-#define RESET   "\033[0m"
-#define GREEN   "\033[32m"
-#define RED     "\033[31m"
-#define BLACK	"\033[1;30m"
-
 #if (defined (LINUX) || defined (__linux__))
 #include <sys/epoll.h>  // epoll
 #else
 #include <sys/event.h>  // kqueue
 #endif
 
-# define BUFFER_SIZE 4096
-# define MAX_EVENTS 4096
-# define TIMEOUT_SECS 5
-# define WAIT_TIMEOUT_SECS 2
+#define YELLOW  "\033[33m"
+#define CYAN    "\033[36m"
+#define RESET   "\033[0m"
+#define GREEN   "\033[32m"
+#define RED     "\033[31m"
+#define BLACK	"\033[1;30m"
+#define BUFFER_SIZE 4096
+#define MAX_EVENTS 4096
+#define TIMEOUT_SECS 5
+#define WAIT_TIMEOUT_SECS 2
 
 struct server : public server_config {
 	int	listen_fd;

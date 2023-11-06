@@ -54,7 +54,7 @@ void Client::determineRequestType(char *buffer) {
 	if (mask_bit == 1)	{ // bit Mask 1 = websocket
 		secondByte[7] = 0;
 		_leftToRead = secondByte.to_ulong();
-		std::memcpy(_maskingKey, buffer + OVERLAP + 2, 4);
+		std::memcpy(_maskingKey, buffer + 2, MASKING_KEY_LENGTH);
 		std::cout << "payloadLength : " << _leftToRead << std::endl;
 		_isHttpRequest = false;
 	}
@@ -87,8 +87,10 @@ int Client::writeToBody(char *buffer, ssize_t nbytes) {
 
 int Client::writeToStream(char *buffer, ssize_t nbytes) {
 
+	//buffer -= OVERLAP;
+
 	if (!_isHttpRequest) {
-		buffer += OVERLAP + 6;
+		buffer += 6;
 		std::cout << "writetostream : " << nbytes << std::endl;
 
 		std::string res;
@@ -105,23 +107,23 @@ int Client::writeToStream(char *buffer, ssize_t nbytes) {
 
 	bool isBodyUnfinished = (_leftToRead || _httpHandler->isTransferChunked());
 	if (isBodyUnfinished) {
-		isBodyUnfinished = writeToBody(buffer + OVERLAP, nbytes);
+		isBodyUnfinished = writeToBody(buffer, nbytes);
 		return (isBodyUnfinished);
 	}
-	const size_t pos_end_header = ((std::string)buffer).find(CRLF);
+	const size_t pos_end_header = ((std::string)(buffer - 4)).find(CRLF);
 	if (pos_end_header == std::string::npos) {
-		writeToHeader(buffer + OVERLAP, nbytes);
+		writeToHeader(buffer, nbytes);
 		return (1);
 	}
-	writeToHeader(buffer + OVERLAP, pos_end_header);
+	writeToHeader(buffer, pos_end_header);
 	_leftToRead = _httpHandler->parseRequest(_requestHeaderStream);
-	isBodyUnfinished = writeToBody(buffer + OVERLAP + pos_end_header, nbytes - pos_end_header);
+	isBodyUnfinished = writeToBody(buffer + pos_end_header, nbytes - pos_end_header);
 	return (isBodyUnfinished);
 }
 
 int Client::treatReceivedData(char *buffer, ssize_t nbytes) {
 	startTimer();
-	saveOverlap(buffer, nbytes);
+	saveOverlap(buffer - OVERLAP, nbytes);
 	if (_lenStream == 0 && nbytes >= 2) // socket frame or http ?
 		determineRequestType(buffer);
 	return (writeToStream(buffer, nbytes));

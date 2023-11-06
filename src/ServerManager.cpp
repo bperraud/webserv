@@ -231,7 +231,7 @@ int	ServerManager::readFromClient(fd_client_pair client) {
 		closeClientConnection(client);
 		return 1;
 	}
-	return (client.second->treatReceivedData(buffer, nbytes));
+	return (client.second->treatReceivedData(buffer + OVERLAP, nbytes));
 }
 
 void ServerManager::writeToClient(int client_fd, const std::string &str) {

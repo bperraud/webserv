@@ -86,21 +86,15 @@ int Client::writeToBody(char *buffer, ssize_t nbytes) {
 }
 
 int Client::writeToStream(char *buffer, ssize_t nbytes) {
-
-	//buffer -= OVERLAP;
-
 	if (!_isHttpRequest) {
 		buffer += 6;
-		std::cout << "writetostream : " << nbytes << std::endl;
 
 		std::string res;
 		for (int i = 0; i < _leftToRead; i++) {
 			unsigned char unmaskedByte = buffer[i] ^ _maskingKey[i % 4];
 			res += unmaskedByte;
 		}
-
 		std::cout << res << std::endl;
-
 		writeToBody(buffer, _leftToRead);
 		return (0);
 	}

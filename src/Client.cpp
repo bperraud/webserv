@@ -1,5 +1,7 @@
 #include "Client.hpp"
 
+#include <arpa/inet.h>
+
 // --------------------------------- GETTERS --------------------------------- //
 
 std::string Client::getResponseHeader() const { return _httpHandler->getResponseHeader(); }
@@ -47,27 +49,40 @@ void Client::resetRequestContext() {
 void Client::determineRequestType(char *buffer) {
 	std::bitset<8> firstByte(buffer[0]);
 	std::bitset<8> secondByte(buffer[1]);
+
+	std::bitset<8> tree(buffer[2]);
+	std::bitset<8> four(buffer[3]);
 	std::cout << firstByte << " ";
-	std::cout << secondByte << " " << std::endl;
+	std::cout << secondByte << " ";
+	std::cout << tree << " ";
+	std::cout << four << " " << std::endl;
 
 	const bool mask_bit = secondByte[7];
 	if (mask_bit == 1)	{ // bit Mask 1 = websocket
 		secondByte[7] = 0;
-		//_leftToRead =
-
 		unsigned int payload = secondByte.to_ulong();
 
+		std::cout << "payload : " << payload << std::endl;
+
+		size_t bytes;
+
 		if (payload == 126) {
-			uint64_t t = buffer[1];
-			_leftToRead = t;
+			bytes = 2;
 		}
 		else if (payload == 127)
-			_leftToRead = buffer[1];
+			bytes = 8;
 		else
 			_leftToRead = payload;
 
-		std::memcpy(_maskingKey, buffer + INITIAL_PAYLOAD_LEN, MASKING_KEY_LEN);
+
+		memcpy(&_leftToRead, &buffer[2], bytes);
+
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		_leftToRead = ntohs(_leftToRead);
+		#endif
+
 		std::cout << "payloadLength : " << _leftToRead << std::endl;
+		std::memcpy(_maskingKey, buffer + INITIAL_PAYLOAD_LEN, MASKING_KEY_LEN);
 		_isHttpRequest = false;
 	}
 	else

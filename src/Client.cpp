@@ -53,8 +53,20 @@ void Client::determineRequestType(char *buffer) {
 	const bool mask_bit = secondByte[7];
 	if (mask_bit == 1)	{ // bit Mask 1 = websocket
 		secondByte[7] = 0;
-		_leftToRead = secondByte.to_ulong();
-		std::memcpy(_maskingKey, buffer + 2, MASKING_KEY_LENGTH);
+		//_leftToRead =
+
+		unsigned int payload = secondByte.to_ulong();
+
+		if (payload == 126) {
+			uint64_t t = buffer[1];
+			_leftToRead = t;
+		}
+		else if (payload == 127)
+			_leftToRead = buffer[1];
+		else
+			_leftToRead = payload;
+
+		std::memcpy(_maskingKey, buffer + INITIAL_PAYLOAD_LEN, MASKING_KEY_LEN);
 		std::cout << "payloadLength : " << _leftToRead << std::endl;
 		_isHttpRequest = false;
 	}

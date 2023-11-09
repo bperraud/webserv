@@ -19,8 +19,8 @@
 #include "CGIExecutor.hpp"
 #include "HttpHandler.hpp"
 
-#define MASKING_KEY_LENGTH 4
-//#define MASKING_KEY_LENGTH 2
+#define MASKING_KEY_LEN 4
+#define INITIAL_PAYLOAD_LEN 2
 
 struct server;
 
@@ -39,7 +39,7 @@ private:
 	bool				_isHttpRequest;
 	bool				_readyToWrite;
 	ssize_t				_lenStream;
-	ssize_t				_leftToRead;
+	uint64_t			_leftToRead;
 	char				_overlapBuffer[4];
 
 private :

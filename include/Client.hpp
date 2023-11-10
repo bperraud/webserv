@@ -57,7 +57,7 @@ public:
 	bool	isKeepAlive() const;
 	bool	isReadyToWrite() const;
 
-	void	determineRequestType(char *buffer);
+	void	determineRequestType(char * &buffer);
 
 	void	createResponse();
 	int		treatReceivedData(char *buffer, ssize_t nbytes);

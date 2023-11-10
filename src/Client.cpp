@@ -46,7 +46,7 @@ void Client::resetRequestContext() {
 	_requestBodyStream.clear();
 }
 
-void Client::determineRequestType(char *buffer) {
+void Client::determineRequestType(char * &buffer) {
 	std::bitset<8> firstByte(buffer[0]);
 	std::bitset<8> secondByte(buffer[1]);
 
@@ -63,23 +63,21 @@ void Client::determineRequestType(char *buffer) {
 		unsigned int payload = secondByte.to_ulong();
 
 		std::cout << "payload : " << payload << std::endl;
-
 		size_t bytes = 0;
 
-		if (payload == 126) {
+		if (payload == 126)
 			bytes = 2;
-		}
 		else if (payload == 127)
 			bytes = 8;
 		else
 			_leftToRead = payload;
 
-
-		memcpy(&_leftToRead, &buffer[2], bytes);
-
-		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-		_leftToRead = ntohs(_leftToRead);
-		#endif
+		if (bytes) {
+			memcpy(&_leftToRead, buffer + 2, bytes);
+			#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+			_leftToRead = ntohs(_leftToRead);
+			#endif
+		}
 
 		std::cout << "payloadLength : " << _leftToRead << std::endl;
 		std::memcpy(_maskingKey, buffer + INITIAL_PAYLOAD_LEN, MASKING_KEY_LEN);
@@ -115,9 +113,7 @@ int Client::writeToBody(char *buffer, ssize_t nbytes) {
 }
 
 int Client::writeToStream(char *buffer, ssize_t nbytes) {
-	if (!_isHttpRequest) {
-		//buffer += 6;
-
+	if (!_isHttpRequest) {	// websocket
 		std::string res;
 		for (int i = 0; i < _leftToRead; i++) {
 			unsigned char unmaskedByte = buffer[i] ^ _maskingKey[i % 4];
@@ -147,8 +143,9 @@ int Client::writeToStream(char *buffer, ssize_t nbytes) {
 int Client::treatReceivedData(char *buffer, ssize_t nbytes) {
 	startTimer();
 	saveOverlap(buffer - OVERLAP, nbytes);
-	if (_lenStream == 0 && nbytes >= 2) // socket frame or http ?
+	if (_lenStream == 0 && nbytes >= 2) { // socket frame or http ?
 		determineRequestType(buffer);
+	}
 	return (writeToStream(buffer, nbytes));
 }
 

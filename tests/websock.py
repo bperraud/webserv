@@ -37,7 +37,7 @@ def main():
 		#response = client.receive_message()
 		#print(response)
 		time.sleep(1)
-		client.send_message(data_bytes)
+		client.send_message("In many network")
 		response = client.receive_message()
 		print(response)
 	except Exception as e:

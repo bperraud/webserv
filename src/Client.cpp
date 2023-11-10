@@ -80,7 +80,7 @@ void Client::determineRequestType(char * &buffer) {
 		}
 
 		std::cout << "payloadLength : " << _leftToRead << std::endl;
-		std::memcpy(_maskingKey, buffer + INITIAL_PAYLOAD_LEN, MASKING_KEY_LEN);
+		std::memcpy(_maskingKey, buffer + INITIAL_PAYLOAD_LEN + bytes, MASKING_KEY_LEN);
 		_isHttpRequest = false;
 
 		buffer += INITIAL_PAYLOAD_LEN + MASKING_KEY_LEN + bytes;

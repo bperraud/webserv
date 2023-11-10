@@ -37,7 +37,7 @@ def main():
 		#response = client.receive_message()
 		#print(response)
 		time.sleep(1)
-		client.send_message("In many network")
+		client.send_message("So, while both approaches can be used to modify a pointer, the choice between them depends on whether you want to change the value of the pointer itself (reference to a pointer) or change what the pointer points to (double pointer).In the reference to a pointer approach, the value of the original pointer is modified, so it now points to a different memory location. In the double pointer approach, you modify the target of the original pointer by indirectly referencing it through the double pointer.")
 		response = client.receive_message()
 		print(response)
 	except Exception as e:

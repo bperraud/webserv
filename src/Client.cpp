@@ -64,7 +64,7 @@ void Client::determineRequestType(char *buffer) {
 
 		std::cout << "payload : " << payload << std::endl;
 
-		size_t bytes;
+		size_t bytes = 0;
 
 		if (payload == 126) {
 			bytes = 2;
@@ -84,6 +84,8 @@ void Client::determineRequestType(char *buffer) {
 		std::cout << "payloadLength : " << _leftToRead << std::endl;
 		std::memcpy(_maskingKey, buffer + INITIAL_PAYLOAD_LEN, MASKING_KEY_LEN);
 		_isHttpRequest = false;
+
+		buffer += INITIAL_PAYLOAD_LEN + MASKING_KEY_LEN + bytes;
 	}
 	else
 		_isHttpRequest = true;
@@ -114,7 +116,7 @@ int Client::writeToBody(char *buffer, ssize_t nbytes) {
 
 int Client::writeToStream(char *buffer, ssize_t nbytes) {
 	if (!_isHttpRequest) {
-		buffer += 6;
+		//buffer += 6;
 
 		std::string res;
 		for (int i = 0; i < _leftToRead; i++) {

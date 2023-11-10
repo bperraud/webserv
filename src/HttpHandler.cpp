@@ -241,7 +241,7 @@ void HttpHandler::assignServerConfig()
 	}
 }
 
-void HttpHandler::upgradeWebsocket(const std::string &webSocketKey) {
+void HttpHandler::handshake(const std::string &webSocketKey) {
 
     BIO *bio, *b64;
     BUF_MEM *bptr;
@@ -276,7 +276,7 @@ void HttpHandler::createHttpResponse(std::stringstream &bodyStream)
 	else if (!_active_route->redir.empty()) redirection();
 	else if (_isWebSocket) {
 		createStatusResponse(101);
-		upgradeWebsocket(getHeaderValue("Sec-WebSocket-Key"));
+		handshake(getHeaderValue("Sec-WebSocket-Key"));
 	}
 	else {
 		auto it = HttpHandler::_HTTP_METHOD.find(_request.method);

@@ -59,7 +59,7 @@ public:
     WebSocketHandler();
     WebSocketHandler(HttpResponse &response);
 
-	void upgradeWebsocket(const std::string &webSocketKey);
+	void handshake(const std::string &webSocketKey);
 };
 
 #endif

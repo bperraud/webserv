@@ -89,7 +89,7 @@ private:
 	void	generateDirectoryListing(const std::string& directory_path);
 	void	handleCGI(const std::string &original_url);
 	void	error(int error);
-	void	upgradeWebsocket(const std::string &webSocketKey);
+	void	handshake(const std::string &webSocketKey);
 
 public:
 	HttpHandler(int timeoutSeconds, server_name_level3 *serv_map);

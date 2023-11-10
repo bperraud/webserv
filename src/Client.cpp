@@ -47,43 +47,29 @@ void Client::resetRequestContext() {
 }
 
 void Client::determineRequestType(char * &buffer) {
-	std::bitset<8> firstByte(buffer[0]);
-	std::bitset<8> secondByte(buffer[1]);
-
-	std::bitset<8> tree(buffer[2]);
-	std::bitset<8> four(buffer[3]);
-	std::cout << firstByte << " ";
-	std::cout << secondByte << " ";
-	std::cout << tree << " ";
-	std::cout << four << " " << std::endl;
-
-	const bool mask_bit = secondByte[7];
+	const bool mask_bit = *(buffer + 1) >> 7;
 	if (mask_bit == 1)	{ // bit Mask 1 = websocket
-		secondByte[7] = 0;
-		unsigned int payload = secondByte.to_ulong();
+		unsigned char payload = buffer[1];
+		payload &= 0b01111111;
+		size_t payloadLenBytes = 0;
+		_leftToRead = payload;
 
-		std::cout << "payload : " << payload << std::endl;
-		size_t bytes = 0;
+		if (payload == PAYLOAD_LENGTH_16)
+			payloadLenBytes = 2;
+		else if (payload == PAYLOAD_LENGTH_64)
+			payloadLenBytes = 8;
 
-		if (payload == 126)
-			bytes = 2;
-		else if (payload == 127)
-			bytes = 8;
-		else
-			_leftToRead = payload;
-
-		if (bytes) {
-			memcpy(&_leftToRead, buffer + 2, bytes);
+		if (payloadLenBytes) {
+			memcpy(&_leftToRead, buffer + 2, payloadLenBytes);
 			#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 			_leftToRead = ntohs(_leftToRead);
 			#endif
 		}
 
+		buffer += INITIAL_PAYLOAD_LEN + MASKING_KEY_LEN + payloadLenBytes;
 		std::cout << "payloadLength : " << _leftToRead << std::endl;
-		std::memcpy(_maskingKey, buffer + INITIAL_PAYLOAD_LEN + bytes, MASKING_KEY_LEN);
+		std::memcpy(_maskingKey, buffer - MASKING_KEY_LEN, MASKING_KEY_LEN);
 		_isHttpRequest = false;
-
-		buffer += INITIAL_PAYLOAD_LEN + MASKING_KEY_LEN + bytes;
 	}
 	else
 		_isHttpRequest = true;

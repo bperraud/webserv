@@ -22,6 +22,9 @@
 #define MASKING_KEY_LEN 4
 #define INITIAL_PAYLOAD_LEN 2
 
+#define PAYLOAD_LENGTH_16 126
+#define PAYLOAD_LENGTH_64 127
+
 struct server;
 
 class Client {

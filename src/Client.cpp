@@ -1,5 +1,4 @@
 #include "Client.hpp"
-
 #include <arpa/inet.h>
 
 // --------------------------------- GETTERS --------------------------------- //
@@ -14,7 +13,6 @@ Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _requestHeade
 	_webSocketHandler(nullptr), _isHttpRequest(true), _readyToWrite(false), _lenStream(0),
 	_overlapBuffer(), _leftToRead(0) {
 	_httpHandler = new HttpHandler(timeoutSeconds, serv_map);
-	_webSocketHandler = new WebSocketHandler();
 	_overlapBuffer[0] = '\0';
 }
 
@@ -46,11 +44,11 @@ void Client::resetRequestContext() {
 	_requestBodyStream.clear();
 }
 
-void Client::determineRequestType(char * &buffer) {
-	const bool mask_bit = *(buffer + 1) >> 7;
+void Client::determineRequestType(char * &header) {
+	const bool mask_bit = *(header + 1) >> 7;
 	if (mask_bit == 1)	{ // bit Mask 1 = websocket
-		unsigned char payload = buffer[1];
-		payload &= 0b01111111;
+		u_int8_t payload = header[1];
+		payload &= 0x7f;
 		size_t payloadLenBytes = 0;
 		_leftToRead = payload;
 
@@ -60,15 +58,18 @@ void Client::determineRequestType(char * &buffer) {
 			payloadLenBytes = 8;
 
 		if (payloadLenBytes) {
-			memcpy(&_leftToRead, buffer + 2, payloadLenBytes);
+			memcpy(&_leftToRead, header + 2, payloadLenBytes);
 			#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 			_leftToRead = ntohs(_leftToRead);
 			#endif
 		}
 
-		buffer += INITIAL_PAYLOAD_LEN + MASKING_KEY_LEN + payloadLenBytes;
+		_webSocketHandler = new WebSocketHandler(header);
+
+		header += INITIAL_PAYLOAD_LEN + MASKING_KEY_LEN + payloadLenBytes;
 		std::cout << "payloadLength : " << _leftToRead << std::endl;
-		std::memcpy(_maskingKey, buffer - MASKING_KEY_LEN, MASKING_KEY_LEN);
+		std::memcpy(_maskingKey, header - MASKING_KEY_LEN, MASKING_KEY_LEN);
+
 		_isHttpRequest = false;
 	}
 	else

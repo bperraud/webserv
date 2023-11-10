@@ -55,8 +55,16 @@ class WebSocketHandler {
 private:
 	//HttpResponse	&_response;
 
+	bool		_fin;
+	bool		_rsv1;
+	bool		_rsv2;
+	bool		_rsv3;
+	uint8_t 	_opcode;
+
+
 public:
     WebSocketHandler();
+	WebSocketHandler(char *header);
     WebSocketHandler(HttpResponse &response);
 
 	void handshake(const std::string &webSocketKey);

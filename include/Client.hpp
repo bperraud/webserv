@@ -10,7 +10,7 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include "bitset"
+#include <arpa/inet.h>
 
 #include "Utils.hpp"
 #include "ServerConfig.hpp"
@@ -21,7 +21,6 @@
 
 #define MASKING_KEY_LEN 4
 #define INITIAL_PAYLOAD_LEN 2
-
 #define PAYLOAD_LENGTH_16 126
 #define PAYLOAD_LENGTH_64 127
 

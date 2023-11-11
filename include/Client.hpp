@@ -18,6 +18,7 @@
 #include "Timer.hpp"
 #include "CGIExecutor.hpp"
 #include "HttpHandler.hpp"
+#include "ProtocolHandlerInterface.hpp"
 
 #define MASKING_KEY_LEN 4
 #define INITIAL_PAYLOAD_LEN 2
@@ -33,7 +34,8 @@ private:
 	std::stringstream   _requestBodyStream;
 
 	Timer				_timer;
-	HttpHandler			*_httpHandler;
+	ProtocolHandlerInterface	*_httpHandler;
+	//HttpHandler			*_httpHandler;
 	WebSocketHandler	*_webSocketHandler;
 
 	char				_maskingKey[4];

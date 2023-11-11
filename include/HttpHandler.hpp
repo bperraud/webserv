@@ -17,6 +17,7 @@
 #include "ErrorHandler.hpp"
 #include "CGIExecutor.hpp"
 #include "WebSocketHandler.hpp"
+#include "ProtocolHandlerInterface.hpp"
 
 # define EOF_CHUNKED "\r\n0\r\n\r\n"
 # define CRLF "\r\n\r\n"
@@ -44,7 +45,7 @@ struct HttpResponse {
 };
 
 
-class HttpHandler {
+class HttpHandler : public ProtocolHandlerInterface {
 
 private:
 

@@ -74,12 +74,15 @@ std::string HttpHandler::getContentType(const std::string &path) const {
 	return it == _MIME_TYPES.end() ? "" : it->second;
 }
 
-bool HttpHandler::isTransferChunked() const {
-	return _transferChunked;
-}
-
 bool HttpHandler::hasBodyExceeded() const {
 	return _bodySizeExceeded;
+}
+
+bool HttpHandler::isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, ssize_t nbytes) {
+	if (_transferChunked)
+		return transferChunked(bodyStream); // chunked
+	leftToRead -= nbytes;
+	return leftToRead > 0;
 }
 
 bool HttpHandler::isAllowedMethod(const std::string &method) const {
@@ -133,12 +136,9 @@ bool HttpHandler::bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes) {
 }
 
 int HttpHandler::transferChunked(std::stringstream &bodyStream) {
-	if (_transferChunked) {
-		bool finished = bodyStream.str().find(EOF_CHUNKED) != std::string::npos;
-		if (finished) unchunckMessage(bodyStream);
-		return !finished;
-	}
-	return 0;
+	bool finished = bodyStream.str().find(EOF_CHUNKED) != std::string::npos;
+	if (finished) unchunckMessage(bodyStream);
+	return !finished;
 }
 
 int HttpHandler::parseRequest(std::stringstream &headerStream)
@@ -262,6 +262,8 @@ void HttpHandler::handshake(const std::string &webSocketKey) {
 	_response.map_headers["Connection"] = "Upgrade";
 	_response.map_headers["Upgrade"] = "websocket";
 	_response.map_headers["Sec-WebSocket-Accept"] = encoded;
+
+	//should communicate max_body_size to websockethandler;
 }
 
 void HttpHandler::createHttpResponse(std::stringstream &bodyStream)

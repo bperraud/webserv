@@ -95,9 +95,9 @@ public:
 	HttpHandler(int timeoutSeconds, server_name_level3 *serv_map);
 	~HttpHandler();
 
-	bool	isTransferChunked() const ;
 	bool	hasBodyExceeded() const;
 	bool	isKeepAlive() const;
+	bool 	isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, ssize_t nbytes);
 
 	bool 	bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes);
 	int		transferChunked(std::stringstream &bodyStream);

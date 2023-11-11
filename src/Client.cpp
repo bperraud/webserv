@@ -86,20 +86,15 @@ void Client::writeToHeader(char *buffer, ssize_t nbytes) {
 
 int Client::writeToBody(char *buffer, ssize_t nbytes) {
 
-	if (_isHttpRequest) {	// http
+	if (_isHttpRequest) {
 		if (_httpHandler->bodyExceeded(_requestBodyStream, nbytes))
 			return 0;
 	}
-
 	_requestBodyStream.write(buffer, nbytes);
 	if (_requestBodyStream.fail())
 		throw std::runtime_error("writing to request body stream");
 
-	if (_isHttpRequest && _httpHandler->isTransferChunked())
-		return _httpHandler->transferChunked(_requestBodyStream); // chunked
-
-	_leftToRead -= nbytes;
-	return _leftToRead > 0;
+	return _httpHandler->isBodyFinished(_requestBodyStream, _leftToRead, nbytes);
 }
 
 int Client::writeToStream(char *buffer, ssize_t nbytes) {
@@ -111,6 +106,7 @@ int Client::writeToStream(char *buffer, ssize_t nbytes) {
 		}
 		std::cout << res << std::endl;
 		writeToBody(buffer, _leftToRead);
+		//writeToBody(buffer, nbytes); ?
 		return (0);
 	}
 

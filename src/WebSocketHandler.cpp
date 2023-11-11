@@ -13,6 +13,17 @@ WebSocketHandler::WebSocketHandler()
 
 }
 
+
+
+const std::map<int, std::string> WebSocketHandler::_OPCODE_MAP = {
+	{OPCODE_CONT, "cont"},
+    {OPCODE_TEXT, "text"},
+    {OPCODE_BINARY, "binary"},
+    {OPCODE_CLOSE, "close"},
+    {OPCODE_PING, "ping"},
+    {OPCODE_PONG, "pong"}
+};
+
 WebSocketHandler::WebSocketHandler(char *header)
 {
 	std::bitset<8> fb(header[0]);
@@ -30,5 +41,10 @@ WebSocketHandler::WebSocketHandler(char *header)
 	std::cout << _rsv2 << " ";
 	std::cout << _rsv3 << " ";
 	std::cout << "_opcode : " << +_opcode << " " << std::endl;
+
+}
+
+void WebSocketHandler::writeHeaderStream()
+{
 
 }

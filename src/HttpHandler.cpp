@@ -134,9 +134,9 @@ bool HttpHandler::bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes) {
 
 int HttpHandler::transferChunked(std::stringstream &bodyStream) {
 	if (_transferChunked) {
-		bool unfinished = bodyStream.str().find(EOF_CHUNKED) == std::string::npos;
-		if (!unfinished) unchunckMessage(bodyStream);
-		return unfinished;
+		bool finished = bodyStream.str().find(EOF_CHUNKED) != std::string::npos;
+		if (finished) unchunckMessage(bodyStream);
+		return !finished;
 	}
 	return 0;
 }
@@ -162,6 +162,8 @@ int HttpHandler::parseRequest(std::stringstream &headerStream)
 	_keepAlive = connection == "keep-alive" | connection == "Upgrade";
 	_isWebSocket = connection == "Upgrade" && getHeaderValue("Upgrade") == "websocket";
 	_transferChunked = getHeaderValue("Transfer-Encoding") == "chunked";
+	if (_transferChunked)
+		_request.bodyLength = 1;
 	_request.host = getHeaderValue("Host").substr(0, getHeaderValue("Host").find(":"));
 	assignServerConfig();
 	return _request.bodyLength;

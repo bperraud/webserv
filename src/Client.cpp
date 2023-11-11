@@ -51,7 +51,6 @@ void Client::determineRequestType(char * &header) {
 		payload &= 0x7f;
 		size_t payloadLenBytes = 0;
 		_leftToRead = payload;
-
 		if (payload == PAYLOAD_LENGTH_16)
 			payloadLenBytes = 2;
 		else if (payload == PAYLOAD_LENGTH_64)
@@ -65,7 +64,6 @@ void Client::determineRequestType(char * &header) {
 		}
 
 		_webSocketHandler = new WebSocketHandler(header);
-
 		header += INITIAL_PAYLOAD_LEN + MASKING_KEY_LEN + payloadLenBytes;
 		std::cout << "payloadLength : " << _leftToRead << std::endl;
 		std::memcpy(_maskingKey, header - MASKING_KEY_LEN, MASKING_KEY_LEN);
@@ -87,16 +85,21 @@ void Client::writeToHeader(char *buffer, ssize_t nbytes) {
 }
 
 int Client::writeToBody(char *buffer, ssize_t nbytes) {
-	if (_httpHandler->bodyExceeded(_requestBodyStream, nbytes))
-		return 0;
+
+	if (_isHttpRequest) {	// http
+		if (_httpHandler->bodyExceeded(_requestBodyStream, nbytes))
+			return 0;
+	}
+
 	_requestBodyStream.write(buffer, nbytes);
 	if (_requestBodyStream.fail())
 		throw std::runtime_error("writing to request body stream");
-	if (_leftToRead) { // not chunked
-		_leftToRead -= nbytes;
-		return _leftToRead > 0;
-	}
-	return _httpHandler->transferChunked(_requestBodyStream); // chunked
+
+	if (_isHttpRequest && _httpHandler->isTransferChunked())
+		return _httpHandler->transferChunked(_requestBodyStream); // chunked
+
+	_leftToRead -= nbytes;
+	return _leftToRead > 0;
 }
 
 int Client::writeToStream(char *buffer, ssize_t nbytes) {
@@ -111,11 +114,9 @@ int Client::writeToStream(char *buffer, ssize_t nbytes) {
 		return (0);
 	}
 
-	bool isBodyUnfinished = (_leftToRead || _httpHandler->isTransferChunked());
-	if (isBodyUnfinished) {
-		isBodyUnfinished = writeToBody(buffer, nbytes);
-		return (isBodyUnfinished);
-	}
+	if (_leftToRead)
+		return writeToBody(buffer, nbytes);
+
 	const size_t pos_end_header = ((std::string)(buffer - 4)).find(CRLF);
 	if (pos_end_header == std::string::npos) {
 		writeToHeader(buffer, nbytes);
@@ -123,8 +124,7 @@ int Client::writeToStream(char *buffer, ssize_t nbytes) {
 	}
 	writeToHeader(buffer, pos_end_header);
 	_leftToRead = _httpHandler->parseRequest(_requestHeaderStream);
-	isBodyUnfinished = writeToBody(buffer + pos_end_header, nbytes - pos_end_header);
-	return (isBodyUnfinished);
+	return writeToBody(buffer + pos_end_header, nbytes - pos_end_header);
 }
 
 int Client::treatReceivedData(char *buffer, ssize_t nbytes) {

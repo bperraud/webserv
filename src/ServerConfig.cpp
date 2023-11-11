@@ -39,18 +39,12 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object)
 		if (key == "listen")
 		{
 			if (value.array_value.size() >= 1)
-			{
 				server.host = value.array_value[0].string_value;
-			}
 			if (value.array_value.size() >= 2)
-			{
 				server.PORT = value.array_value[1].number_value;
-			}
 		}
 		else if (key == "name")
-		{
 			server.name = value.string_value;
-		}
 		else if (key == "max_body_size")
 		{
 			server.max_body_size = value.number_value;
@@ -89,15 +83,11 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object)
 					const json_value &route_info_value = sub_sub_it->second;
 
 					if (route_info_key == "root")
-					{
 						route.root = route_info_value.string_value;
-					}
 					else if (route_info_key == "methods")
 					{
 						for (size_t i = 0; i < route_info_value.array_value.size(); i++)
-						{
 							route.methods[i] = route_info_value.array_value[i].string_value;
-						}
 					}
 					else if (route_info_key == "cgi")
 					{
@@ -109,21 +99,13 @@ server_config ServerConfig::parseJsonObject(const json_value &json_object)
 						}
 					}
 					else if (route_info_key == "autoindex")
-					{
 						route.autoindex = route_info_value.boolean_value;
-					}
 					else if (route_info_key == "redir")
-					{
 						route.redir = route_info_value.string_value;
-					}
 					else if (route_info_key == "index")
-					{
 						route.index = route_info_value.string_value;
-					}
 					else if (route_info_key == "handler")
-					{
 						route.handler = route_info_value.string_value;
-					}
 				}
 				routes_map[route_key] = route;
 			}
@@ -142,9 +124,7 @@ std::ostream &operator<<(std::ostream &os, const server_config &s)
 	os << "error pages: " << std::endl;
 	std::map<std::string, std::string>::const_iterator error_it;
 	for (error_it = s.error_pages.begin(); error_it != s.error_pages.end(); ++error_it)
-	{
 		os << "    " << error_it->first << ": " << error_it->second << std::endl;
-	}
 	os << "routes: " << std::endl;
 	std::map<std::string, routes>::const_iterator routes_it;
 	std::map<std::string, std::string>::const_iterator cgi_it;
@@ -159,16 +139,12 @@ std::ostream &operator<<(std::ostream &os, const server_config &s)
 		for (int i = 0; i < 3; i++)
 		{
 			if (!r.methods[i].empty())
-			{
 				os << r.methods[i] << " ";
-			}
 		}
 		os << std::endl;
 		os << "        CGI: " << std::endl;
 		for (cgi_it = r.cgi.begin(); cgi_it != r.cgi.end(); ++cgi_it)
-		{
 			os << "            " << cgi_it->first << ": " << cgi_it->second << std::endl;
-		}
 		os << "        auto index: " << std::boolalpha << r.autoindex << std::endl;
 	}
 	return os;

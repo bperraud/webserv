@@ -4,33 +4,24 @@
 #include <string>
 #include <cstring>
 #include <iostream>
+#include <map>
 #include <openssl/sha.h>
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/buffer.h>
 
-# define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+#define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
-//OPCODE_CONT = 0x0
-//    OPCODE_TEXT = 0x1
-//    OPCODE_BINARY = 0x2
-//    OPCODE_CLOSE = 0x8
-//    OPCODE_PING = 0x9
-//    OPCODE_PONG = 0xa
+#define OPCODE_CONT 0x0
+#define OPCODE_TEXT 0x1
+#define OPCODE_BINARY 0x2
+#define OPCODE_CLOSE 0x8
+#define OPCODE_PING 0x9
+#define OPCODE_PONG 0xa
 
 //    # available operation code value tuple
 //    OPCODES = (OPCODE_CONT, OPCODE_TEXT, OPCODE_BINARY, OPCODE_CLOSE,
 //               OPCODE_PING, OPCODE_PONG)
-
-//    # opcode human readable string
-//    OPCODE_MAP = {
-//        OPCODE_CONT: "cont",
-//        OPCODE_TEXT: "text",
-//        OPCODE_BINARY: "binary",
-//        OPCODE_CLOSE: "close",
-//        OPCODE_PING: "ping",
-//        OPCODE_PONG: "pong"
-//    }
 
 //    # data length threshold.
 //    LENGTH_7 = 0x7e
@@ -48,12 +39,10 @@
 //        has_mask = b2 >> 7 & 1
 //        length_bits = b2 & 0x7f
 
-struct HttpResponse;
 
 class WebSocketHandler {
 
 private:
-	//HttpResponse	&_response;
 
 	bool		_fin;
 	bool		_rsv1;
@@ -61,13 +50,15 @@ private:
 	bool		_rsv3;
 	uint8_t 	_opcode;
 
+	static const std::map<int, std::string>	_OPCODE_MAP;
+
 
 public:
     WebSocketHandler();
 	WebSocketHandler(char *header);
-    WebSocketHandler(HttpResponse &response);
 
 	void handshake(const std::string &webSocketKey);
+	void writeHeaderStream();
 };
 
 #endif

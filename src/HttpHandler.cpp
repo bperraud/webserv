@@ -46,7 +46,7 @@ const std::map<int, std::string> HttpHandler::_SUCCESS_STATUS = {
 };
 
 HttpHandler::HttpHandler(int timeoutSeconds, server_name_level3 *serv_map) :
-	_response_header_stream(), _serverMap(serv_map), _server(NULL),
+	_serverMap(serv_map), _server(NULL),
  	_keepAlive(false), _bodySizeExceeded(false), _transferChunked(false), _isWebSocket(false),
 	_default_route(), _active_route(&_default_route)
 {
@@ -62,8 +62,6 @@ HttpHandler::~HttpHandler() {
 
 // --------------------------------- GETTERS --------------------------------- //
 
-std::string HttpHandler::getResponseHeader() const { return _response_header_stream.str(); }
-std::string HttpHandler::getResponseBody() const { return _response_body_stream.str(); }
 bool HttpHandler::isKeepAlive() const { return _keepAlive; }
 
 std::string HttpHandler::getContentType(const std::string &path) const {

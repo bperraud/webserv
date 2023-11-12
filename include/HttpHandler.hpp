@@ -56,8 +56,8 @@ private:
 
 	std::string			_request_body;
 
-	std::stringstream   _response_header_stream;
-	std::stringstream   _response_body_stream;
+	//std::stringstream   _response_header_stream;
+	//std::stringstream   _response_body_stream;
 	HttpMessage			_request;
 	HttpResponse		_response;
 

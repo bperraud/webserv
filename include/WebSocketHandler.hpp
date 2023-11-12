@@ -51,6 +51,9 @@ private:
 	bool		_rsv3;
 	uint8_t 	_opcode;
 
+	std::stringstream   _response_header_stream;
+	std::stringstream   _response_body_stream;
+
 	static const std::map<int, std::string>	_OPCODE_MAP;
 
 

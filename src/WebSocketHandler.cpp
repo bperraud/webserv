@@ -16,16 +16,6 @@ WebSocketHandler::WebSocketHandler()
 
 }
 
-std::string WebSocketHandler::getResponseHeader() const
-{
-	return std::string();
-}
-
-std::string WebSocketHandler::getResponseBody() const
-{
-	return std::string();
-}
-
 WebSocketHandler::WebSocketHandler(char *header)
 {
 	std::bitset<8> fb(header[0]);
@@ -46,6 +36,16 @@ WebSocketHandler::WebSocketHandler(char *header)
 
 }
 
+bool WebSocketHandler::isKeepAlive() const { return true; }
+
+void WebSocketHandler::resetRequestContext()
+{
+	_response_body_stream.str(std::string());
+	_response_body_stream.clear();
+	_response_header_stream.str(std::string());
+	_response_header_stream.clear();
+}
+
 bool WebSocketHandler::hasBodyExceeded() const
 {
 	return false;
@@ -56,22 +56,12 @@ bool WebSocketHandler::isBodyFinished(std::stringstream &bodyStream, uint64_t &l
 	return false;
 }
 
-bool WebSocketHandler::isKeepAlive() const
-{
-	return false;
-}
-
 bool WebSocketHandler::bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes)
 {
 	return false;
 }
 
 void WebSocketHandler::createHttpResponse(std::stringstream &bodyStream)
-{
-}
-
-
-void WebSocketHandler::resetRequestContext()
 {
 }
 

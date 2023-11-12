@@ -1,6 +1,7 @@
 #ifndef WEBSOCKETHANDLER_HPP
 #define WEBSOCKETHANDLER_HPP
 
+#include "ProtocolHandlerInterface.hpp"
 #include <string>
 #include <cstring>
 #include <iostream>
@@ -40,7 +41,7 @@
 //        length_bits = b2 & 0x7f
 
 
-class WebSocketHandler {
+class WebSocketHandler : public ProtocolHandlerInterface {
 
 private:
 
@@ -56,6 +57,20 @@ private:
 public:
     WebSocketHandler();
 	WebSocketHandler(char *header);
+
+	std::string		getResponseHeader() const;
+	std::string		getResponseBody() const;
+
+	bool	hasBodyExceeded() const;
+	bool 	isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, ssize_t nbytes);
+	bool	isKeepAlive() const;
+
+	bool 	bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes);
+	void	createHttpResponse(std::stringstream &bodyStream);
+
+
+	void	resetRequestContext();
+	int		parseRequest(std::stringstream &_readStream);
 
 	void handshake(const std::string &webSocketKey);
 	void writeHeaderStream();

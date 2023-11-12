@@ -2,19 +2,6 @@
 #include "HttpHandler.hpp"
 #include "bitset"
 
-
-//WebSocketHandler::WebSocketHandler(HttpResponse &response) : _response(response)
-//{
-
-//}
-
-WebSocketHandler::WebSocketHandler()
-{
-
-}
-
-
-
 const std::map<int, std::string> WebSocketHandler::_OPCODE_MAP = {
 	{OPCODE_CONT, "cont"},
     {OPCODE_TEXT, "text"},
@@ -23,6 +10,21 @@ const std::map<int, std::string> WebSocketHandler::_OPCODE_MAP = {
     {OPCODE_PING, "ping"},
     {OPCODE_PONG, "pong"}
 };
+
+WebSocketHandler::WebSocketHandler()
+{
+
+}
+
+std::string WebSocketHandler::getResponseHeader() const
+{
+	return std::string();
+}
+
+std::string WebSocketHandler::getResponseBody() const
+{
+	return std::string();
+}
 
 WebSocketHandler::WebSocketHandler(char *header)
 {
@@ -42,6 +44,40 @@ WebSocketHandler::WebSocketHandler(char *header)
 	std::cout << _rsv3 << " ";
 	std::cout << "_opcode : " << +_opcode << " " << std::endl;
 
+}
+
+bool WebSocketHandler::hasBodyExceeded() const
+{
+	return false;
+}
+
+bool WebSocketHandler::isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, ssize_t nbytes)
+{
+	return false;
+}
+
+bool WebSocketHandler::isKeepAlive() const
+{
+	return false;
+}
+
+bool WebSocketHandler::bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes)
+{
+	return false;
+}
+
+void WebSocketHandler::createHttpResponse(std::stringstream &bodyStream)
+{
+}
+
+
+void WebSocketHandler::resetRequestContext()
+{
+}
+
+int WebSocketHandler::parseRequest(std::stringstream &_readStream)
+{
+	return 0;
 }
 
 void WebSocketHandler::writeHeaderStream()

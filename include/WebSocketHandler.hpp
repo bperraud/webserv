@@ -10,6 +10,10 @@
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 #include <openssl/buffer.h>
+#include <arpa/inet.h>
+
+#include "bitset"
+
 
 #define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
@@ -40,6 +44,10 @@
 //        has_mask = b2 >> 7 & 1
 //        length_bits = b2 & 0x7f
 
+#define MASKING_KEY_LEN 4
+#define INITIAL_PAYLOAD_LEN 2
+#define PAYLOAD_LENGTH_16 126
+#define PAYLOAD_LENGTH_64 127
 
 class WebSocketHandler : public ProtocolHandlerInterface {
 
@@ -50,6 +58,11 @@ private:
 	bool		_rsv2;
 	bool		_rsv3;
 	uint8_t 	_opcode;
+
+	char		_maskingKey[4];
+
+
+	uint64_t	_leftToRead;
 
 	std::stringstream   _response_header_stream;
 	std::stringstream   _response_body_stream;
@@ -63,6 +76,11 @@ public:
 
 	std::string		getResponseHeader() const;
 	std::string		getResponseBody() const;
+
+	size_t	getPositionEndHeader(char *header) override;
+
+	int 	writeToBody(std::stringstream &bodyStream, char* buffer,
+						const ssize_t &nbytes, u_int64_t &leftToRead) override;
 
 	bool	hasBodyExceeded() const;
 	bool 	isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, ssize_t nbytes);

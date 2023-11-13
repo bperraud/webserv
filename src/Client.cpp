@@ -46,26 +46,26 @@ void Client::resetRequestContext() {
 void Client::determineRequestType(char * &header) {
 	const bool mask_bit = *(header + 1) >> 7;
 	if (mask_bit == 1)	{ // bit Mask 1 = websocket
-		u_int8_t payload = header[1];
-		payload &= 0x7f;
-		size_t payloadLenBytes = 0;
-		_leftToRead = payload;
-		if (payload == PAYLOAD_LENGTH_16)
-			payloadLenBytes = 2;
-		else if (payload == PAYLOAD_LENGTH_64)
-			payloadLenBytes = 8;
+		//u_int8_t payload = header[1];
+		//payload &= 0x7f;
+		//size_t payloadLenBytes = 0;
+		//_leftToRead = payload;
+		//if (payload == PAYLOAD_LENGTH_16)
+		//	payloadLenBytes = 2;
+		//else if (payload == PAYLOAD_LENGTH_64)
+		//	payloadLenBytes = 8;
 
-		if (payloadLenBytes) {
-			memcpy(&_leftToRead, header + 2, payloadLenBytes);
-			#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-			_leftToRead = ntohs(_leftToRead);
-			#endif
-		}
+		//if (payloadLenBytes) {
+		//	memcpy(&_leftToRead, header + 2, payloadLenBytes);
+		//	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		//	_leftToRead = ntohs(_leftToRead);
+		//	#endif
+		//}
 
-		_webSocketHandler = new WebSocketHandler(header);
-		header += INITIAL_PAYLOAD_LEN + MASKING_KEY_LEN + payloadLenBytes;
-		std::cout << "payloadLength : " << _leftToRead << std::endl;
-		std::memcpy(_maskingKey, header - MASKING_KEY_LEN, MASKING_KEY_LEN);
+		//_webSocketHandler = new WebSocketHandler(header);
+		//header += INITIAL_PAYLOAD_LEN + MASKING_KEY_LEN + payloadLenBytes;
+		//std::cout << "payloadLength : " << _leftToRead << std::endl;
+		//std::memcpy(_maskingKey, header - MASKING_KEY_LEN, MASKING_KEY_LEN);
 
 		_isHttpRequest = false;
 	}
@@ -85,34 +85,30 @@ void Client::writeToHeader(char *buffer, ssize_t nbytes) {
 
 int Client::writeToBody(char *buffer, ssize_t nbytes) {
 
-	if (_isHttpRequest) {
-		if (_httpHandler->bodyExceeded(_requestBodyStream, nbytes))
-			return 0;
-	}
-	_requestBodyStream.write(buffer, nbytes);
-	if (_requestBodyStream.fail())
-		throw std::runtime_error("writing to request body stream");
-
-	return _httpHandler->isBodyFinished(_requestBodyStream, _leftToRead, nbytes);
+	return _httpHandler->writeToBody(_requestBodyStream, buffer, nbytes, _leftToRead);
 }
 
+
+// question to chat gpt : why the need for host in http request ? (body size websocket)
 int Client::writeToStream(char *buffer, ssize_t nbytes) {
-	if (!_isHttpRequest) {	// websocket
-		std::string res;
-		for (int i = 0; i < _leftToRead; i++) {
-			unsigned char unmaskedByte = buffer[i] ^ _maskingKey[i % 4];
-			res += unmaskedByte;
-		}
-		std::cout << res << std::endl;
-		writeToBody(buffer, _leftToRead);
-		//writeToBody(buffer, nbytes); ?
-		return (0);
-	}
+	//if (!_isHttpRequest) {	// pb : cannot call base class function
+	//	std::string res;
+	//	for (int i = 0; i < _leftToRead; i++) {
+	//		unsigned char unmaskedByte = buffer[i] ^ _maskingKey[i % 4];
+	//		res += unmaskedByte;
+	//	}
+	//	std::cout << res << std::endl;
+	//	writeToBody(buffer, _leftToRead);
+	//	//writeToBody(buffer, nbytes); ?
+	//	return (0);
+	//}
 
 	if (_leftToRead)
 		return writeToBody(buffer, nbytes);
 
-	const size_t pos_end_header = ((std::string)(buffer - 4)).find(CRLF);
+	const size_t pos_end_header = _httpHandler->getPositionEndHeader(buffer);
+
+	//const size_t pos_end_header = ((std::string)(buffer - 4)).find(CRLF);
 	if (pos_end_header == std::string::npos) {
 		writeToHeader(buffer, nbytes);
 		return (1);
@@ -125,7 +121,7 @@ int Client::writeToStream(char *buffer, ssize_t nbytes) {
 int Client::treatReceivedData(char *buffer, ssize_t nbytes) {
 	startTimer();
 	saveOverlap(buffer - OVERLAP, nbytes);
-	if (_lenStream == 0 && nbytes >= 2) { // socket frame or http ?
+	if (_lenStream == 0 && nbytes >= 2) { // socket frame or http ?  -> remove the nbytes 2
 		determineRequestType(buffer);
 	}
 	return (writeToStream(buffer, nbytes));

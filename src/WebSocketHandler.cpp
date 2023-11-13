@@ -1,6 +1,5 @@
 #include "WebSocketHandler.hpp"
 #include "HttpHandler.hpp"
-#include "bitset"
 
 const std::map<int, std::string> WebSocketHandler::_OPCODE_MAP = {
 	{OPCODE_CONT, "cont"},
@@ -46,6 +45,41 @@ void WebSocketHandler::resetRequestContext()
 	_response_header_stream.clear();
 }
 
+size_t WebSocketHandler::getPositionEndHeader(char *header)
+{
+
+	// if < 2 : return std:string::npos
+
+	u_int8_t payload = header[1];
+	payload &= 0x7f;
+	size_t payloadLenBytes = 0;
+	_leftToRead = payload;
+	if (payload == PAYLOAD_LENGTH_16)
+		payloadLenBytes = 2;
+	else if (payload == PAYLOAD_LENGTH_64)
+		payloadLenBytes = 8;
+
+	if (payloadLenBytes) {
+		memcpy(&_leftToRead, header + 2, payloadLenBytes);
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		_leftToRead = ntohs(_leftToRead);
+		#endif
+	}
+
+	size_t pos_end_header = INITIAL_PAYLOAD_LEN + MASKING_KEY_LEN + payloadLenBytes;
+
+	std::cout << "payloadLength : " << _leftToRead << std::endl;
+
+	std::memcpy(_maskingKey, header + INITIAL_PAYLOAD_LEN + payloadLenBytes, MASKING_KEY_LEN);
+
+	return pos_end_header;
+}
+
+int WebSocketHandler::writeToBody(std::stringstream &bodyStream, char *buffer, const ssize_t &nbytes, u_int64_t &leftToRead)
+{
+	return 0;
+}
+
 bool WebSocketHandler::hasBodyExceeded() const
 {
 	return false;
@@ -53,7 +87,8 @@ bool WebSocketHandler::hasBodyExceeded() const
 
 bool WebSocketHandler::isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, ssize_t nbytes)
 {
-	return false;
+	leftToRead -= nbytes;
+	return leftToRead > 0;
 }
 
 bool WebSocketHandler::bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes)
@@ -63,11 +98,12 @@ bool WebSocketHandler::bodyExceeded(std::stringstream &bodyStream, ssize_t nbyte
 
 void WebSocketHandler::createHttpResponse(std::stringstream &bodyStream)
 {
+
 }
 
-int WebSocketHandler::parseRequest(std::stringstream &_readStream)
+int WebSocketHandler::parseRequest(std::stringstream &headerStream)
 {
-	return 0;
+	return _leftToRead;
 }
 
 void WebSocketHandler::writeHeaderStream()

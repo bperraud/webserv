@@ -76,7 +76,7 @@ bool HttpHandler::hasBodyExceeded() const {
 	return _bodySizeExceeded;
 }
 
-bool HttpHandler::isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, ssize_t nbytes) {
+bool HttpHandler::isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, const ssize_t &nbytes) {
 	if (_transferChunked)
 		return transferChunked(bodyStream); // chunked
 	leftToRead -= nbytes;
@@ -103,6 +103,16 @@ bool HttpHandler::invalidRequestLine() const {
 
 // --------------------------------- METHODS --------------------------------- //
 
+
+int HttpHandler::writeToBody(std::stringstream &bodyStream, char* buffer, const ssize_t &nbytes, u_int64_t &leftToRead) {
+	if (bodyExceeded(bodyStream, nbytes))
+		return 0;
+	bodyStream.write(buffer, nbytes);
+	if (bodyStream.fail())
+		throw std::runtime_error("writing to request body stream");
+	return isBodyFinished(bodyStream, leftToRead, nbytes);
+}
+
 void HttpHandler::createStatusResponse(int code) {
 	_response.status_code = std::to_string(code);
 	try {
@@ -111,6 +121,10 @@ void HttpHandler::createStatusResponse(int code) {
 	catch (std::out_of_range) {
 		std::cout << "status code not found\n";
 	}
+}
+
+size_t HttpHandler::getPositionEndHeader(char *buffer) {
+	return ((std::string)(buffer - 4)).find(CRLF);  // ameliorable
 }
 
 void HttpHandler::resetRequestContext() {
@@ -125,7 +139,7 @@ void HttpHandler::resetRequestContext() {
 	_active_route = &_default_route;
 }
 
-bool HttpHandler::bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes) {
+bool HttpHandler::bodyExceeded(std::stringstream &bodyStream, const ssize_t &nbytes) {
 	if (_server->max_body_size && static_cast<ssize_t>(bodyStream.tellp()) + nbytes > _server->max_body_size) {
 		_bodySizeExceeded = true;
 		return true;

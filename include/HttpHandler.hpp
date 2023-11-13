@@ -56,8 +56,6 @@ private:
 
 	std::string			_request_body;
 
-	//std::stringstream   _response_header_stream;
-	//std::stringstream   _response_body_stream;
 	HttpMessage			_request;
 	HttpResponse		_response;
 
@@ -96,19 +94,18 @@ public:
 	HttpHandler(int timeoutSeconds, server_name_level3 *serv_map);
 	~HttpHandler();
 
+	size_t	getPositionEndHeader(char *buffer) override;
 	bool	hasBodyExceeded() const;
 	bool	isKeepAlive() const;
-	bool 	isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, ssize_t nbytes);
+	bool 	isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, const ssize_t &nbytes);
 
-	bool 	bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes);
+	int		writeToBody(std::stringstream &bodyStream, char* buffer, const ssize_t &nbytes, u_int64_t &leftToRead) override;
+	bool 	bodyExceeded(std::stringstream &bodyStream, const ssize_t &nbytes);
 	int		transferChunked(std::stringstream &bodyStream);
 	void	createHttpResponse(std::stringstream &bodyStream);
 
-	std::string		getResponseHeader() const;
-	std::string		getResponseBody() const;
-
 	void	resetRequestContext();
-	int		parseRequest(std::stringstream &_readStream);
+	int		parseRequest(std::stringstream &headerStream);
 
 };
 

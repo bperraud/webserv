@@ -10,7 +10,6 @@
 #include <dirent.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <arpa/inet.h>
 
 #include "Utils.hpp"
 #include "ServerConfig.hpp"
@@ -20,10 +19,6 @@
 #include "HttpHandler.hpp"
 #include "ProtocolHandlerInterface.hpp"
 
-#define MASKING_KEY_LEN 4
-#define INITIAL_PAYLOAD_LEN 2
-#define PAYLOAD_LENGTH_16 126
-#define PAYLOAD_LENGTH_64 127
 
 struct server;
 
@@ -34,11 +29,9 @@ private:
 	std::stringstream   _requestBodyStream;
 
 	Timer				_timer;
-	ProtocolHandlerInterface	*_httpHandler;
-	//HttpHandler			*_httpHandler;
-	WebSocketHandler	*_webSocketHandler;
 
-	char				_maskingKey[4];
+	ProtocolHandlerInterface	*_httpHandler;
+	WebSocketHandler	*_webSocketHandler;
 
 	bool				_isHttpRequest;
 	bool				_readyToWrite;

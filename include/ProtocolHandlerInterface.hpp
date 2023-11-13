@@ -13,23 +13,27 @@ protected:
 	std::stringstream   _response_body_stream;
 
 public:
-    ProtocolHandlerInterface() = default;  // Deleting the constructor
+    ProtocolHandlerInterface() = default;  // default constructor
 
 	virtual ~ProtocolHandlerInterface() = default;
 
 	std::string		getResponseHeader() const;
 	std::string		getResponseBody() const;
 
+	virtual size_t	getPositionEndHeader(char *buffer) = 0;
+
+	virtual int 	writeToBody(std::stringstream &bodyStream, char* buffer,
+						const ssize_t &nbytes, u_int64_t &leftToRead) = 0;
 	virtual bool	hasBodyExceeded() const = 0;
-	virtual bool 	isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, ssize_t nbytes) = 0;
+	virtual bool 	isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, const ssize_t &nbytes) = 0;
 	virtual bool	isKeepAlive() const = 0;
 
-	virtual bool 	bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes) = 0;
+	virtual bool 	bodyExceeded(std::stringstream &bodyStream, const ssize_t &nbytes) = 0;
 	virtual void	createHttpResponse(std::stringstream &bodyStream) = 0;
 
 
 	virtual void	resetRequestContext() = 0;
-	virtual int		parseRequest(std::stringstream &_readStream) = 0;
+	virtual int		parseRequest(std::stringstream &headerStream) = 0;
 
 };
 

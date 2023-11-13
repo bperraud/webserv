@@ -8,7 +8,6 @@ bool Client::isKeepAlive() const { return _protocolHandler->isKeepAlive(); }
 bool Client::isReadyToWrite() const { return _readyToWrite; }
 
 Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _requestHeaderStream(std::ios::in | std::ios::out),
-
 	_requestBodyStream(std::ios::in | std::ios::out), _serv_map(serv_map), _timer(timeoutSeconds),
 	_protocolHandler(nullptr), _readyToWrite(false), _lenStream(0),
 	_overlapBuffer(), _leftToRead(0) {
@@ -47,13 +46,10 @@ void Client::resetRequestContext() {
 
 void Client::determineRequestType(char * header) {
 	const bool mask_bit = *(header + 1) >> 7;
-	if (mask_bit == 1)	{ // bit Mask 1 = websocket
+	if (mask_bit == 1)
 		_protocolHandler = new WebSocketHandler(header);
-	}
 	else
 		_protocolHandler = new HttpHandler(_serv_map);
-
-	std::cout << "_protocolHandler defined" << std::endl;
 }
 
 void Client::writeToHeader(char *buffer, ssize_t nbytes) {
@@ -67,20 +63,14 @@ void Client::writeToHeader(char *buffer, ssize_t nbytes) {
 }
 
 int Client::writeToBody(char *buffer, ssize_t nbytes) {
-
 	return _protocolHandler->writeToBody(_requestBodyStream, buffer, nbytes, _leftToRead);
 }
 
-
 // question to chat gpt : why the need for host in http request ? (body size websocket)
 int Client::writeToStream(char *buffer, ssize_t nbytes) {
-
 	if (_leftToRead)
 		return writeToBody(buffer, nbytes);
-
 	const size_t pos_end_header = _protocolHandler->getPositionEndHeader(buffer);
-
-	//const size_t pos_end_header = ((std::string)(buffer - 4)).find(CRLF);
 	if (pos_end_header == std::string::npos) {
 		writeToHeader(buffer, nbytes);
 		return (1);

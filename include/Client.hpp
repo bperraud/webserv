@@ -44,6 +44,9 @@ private :
 	void	writeToHeader(char *buffer, ssize_t nbytes);
 	int		writeToStream(char *buffer, ssize_t nbytes);
 
+	int		writeToBody(char *buffer, ssize_t nbytes);
+	void	determineRequestType(char *buffer);
+
 public:
 
 	Client(int timeoutSeconds, server_name_level3 *serv_map);
@@ -55,20 +58,15 @@ public:
 	bool	isKeepAlive() const;
 	bool	isReadyToWrite() const;
 
-	void	determineRequestType(char *buffer);
-
 	void	createResponse();
 	int		treatReceivedData(char *buffer, ssize_t nbytes);
 	void	setReadyToWrite(bool ready);
-
-	int		writeToBody(char *buffer, ssize_t nbytes);
 
 	void	saveOverlap(char *buffer, ssize_t nbytes);
 	void	resetRequestContext();
 	void	startTimer();
 	void	stopTimer();
 	bool	hasTimeOut();
-
 };
 
 #endif

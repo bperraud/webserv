@@ -13,12 +13,12 @@ Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _requestHeade
 	_protocolHandler(nullptr), _readyToWrite(false), _lenStream(0),
 	_overlapBuffer(), _leftToRead(0) {
 	_overlapBuffer[0] = '\0';
-	_protocolHandler = new HttpHandler(_serv_map);
-
 }
 
 bool Client::hasBodyExceeded() const {
-	return _protocolHandler->hasBodyExceeded();
+	if (_protocolHandler)
+		return _protocolHandler->hasBodyExceeded();
+	return false;
 }
 
 // --------------------------------- SETTERS --------------------------------- //

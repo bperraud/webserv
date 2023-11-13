@@ -45,7 +45,7 @@ const std::map<int, std::string> HttpHandler::_SUCCESS_STATUS = {
 	{301, "Moved Permanently"}
 };
 
-HttpHandler::HttpHandler(int timeoutSeconds, server_name_level3 *serv_map) :
+HttpHandler::HttpHandler(server_name_level3 *serv_map) :
 	_serverMap(serv_map), _server(NULL),
  	_keepAlive(false), _bodySizeExceeded(false), _transferChunked(false), _isWebSocket(false),
 	_default_route(), _active_route(&_default_route)

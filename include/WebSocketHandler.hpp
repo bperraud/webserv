@@ -83,12 +83,10 @@ public:
 						const ssize_t &nbytes, u_int64_t &leftToRead) override;
 
 	bool	hasBodyExceeded() const;
-	bool 	isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, ssize_t nbytes);
+
 	bool	isKeepAlive() const;
 
-	bool 	bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes);
 	void	createHttpResponse(std::stringstream &bodyStream);
-
 
 	void	resetRequestContext();
 	int		parseRequest(std::stringstream &_readStream);

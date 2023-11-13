@@ -91,7 +91,7 @@ private:
 	void	handshake(const std::string &webSocketKey);
 
 public:
-	HttpHandler(int timeoutSeconds, server_name_level3 *serv_map);
+	HttpHandler(server_name_level3 *serv_map);
 	~HttpHandler();
 
 	size_t	getPositionEndHeader(char *buffer) override;

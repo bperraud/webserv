@@ -28,10 +28,11 @@ private:
 	std::stringstream 	_requestHeaderStream;
 	std::stringstream   _requestBodyStream;
 
+	server_name_level3 *_serv_map;
+
 	Timer				_timer;
 
-	ProtocolHandlerInterface	*_httpHandler;
-	WebSocketHandler	*_webSocketHandler;
+	ProtocolHandlerInterface	*_protocolHandler;
 
 	bool				_isHttpRequest;
 	bool				_readyToWrite;
@@ -54,7 +55,7 @@ public:
 	bool	isKeepAlive() const;
 	bool	isReadyToWrite() const;
 
-	void	determineRequestType(char * &buffer);
+	void	determineRequestType(char *buffer);
 
 	void	createResponse();
 	int		treatReceivedData(char *buffer, ssize_t nbytes);

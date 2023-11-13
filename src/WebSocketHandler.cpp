@@ -10,13 +10,11 @@ const std::map<int, std::string> WebSocketHandler::_OPCODE_MAP = {
     {OPCODE_PONG, "pong"}
 };
 
-WebSocketHandler::WebSocketHandler()
-{
+WebSocketHandler::WebSocketHandler() {
 
 }
 
-WebSocketHandler::WebSocketHandler(char *header)
-{
+WebSocketHandler::WebSocketHandler(char *header) {
 	std::bitset<8> fb(header[0]);
 	std::cout << fb << std::endl;
 
@@ -37,17 +35,14 @@ WebSocketHandler::WebSocketHandler(char *header)
 
 bool WebSocketHandler::isKeepAlive() const { return true; }
 
-void WebSocketHandler::resetRequestContext()
-{
+void WebSocketHandler::resetRequestContext() {
 	_response_body_stream.str(std::string());
 	_response_body_stream.clear();
 	_response_header_stream.str(std::string());
 	_response_header_stream.clear();
 }
 
-size_t WebSocketHandler::getPositionEndHeader(char *header)
-{
-
+size_t WebSocketHandler::getPositionEndHeader(char *header) {
 	// if < 2 : return std:string::npos
 
 	u_int8_t payload = header[1];
@@ -67,7 +62,6 @@ size_t WebSocketHandler::getPositionEndHeader(char *header)
 	}
 
 	size_t pos_end_header = INITIAL_PAYLOAD_LEN + MASKING_KEY_LEN + payloadLenBytes;
-
 	std::cout << "payloadLength : " << _leftToRead << std::endl;
 
 	std::memcpy(_maskingKey, header + INITIAL_PAYLOAD_LEN + payloadLenBytes, MASKING_KEY_LEN);
@@ -75,38 +69,35 @@ size_t WebSocketHandler::getPositionEndHeader(char *header)
 	return pos_end_header;
 }
 
-int WebSocketHandler::writeToBody(std::stringstream &bodyStream, char *buffer, const ssize_t &nbytes, u_int64_t &leftToRead)
-{
-	return 0;
-}
+int WebSocketHandler::writeToBody(std::stringstream &bodyStream, char *buffer, const ssize_t &nbytes, u_int64_t &leftToRead) {
+	std::string res;
+	for (int i = 0; i < _leftToRead; i++) {
+		unsigned char unmaskedByte = buffer[i] ^ _maskingKey[i % 4];
+		res += unmaskedByte;
+	}
+	std::cout << res << std::endl;
 
-bool WebSocketHandler::hasBodyExceeded() const
-{
-	return false;
-}
 
-bool WebSocketHandler::isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, ssize_t nbytes)
-{
+	//bodyStream.write(buffer, nbytes);
+	//if (bodyStream.fail())
+	//	throw std::runtime_error("writing to request body stream");
+
 	leftToRead -= nbytes;
 	return leftToRead > 0;
 }
 
-bool WebSocketHandler::bodyExceeded(std::stringstream &bodyStream, ssize_t nbytes)
-{
+bool WebSocketHandler::hasBodyExceeded() const {
 	return false;
 }
 
-void WebSocketHandler::createHttpResponse(std::stringstream &bodyStream)
-{
+void WebSocketHandler::createHttpResponse(std::stringstream &bodyStream) {
 
 }
 
-int WebSocketHandler::parseRequest(std::stringstream &headerStream)
-{
+int WebSocketHandler::parseRequest(std::stringstream &headerStream) {
 	return _leftToRead;
 }
 
-void WebSocketHandler::writeHeaderStream()
-{
+void WebSocketHandler::writeHeaderStream() {
 
 }

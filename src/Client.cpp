@@ -12,6 +12,10 @@ Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _requestHeade
 	_protocolHandler(nullptr), _readyToWrite(false), _lenStream(0),
 	_overlapBuffer(), _leftToRead(0) {
 	_overlapBuffer[0] = '\0';
+
+
+	std::size_t initialCapacity = _requestBodyStream.str().capacity();
+	std::cout << initialCapacity << std::endl;
 }
 
 bool Client::hasBodyExceeded() const {

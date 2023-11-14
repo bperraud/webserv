@@ -72,12 +72,13 @@ size_t WebSocketHandler::getPositionEndHeader(char *header) {
 int WebSocketHandler::writeToBody(std::stringstream &bodyStream, char *buffer, const ssize_t &nbytes, u_int64_t &leftToRead) {
 	std::string res;
 	for (int i = 0; i < _leftToRead; i++) {
-		unsigned char unmaskedByte = buffer[i] ^ _maskingKey[i % 4];
+		const char unmaskedByte = buffer[i] ^ _maskingKey[i % 4];
 		res += unmaskedByte;
+		bodyStream.write(&unmaskedByte, sizeof(unmaskedByte));
 	}
-	std::cout << res << std::endl;
+	//std::cout << res << std::endl;
 
-
+	std::cout << bodyStream.str() << std::endl;
 	//bodyStream.write(buffer, nbytes);
 	//if (bodyStream.fail())
 	//	throw std::runtime_error("writing to request body stream");

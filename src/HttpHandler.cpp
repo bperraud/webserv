@@ -199,14 +199,14 @@ void HttpHandler::setupRoute(const std::string &url)
 
 void HttpHandler::unchunckMessage(std::stringstream &bodyStream)
 {
-	std::string line;
 	std::stringstream requestBodyStream(std::ios::in | std::ios::out);
-	while (std::getline(bodyStream, line)) {
-		int chunk_size = std::atoi(line.c_str());
+	int chunk_size;
+	while (bodyStream >> chunk_size) {
 		if (chunk_size == 0)
 			break;
 		std::string chunk;
 		chunk.resize(chunk_size);
+		bodyStream.ignore(2);
 		bodyStream.read(&chunk[0], chunk_size);
 		bodyStream.ignore(2);
 		requestBodyStream.write(chunk.data(), chunk_size);

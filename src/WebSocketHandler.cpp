@@ -25,6 +25,8 @@ WebSocketHandler::WebSocketHandler(char *header) {
     _rsv3 = header[0] >> 4 & 1;
 	_opcode = header[0] & 0xf;
 
+	_response_header_stream.write(header, 1);
+
 	std::cout << _fin << " ";
 	std::cout << _rsv1 << " ";
 	std::cout << _rsv2 << " ";
@@ -70,18 +72,12 @@ size_t WebSocketHandler::getPositionEndHeader(char *header) {
 }
 
 int WebSocketHandler::writeToBody(std::stringstream &bodyStream, char *buffer, const ssize_t &nbytes, u_int64_t &leftToRead) {
-	std::string res;
 	for (int i = 0; i < _leftToRead; i++) {
 		const char unmaskedByte = buffer[i] ^ _maskingKey[i % 4];
-		res += unmaskedByte;
 		bodyStream.write(&unmaskedByte, sizeof(unmaskedByte));
+		if (bodyStream.fail())
+			throw std::runtime_error("writing to request body stream");
 	}
-	//std::cout << res << std::endl;
-
-	std::cout << bodyStream.str() << std::endl;
-	//bodyStream.write(buffer, nbytes);
-	//if (bodyStream.fail())
-	//	throw std::runtime_error("writing to request body stream");
 
 	leftToRead -= nbytes;
 	return leftToRead > 0;
@@ -91,13 +87,45 @@ bool WebSocketHandler::hasBodyExceeded() const {
 	return false;
 }
 
-void WebSocketHandler::createHttpResponse(std::stringstream &bodyStream) {
-
-}
-
 int WebSocketHandler::parseRequest(std::stringstream &headerStream) {
 	return _leftToRead;
 }
+
+void WebSocketHandler::createHttpResponse(std::stringstream &bodyStream) {
+	std::string request_body = bodyStream.str();
+
+	std::cout << request_body << std::endl;
+	std::cout << request_body.length() << std::endl;
+
+	u_int32_t payload_bytes;
+	u_int16_t request_body_len = request_body.length();
+
+	std::bitset<16> fb(request_body_len);
+
+	std::cout << fb << std::endl;
+
+	if (request_body_len <= 125)
+		payload_bytes = 1;
+	else if (request_body_len <= 65535) {
+		u_int8_t l = 126;
+		_response_header_stream.write(reinterpret_cast<const char*>(&l), 1);
+		payload_bytes = 2;
+	}
+	else {
+		u_int8_t l = 127;
+		_response_header_stream.write(reinterpret_cast<const char*>(&l), 1);
+		payload_bytes = 8;
+	}
+
+	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	request_body_len = htons(request_body_len);
+	#endif
+
+
+	_response_header_stream.write(reinterpret_cast<const char*>(&request_body_len), payload_bytes);
+	_response_body_stream << request_body;
+}
+
 
 void WebSocketHandler::writeHeaderStream() {
 

@@ -64,9 +64,6 @@ private:
 
 	uint64_t	_leftToRead;
 
-	std::stringstream   _response_header_stream;
-	std::stringstream   _response_body_stream;
-
 	static const std::map<int, std::string>	_OPCODE_MAP;
 
 
@@ -74,20 +71,15 @@ public:
     WebSocketHandler();
 	WebSocketHandler(char *header);
 
-	std::string		getResponseHeader() const;
-	std::string		getResponseBody() const;
-
 	size_t	getPositionEndHeader(char *header) override;
 
 	int 	writeToBody(std::stringstream &bodyStream, char* buffer,
 						const ssize_t &nbytes, u_int64_t &leftToRead) override;
 
 	bool	hasBodyExceeded() const;
-
 	bool	isKeepAlive() const;
 
 	void	createHttpResponse(std::stringstream &bodyStream);
-
 	void	resetRequestContext();
 	int		parseRequest(std::stringstream &_readStream);
 

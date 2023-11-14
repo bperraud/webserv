@@ -16,6 +16,7 @@ class WebSocketClient:
 
 	def receive_message(self):
 		message = self.ws.recv()
+		print(len(message))
 		print(f"Received: {message}")
 		return message
 

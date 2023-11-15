@@ -2,27 +2,6 @@ import requests
 import socket
 import os
 from websocket import create_connection
-import time
-
-class WebSocketClient:
-	def __init__(self, url):
-		self.url = url
-		self.ws = None
-
-	def connect(self):
-		self.ws = create_connection(self.url)
-
-	def send_message(self, message):
-		self.ws.send(message)
-
-	def receive_message(self):
-		message = self.ws.recv()
-		return message
-
-	def close(self):
-		if self.ws:
-			self.ws.close()
-			print("Connection closed")
 
 # get the directory of the current Python script
 script_dir = os.path.dirname(os.path.abspath(__file__)) + "/"
@@ -43,13 +22,11 @@ def compare_string_to_file(string_to_compare, file_path):
 		return False
 
 def test_websocket():
-	client = WebSocketClient(WS_URL)
+	client = create_connection(WS_URL)
 	try:
-		client.connect()
 		message = "So, while both approaches can be used to modify a pointer, the choice between them depends on whether you want to change the value of the pointer itself (reference to a pointer) or change what the pointer points to (double pointer).In the reference to a pointer approach, the value of the original pointer is modified, so it now points to a different memory location. In the double pointer approach, you modify the target of the original pointer by indirectly referencing it through the double pointer."
-		time.sleep(1)
-		client.send_message(message)
-		response = client.receive_message()
+		client.send(message)
+		response = client.recv()
 		assert(response == message)
 	except Exception as e:
 		assert(True == False)

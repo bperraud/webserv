@@ -1,5 +1,4 @@
 from websocket import create_connection
-import time
 
 class WebSocketClient:
 	def __init__(self, url):
@@ -29,15 +28,10 @@ def main():
 	WS_URL = "ws://localhost:8080/"
 
 	client = WebSocketClient(WS_URL)
-
 	data_bytes = bytes([0x01] * 287)
 
 	try:
 		client.connect()
-		#time.sleep(2)
-		#response = client.receive_message()
-		#print(response)
-		time.sleep(1)
 		client.send_message("So, while both approaches can be used to modify a pointer, the choice between them depends on whether you want to change the value of the pointer itself (reference to a pointer) or change what the pointer points to (double pointer).In the reference to a pointer approach, the value of the original pointer is modified, so it now points to a different memory location. In the double pointer approach, you modify the target of the original pointer by indirectly referencing it through the double pointer.")
 		response = client.receive_message()
 		print(response)

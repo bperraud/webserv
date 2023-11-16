@@ -71,20 +71,20 @@ public:
     WebSocketHandler();
 	WebSocketHandler(char *header);
 
-	size_t	getPositionEndHeader(char *header) override;
+	size_t	GetPositionEndHeader(char *header) override;
 
-	int 	writeToBody(std::stringstream &bodyStream, char* buffer,
+	int 	WriteToBody(std::stringstream &bodyStream, char* buffer,
 						const ssize_t &nbytes, u_int64_t &leftToRead) override;
 
-	bool	hasBodyExceeded() const;
-	bool	isKeepAlive() const;
+	bool	HasBodyExceeded() const;
+	bool	IsKeepAlive() const;
 
-	void	createHttpResponse(std::stringstream &bodyStream);
-	void	resetRequestContext();
-	int		parseRequest(std::stringstream &_readStream);
+	void	CreateHttpResponse(std::stringstream &bodyStream);
+	void	ResetRequestContext();
+	int		ParseRequest(std::stringstream &_readStream);
 
-	void handshake(const std::string &webSocketKey);
-	void writeHeaderStream();
+	void Handshake(const std::string &webSocketKey);
+	void WriteHeaderStream();
 };
 
 #endif

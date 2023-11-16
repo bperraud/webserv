@@ -43,31 +43,31 @@ private:
 	char				_overlapBuffer[4];
 
 private :
-	void	writeToHeader(char *buffer, ssize_t nbytes);
-	int		writeToStream(char *buffer, ssize_t nbytes);
+	void	WriteToHeader(char *buffer, ssize_t nbytes);
+	int		WriteToStream(char *buffer, ssize_t nbytes);
 
-	int		writeToBody(char *buffer, ssize_t nbytes);
-	void	determineRequestType(char *buffer);
+	int		WriteToBody(char *buffer, ssize_t nbytes);
+	void	DetermineRequestType(char *buffer);
 
 public:
 
 	Client(int timeoutSeconds, server_name_level3 *serv_map);
 	~Client();
 
-	std::string		getResponseHeader() const;
-	std::string		getResponseBody() const;
-	bool	hasBodyExceeded() const;
-	bool	isKeepAlive() const;
-	bool	isReadyToWrite() const;
+	std::string		GetResponseHeader() const;
+	std::string		GetResponseBody() const;
+	bool	HasBodyExceeded() const;
+	bool	IsKeepAlive() const;
+	bool	IsReadyToWrite() const;
 
-	void	createResponse();
-	int		treatReceivedData(char *buffer, ssize_t nbytes);
-	void	setReadyToWrite(bool ready);
-	void	saveOverlap(char *buffer, ssize_t nbytes);
-	void	resetRequestContext();
-	void	startTimer();
-	void	stopTimer();
-	bool	hasTimeOut();
+	void	CreateResponse();
+	int		TreatReceivedData(char *buffer, ssize_t nbytes);
+	void	SetReadyToWrite(bool ready);
+	void	SaveOverlap(char *buffer, ssize_t nbytes);
+	void	ResetRequestContext();
+	void	StartTimer();
+	void	StopTimer();
+	bool	HasTimeOut();
 };
 
 #endif

@@ -62,9 +62,9 @@ HttpHandler::~HttpHandler() {
 
 // --------------------------------- GETTERS --------------------------------- //
 
-bool HttpHandler::isKeepAlive() const { return _keepAlive; }
+bool HttpHandler::IsKeepAlive() const { return _keepAlive; }
 
-std::string HttpHandler::getContentType(const std::string &path) const {
+std::string HttpHandler::GetContentType(const std::string &path) const {
 	std::string::size_type dot_pos = path.find_last_of('.');
 	if (dot_pos == std::string::npos) // no extension, assume directory
 		return _active_route->autoindex ?  "text/html" : "text/plain";
@@ -72,24 +72,24 @@ std::string HttpHandler::getContentType(const std::string &path) const {
 	return it == _MIME_TYPES.end() ? "" : it->second;
 }
 
-bool HttpHandler::hasBodyExceeded() const {
+bool HttpHandler::HasBodyExceeded() const {
 	return _bodySizeExceeded;
 }
 
-bool HttpHandler::isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, const ssize_t &nbytes) {
+bool HttpHandler::IsBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, const ssize_t &nbytes) {
 	if (_transferChunked)
-		return transferChunked(bodyStream); // chunked
+		return TransferChunked(bodyStream); // chunked
 	leftToRead -= nbytes;
 	return leftToRead > 0;
 }
 
-bool HttpHandler::isAllowedMethod(const std::string &method) const {
+bool HttpHandler::IsAllowedMethod(const std::string &method) const {
 	for (auto &allowed_method : _active_route->methods)
 		if (allowed_method == method) return true;
 	return false;
 }
 
-std::string HttpHandler::getHeaderValue(const std::string &header) const {
+std::string HttpHandler::GetHeaderValue(const std::string &header) const {
 	std::map<std::string, std::string>::const_iterator it = _request.map_headers.find(header);
 	if (it != _request.map_headers.end()) {
 		return it->second;
@@ -97,23 +97,23 @@ std::string HttpHandler::getHeaderValue(const std::string &header) const {
 	return "";
 }
 
-bool HttpHandler::invalidRequestLine() const {
+bool HttpHandler::InvalidRequestLine() const {
 	return (_request.method.empty() || _request.url.empty() || _request.version.empty());
 }
 
 // --------------------------------- METHODS --------------------------------- //
 
 
-int HttpHandler::writeToBody(std::stringstream &bodyStream, char* buffer, const ssize_t &nbytes, u_int64_t &leftToRead) {
-	if (bodyExceeded(bodyStream, nbytes))
+int HttpHandler::WriteToBody(std::stringstream &bodyStream, char* buffer, const ssize_t &nbytes, u_int64_t &leftToRead) {
+	if (BodyExceeded(bodyStream, nbytes))
 		return 0;
 	bodyStream.write(buffer, nbytes);
 	if (bodyStream.fail())
 		throw std::runtime_error("writing to request body stream");
-	return isBodyFinished(bodyStream, leftToRead, nbytes);
+	return IsBodyFinished(bodyStream, leftToRead, nbytes);
 }
 
-void HttpHandler::createStatusResponse(int code) {
+void HttpHandler::CreateStatusResponse(int code) {
 	_response.status_code = std::to_string(code);
 	try {
 		_response.statusPhrase = _SUCCESS_STATUS.at(code);
@@ -123,11 +123,11 @@ void HttpHandler::createStatusResponse(int code) {
 	}
 }
 
-size_t HttpHandler::getPositionEndHeader(char *buffer) {
+size_t HttpHandler::GetPositionEndHeader(char *buffer) {
 	return ((std::string)(buffer - 4)).find(CRLF);  // ameliorable
 }
 
-void HttpHandler::resetRequestContext() {
+void HttpHandler::ResetRequestContext() {
 	_request.method = "";
 	_request.url = "";
 	_request.version = "";
@@ -139,7 +139,7 @@ void HttpHandler::resetRequestContext() {
 	_active_route = &_default_route;
 }
 
-bool HttpHandler::bodyExceeded(std::stringstream &bodyStream, const ssize_t &nbytes) {
+bool HttpHandler::BodyExceeded(std::stringstream &bodyStream, const ssize_t &nbytes) {
 	if (_server->max_body_size && static_cast<ssize_t>(bodyStream.tellp()) + nbytes > _server->max_body_size) {
 		_bodySizeExceeded = true;
 		return true;
@@ -147,13 +147,13 @@ bool HttpHandler::bodyExceeded(std::stringstream &bodyStream, const ssize_t &nby
 	return false;
 }
 
-int HttpHandler::transferChunked(std::stringstream &bodyStream) {
+int HttpHandler::TransferChunked(std::stringstream &bodyStream) {
 	bool finished = bodyStream.str().find(EOF_CHUNKED) != std::string::npos;
-	if (finished) unchunckMessage(bodyStream);
+	if (finished) UnchunckMessage(bodyStream);
 	return !finished;
 }
 
-int HttpHandler::parseRequest(std::stringstream &headerStream)
+int HttpHandler::ParseRequest(std::stringstream &headerStream)
 {
 	headerStream >> _request.method >> _request.url >> _request.version;
 
@@ -167,21 +167,21 @@ int HttpHandler::parseRequest(std::stringstream &headerStream)
 		_request.map_headers[header_name] = header_value;
 	}
 	_request.bodyLength = 0;
-	std::string content_length_header = getHeaderValue("Content-Length");
+	std::string content_length_header = GetHeaderValue("Content-Length");
 	if (!content_length_header.empty())
 		_request.bodyLength = std::stoi(content_length_header);
-	std::string connection = getHeaderValue("Connection");
+	std::string connection = GetHeaderValue("Connection");
 	_keepAlive = connection == "keep-alive" | connection == "Upgrade";
-	_isWebSocket = connection == "Upgrade" && getHeaderValue("Upgrade") == "websocket";
-	_transferChunked = getHeaderValue("Transfer-Encoding") == "chunked";
+	_isWebSocket = connection == "Upgrade" && GetHeaderValue("Upgrade") == "websocket";
+	_transferChunked = GetHeaderValue("Transfer-Encoding") == "chunked";
 	if (_transferChunked)
 		_request.bodyLength = 1;
-	_request.host = getHeaderValue("Host").substr(0, getHeaderValue("Host").find(":"));
-	assignServerConfig();
+	_request.host = GetHeaderValue("Host").substr(0, GetHeaderValue("Host").find(":"));
+	AssignServerConfig();
 	return _request.bodyLength;
 }
 
-void HttpHandler::setupRoute(const std::string &url)
+void HttpHandler::SetupRoute(const std::string &url)
 {
 	std::map<std::string, routes>::iterator it = _server->routes_map.begin();
 	for (; it != _server->routes_map.end(); ++it) {
@@ -197,7 +197,7 @@ void HttpHandler::setupRoute(const std::string &url)
 	_request.url = _active_route->root + _request.url;
 }
 
-void HttpHandler::unchunckMessage(std::stringstream &bodyStream)
+void HttpHandler::UnchunckMessage(std::stringstream &bodyStream)
 {
 	std::stringstream requestBodyStream(std::ios::in | std::ios::out);
 	int chunk_size;
@@ -214,7 +214,7 @@ void HttpHandler::unchunckMessage(std::stringstream &bodyStream)
 	_request_body = requestBodyStream.str();
 }
 
-void HttpHandler::handleCGI(const std::string &original_url)
+void HttpHandler::HandleCGI(const std::string &original_url)
 {
 	std::string extension;
 	size_t dotPos = _request.url.find_last_of('.');
@@ -223,25 +223,25 @@ void HttpHandler::handleCGI(const std::string &original_url)
 	std::string cookies = "";
 	_response.map_headers["Cookie"] = "";
 	int err = CGIExecutor::run(_request, _response_body_stream, &cookies, _active_route->handler, _active_route->cgi[extension], original_url);
-	if (err) error(err);
+	if (err) Error(err);
 	else {
 		if (!cookies.empty())
 			_response.map_headers["Set-Cookie"] = cookies;
-		createStatusResponse(200);
+		CreateStatusResponse(200);
 		_response.map_headers["Content-Type"] = "text/html";
 	}
 }
 
-void HttpHandler::redirection()
+void HttpHandler::Redirection()
 {
-	createStatusResponse(301);
+	CreateStatusResponse(301);
 	_response.map_headers["Location"] = _active_route->redir;
 	_response_body_stream << "<html><body><h1>301 Moved Permanently</h1></body></html>";
 	_response.map_headers["Content-Type"] = "text/html";
 	_response.map_headers["Content-Length"] = std::to_string(_response_body_stream.str().length());
 }
 
-void HttpHandler::assignServerConfig()
+void HttpHandler::AssignServerConfig()
 {
 	if (_serverMap->empty())
 		throw std::runtime_error("empty map");
@@ -255,7 +255,7 @@ void HttpHandler::assignServerConfig()
 	}
 }
 
-void HttpHandler::handshake(const std::string &webSocketKey) {
+void HttpHandler::Handshake(const std::string &webSocketKey) {
 
     BIO *bio, *b64;
     BUF_MEM *bptr;
@@ -278,35 +278,35 @@ void HttpHandler::handshake(const std::string &webSocketKey) {
 	//should communicate max_body_size to websockethandler;
 }
 
-void HttpHandler::createHttpResponse(std::stringstream &bodyStream)
+void HttpHandler::CreateHttpResponse(std::stringstream &bodyStream)
 {
 	if (!_transferChunked) _request_body = bodyStream.str();
 	_response.version = _request.version;
 	const std::string original_url = _request.url;
 	if (!_server)
 		throw std::runtime_error("No server found");
-	setupRoute(_request.url);
-	if (invalidRequestLine()) error(400);
-	else if (_bodySizeExceeded) error(413);
-	else if (!_active_route->handler.empty()) handleCGI(original_url);
-	else if (!_active_route->redir.empty()) redirection();
+	SetupRoute(_request.url);
+	if (InvalidRequestLine()) Error(400);
+	else if (_bodySizeExceeded) Error(413);
+	else if (!_active_route->handler.empty()) HandleCGI(original_url);
+	else if (!_active_route->redir.empty()) Redirection();
 	else if (_isWebSocket) {
-		createStatusResponse(101);
-		handshake(getHeaderValue("Sec-WebSocket-Key"));
+		CreateStatusResponse(101);
+		Handshake(GetHeaderValue("Sec-WebSocket-Key"));
 	}
 	else {
 		auto it = HttpHandler::_HTTP_METHOD.find(_request.method);
-		if (it != HttpHandler::_HTTP_METHOD.end() && isAllowedMethod(_request.method))
+		if (it != HttpHandler::_HTTP_METHOD.end() && IsAllowedMethod(_request.method))
 			(this->*(it->second))();
 		else
-			error(405);
+			Error(405);
 	}
-	constructStringResponse();
+	ConstructStringResponse();
 }
 
-void HttpHandler::error(int error)
+void HttpHandler::Error(int error)
 {
-	resetRequestContext();
+	ResetRequestContext();
 	std::string error_page = "";
 	if (_server->error_pages.count(std::to_string(error)))
 		error_page = _server->error_pages[std::to_string(error)];
@@ -314,10 +314,10 @@ void HttpHandler::error(int error)
 	error_handler.errorProcess(error);
 }
 
-void HttpHandler::generateDirectoryListing(const std::string &directory_path) {
+void HttpHandler::GenerateDirectoryListing(const std::string &directory_path) {
 	DIR *dir = opendir(directory_path.c_str());
 	if (dir == NULL)
-		return error(403);
+		return Error(403);
 	_response_body_stream << "<html><head><title>Directory Listing</title></head><body><h1>Directory Listing</h1><table>";
 	_response_body_stream << "<tr><td><a href=\"../\">../</a></td><td>-</td></tr>"; // Link to parent directory
 	struct dirent *entry;
@@ -353,85 +353,85 @@ void HttpHandler::generateDirectoryListing(const std::string &directory_path) {
 	closedir(dir);
 }
 
-void HttpHandler::uploadFile(const std::string &contentType, size_t pos_boundary) {
+void HttpHandler::UploadFile(const std::string &contentType, size_t pos_boundary) {
 	std::string messageBody = _request_body;
 	const size_t headerPrefixLength = strlen("filename=\"");
 	size_t pos1 = messageBody.find("filename=\"");
 	size_t pos2 = pos1 != std::string::npos ? messageBody.find("\"", pos1 + headerPrefixLength) : std::string::npos;
 	std::string fileName = pos2 != std::string::npos ? messageBody.substr(pos1 + headerPrefixLength, pos2 - pos1 - headerPrefixLength) : "";
 	if (pos1 == std::string::npos || pos2 == std::string::npos || fileName.empty())
-		return error(400);
+		return Error(400);
 	size_t start = messageBody.find(CRLF);
 	size_t end = messageBody.find("\r\n--" + contentType.substr(pos_boundary + 9) + "--", start);
 	if (start == std::string::npos || end == std::string::npos)
-		return error(400);
+		return Error(400);
 	start += std::strlen(CRLF);
 	messageBody = messageBody.substr(start, end - start);
 	std::string path = _active_route->root + "/" + fileName;
 	std::ofstream *outfile = Utils::createOrEraseFile(path);
 	if (!outfile)
-		return error(403);
+		return Error(403);
 	outfile->write(messageBody.c_str(), messageBody.length());
 	outfile->close();
 	delete outfile;
-	createStatusResponse(201);
+	CreateStatusResponse(201);
 	_response_body_stream << messageBody;
-	const std::string content_type = getContentType(fileName);
+	const std::string content_type = GetContentType(fileName);
 	if (content_type.empty())
-		return error(415);
+		return Error(415);
 	_response.map_headers["Content-Type"] = content_type;
 	_response.map_headers["Location"] = path;
 }
 
 void HttpHandler::GET() {
-	createStatusResponse(200);
+	CreateStatusResponse(200);
 	if (Utils::isDirectory(_request.url)) { // directory
 		if (_active_route->autoindex)
-			generateDirectoryListing(_request.url);
+			GenerateDirectoryListing(_request.url);
 		else {
 			if (_active_route->index == "")
-				return error(404); // no index file
+				return Error(404); // no index file
 			_request.url += "/" + _active_route->index;
 			if (Utils::pathToFileExist(_request.url))
 				Utils::loadFile(_request.url, _response_body_stream);
 			else
-				return error(404);
+				return Error(404);
 		}
 	}
 	else if (Utils::pathToFileExist(_request.url))
 		Utils::loadFile(_request.url, _response_body_stream);
 	else
-		return error(404);
-	const std::string content_type = getContentType(_request.url);
+		return Error(404);
+	const std::string content_type = GetContentType(_request.url);
 	if (content_type.empty())
-		return error(415);
+		return Error(415);
 	_response.map_headers["Content-Type"] = content_type;
 }
 
 void HttpHandler::POST() {
-	createStatusResponse(200);
-	const std::string request_content_type = getHeaderValue("Content-Type");
+	CreateStatusResponse(200);
+	const std::string request_content_type = GetHeaderValue("Content-Type");
 	const size_t pos_boundary = request_content_type.find("boundary=");
 	if (pos_boundary != std::string::npos) // multipart/form-data
-		uploadFile(request_content_type, pos_boundary);
+		UploadFile(request_content_type, pos_boundary);
 	else if (_request.url == "www/sendback")
 		_response_body_stream << _request_body;
 	else if (request_content_type.find("application/x-www-form-urlencoded") != std::string::npos)
 		_response_body_stream << "Response to application/x-www-form-urlencoded";
 	else
-		return error(501);
+		return Error(501);
 }
 
 void HttpHandler::DELETE() {
-	createStatusResponse(204);
+	CreateStatusResponse(204);
 	const std::string decoded_file_path = Utils::urlDecode(_request.url);
 	if (!Utils::pathToFileExist(decoded_file_path))
-		return error(404);
+		return Error(404);
 	if (std::remove(decoded_file_path.c_str()) != 0)
-		return error(403);
+		return Error(403);
 }
 
-void HttpHandler::constructStringResponse()
+void HttpHandler::ConstructStringResponse()
 {
 	bool first = true;
 	_response.map_headers["Access-Control-Allow-Origin"] = "*";

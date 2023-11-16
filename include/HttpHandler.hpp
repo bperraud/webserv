@@ -70,42 +70,42 @@ private:
 
 private:
 
-	void	assignServerConfig();
-	void	createStatusResponse(int code);
-	void	uploadFile(const std::string& contentType, size_t pos_boundary);
-	void 	redirection();
-	void	unchunckMessage(std::stringstream &bodyStream);
+	void	AssignServerConfig();
+	void	CreateStatusResponse(int code);
+	void	UploadFile(const std::string& contentType, size_t pos_boundary);
+	void 	Redirection();
+	void	UnchunckMessage(std::stringstream &bodyStream);
 
-	std::string		getHeaderValue(const std::string &header) const;
-	std::string		getContentType(const std::string& path) const;
-	bool	invalidRequestLine() const;
+	std::string		GetHeaderValue(const std::string &header) const;
+	std::string		GetContentType(const std::string& path) const;
+	bool	InvalidRequestLine() const;
 	void	GET();
 	void	DELETE();
 	void	POST();
-	void	setupRoute(const std::string &url);
-	bool	isAllowedMethod(const std::string &method) const;
-	void	constructStringResponse();
-	void	generateDirectoryListing(const std::string& directory_path);
-	void	handleCGI(const std::string &original_url);
-	void	error(int error);
-	void	handshake(const std::string &webSocketKey);
+	void	SetupRoute(const std::string &url);
+	bool	IsAllowedMethod(const std::string &method) const;
+	void	ConstructStringResponse();
+	void	GenerateDirectoryListing(const std::string& directory_path);
+	void	HandleCGI(const std::string &original_url);
+	void	Error(int error);
+	void	Handshake(const std::string &webSocketKey);
 
 public:
 	HttpHandler(server_name_level3 *serv_map);
 	~HttpHandler();
 
-	size_t	getPositionEndHeader(char *buffer) override;
-	bool	hasBodyExceeded() const;
-	bool	isKeepAlive() const;
-	bool 	isBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, const ssize_t &nbytes);
+	size_t	GetPositionEndHeader(char *buffer) override;
+	bool	HasBodyExceeded() const;
+	bool	IsKeepAlive() const;
+	bool 	IsBodyFinished(std::stringstream &bodyStream, uint64_t &leftToRead, const ssize_t &nbytes);
 
-	int		writeToBody(std::stringstream &bodyStream, char* buffer, const ssize_t &nbytes, u_int64_t &leftToRead) override;
-	bool 	bodyExceeded(std::stringstream &bodyStream, const ssize_t &nbytes);
-	int		transferChunked(std::stringstream &bodyStream);
-	void	createHttpResponse(std::stringstream &bodyStream);
+	int		WriteToBody(std::stringstream &bodyStream, char* buffer, const ssize_t &nbytes, u_int64_t &leftToRead) override;
+	bool 	BodyExceeded(std::stringstream &bodyStream, const ssize_t &nbytes);
+	int		TransferChunked(std::stringstream &bodyStream);
+	void	CreateHttpResponse(std::stringstream &bodyStream);
 
-	void	resetRequestContext();
-	int		parseRequest(std::stringstream &headerStream);
+	void	ResetRequestContext();
+	int		ParseRequest(std::stringstream &headerStream);
 
 };
 

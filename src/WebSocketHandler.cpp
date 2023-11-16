@@ -36,9 +36,9 @@ WebSocketHandler::WebSocketHandler(char *header) {
 
 }
 
-bool WebSocketHandler::isKeepAlive() const { return true; }
+bool WebSocketHandler::IsKeepAlive() const { return true; }
 
-void WebSocketHandler::resetRequestContext() {
+void WebSocketHandler::ResetRequestContext() {
 	_response_body_stream.str(std::string());
 	_response_body_stream.clear();
 	_response_header_stream.str(std::string());
@@ -47,7 +47,7 @@ void WebSocketHandler::resetRequestContext() {
 
 #include <byteswap.h>
 
-size_t WebSocketHandler::getPositionEndHeader(char *header) {
+size_t WebSocketHandler::GetPositionEndHeader(char *header) {
 	// if < 2 : return std:string::npos
 
 	u_int8_t payload = header[1];
@@ -75,7 +75,7 @@ size_t WebSocketHandler::getPositionEndHeader(char *header) {
 	return pos_end_header;
 }
 
-int WebSocketHandler::writeToBody(std::stringstream &bodyStream, char *buffer, const ssize_t &nbytes, u_int64_t &leftToRead) {
+int WebSocketHandler::WriteToBody(std::stringstream &bodyStream, char *buffer, const ssize_t &nbytes, u_int64_t &leftToRead) {
 
 	bool first = true;
 	for (size_t i = _byte; i < _byte + nbytes; i++) {
@@ -90,15 +90,15 @@ int WebSocketHandler::writeToBody(std::stringstream &bodyStream, char *buffer, c
 	return leftToRead > 0;
 }
 
-bool WebSocketHandler::hasBodyExceeded() const {
+bool WebSocketHandler::HasBodyExceeded() const {
 	return false;
 }
 
-int WebSocketHandler::parseRequest(std::stringstream &headerStream) {
+int WebSocketHandler::ParseRequest(std::stringstream &headerStream) {
 	return _leftToRead;
 }
 
-void WebSocketHandler::createHttpResponse(std::stringstream &bodyStream) {
+void WebSocketHandler::CreateHttpResponse(std::stringstream &bodyStream) {
 	std::string request_body = bodyStream.str();
 
 	u_int64_t response_body_len = request_body.length();
@@ -134,6 +134,6 @@ void WebSocketHandler::createHttpResponse(std::stringstream &bodyStream) {
 }
 
 
-void WebSocketHandler::writeHeaderStream() {
+void WebSocketHandler::WriteHeaderStream() {
 
 }

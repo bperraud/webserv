@@ -80,7 +80,7 @@ void ServerManager::setNonBlockingMode(int socket) {
 void ServerManager::timeoutCheck() {
 	for (auto it = _client_map.begin(); it != _client_map.end(); ) {
         auto currentIt = it++;
-		if (currentIt->second->hasTimeOut())
+		if (currentIt->second->HasTimeOut())
 		{
 			std::cout << "timeout on -> " << RED << " client " << currentIt->first << RESET << std::endl;
 			closeClientConnection(*currentIt);
@@ -185,18 +185,18 @@ void ServerManager::eventManager() {
 
 void ServerManager::handleReadEvent(fd_client_pair client)  {
 	if (!readFromClient(client)) {
-		client.second->stopTimer();
-		client.second->createResponse();
-		client.second->setReadyToWrite(true);
+		client.second->StopTimer();
+		client.second->CreateResponse();
+		client.second->SetReadyToWrite(true);
 	}
 }
 
 void ServerManager::handleWriteEvent(fd_client_pair client) {
-	if (client.second->isReadyToWrite())
+	if (client.second->IsReadyToWrite())
 	{
-		writeToClient(client.first, client.second->getResponseHeader());
-		writeToClient(client.first, client.second->getResponseBody());
-		client.second->resetRequestContext();
+		writeToClient(client.first, client.second->GetResponseHeader());
+		writeToClient(client.first, client.second->GetResponseBody());
+		client.second->ResetRequestContext();
 		connectionCloseMode(client);
 	}
 }
@@ -218,20 +218,20 @@ void ServerManager::closeClientConnection(fd_client_pair client, map_iterator_ty
 }
 
 void ServerManager::connectionCloseMode(fd_client_pair client) {
-	if (!client.second->isKeepAlive())
+	if (!client.second->IsKeepAlive())
 		closeClientConnection(client);
 }
 
 int	ServerManager::readFromClient(fd_client_pair client) {
 	char buffer[BUFFER_SIZE + OVERLAP];
 	const ssize_t nbytes = recv(client.first, buffer + OVERLAP, BUFFER_SIZE, 0);
-	if (client.second->hasBodyExceeded()) // ignore incoming data
+	if (client.second->HasBodyExceeded()) // ignore incoming data
 		return 1;
 	if (nbytes <= 0) {
 		closeClientConnection(client);
 		return 1;
 	}
-	return (client.second->treatReceivedData(buffer + OVERLAP, nbytes));
+	return (client.second->TreatReceivedData(buffer + OVERLAP, nbytes));
 }
 
 void ServerManager::writeToClient(int client_fd, const std::string &str) {

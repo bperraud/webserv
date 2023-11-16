@@ -2,10 +2,10 @@
 
 // --------------------------------- GETTERS --------------------------------- //
 
-std::string Client::getResponseHeader() const { return _protocolHandler->getResponseHeader(); }
-std::string Client::getResponseBody() const { return _protocolHandler->getResponseBody(); }
-bool Client::isKeepAlive() const { return _protocolHandler->isKeepAlive(); }
-bool Client::isReadyToWrite() const { return _readyToWrite; }
+std::string Client::GetResponseHeader() const { return _protocolHandler->GetResponseHeader(); }
+std::string Client::GetResponseBody() const { return _protocolHandler->GetResponseBody(); }
+bool Client::IsKeepAlive() const { return _protocolHandler->IsKeepAlive(); }
+bool Client::IsReadyToWrite() const { return _readyToWrite; }
 
 Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _requestHeaderStream(std::ios::in | std::ios::out),
 	_requestBodyStream(std::ios::in | std::ios::out), _serv_map(serv_map), _timer(timeoutSeconds),
@@ -18,27 +18,27 @@ Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _requestHeade
 	std::cout << initialCapacity << std::endl;
 }
 
-bool Client::hasBodyExceeded() const {
+bool Client::HasBodyExceeded() const {
 	if (_protocolHandler)
-		return _protocolHandler->hasBodyExceeded();
+		return _protocolHandler->HasBodyExceeded();
 	return false;
 }
 
 // --------------------------------- SETTERS --------------------------------- //
 
-void Client::setReadyToWrite(bool ready) { _readyToWrite = ready; }
+void Client::SetReadyToWrite(bool ready) { _readyToWrite = ready; }
 
 // ---------------------------------- TIMER ---------------------------------- //
 
-void Client::startTimer() { _timer.start(); }
-void Client::stopTimer() { _timer.stop(); }
-bool Client::hasTimeOut() { return _timer.hasTimeOut(); }
+void Client::StartTimer() { _timer.start(); }
+void Client::StopTimer() { _timer.stop(); }
+bool Client::HasTimeOut() { return _timer.hasTimeOut(); }
 
-void Client::resetRequestContext() {
+void Client::ResetRequestContext() {
 	_lenStream = 0;
 	_leftToRead = 0;
 	bzero(_overlapBuffer, OVERLAP);
-	_protocolHandler->resetRequestContext();
+	_protocolHandler->ResetRequestContext();
 	_readyToWrite = false;
 	_requestHeaderStream.str(std::string());
 	_requestHeaderStream.seekp(0, std::ios_base::beg);
@@ -48,7 +48,7 @@ void Client::resetRequestContext() {
 	_requestBodyStream.clear();
 }
 
-void Client::determineRequestType(char * header) {
+void Client::DetermineRequestType(char * header) {
 	const bool mask_bit = *(header + 1) >> 7;
 	if (mask_bit == 1)
 		_protocolHandler = new WebSocketHandler(header);
@@ -56,7 +56,7 @@ void Client::determineRequestType(char * header) {
 		_protocolHandler = new HttpHandler(_serv_map);
 }
 
-void Client::writeToHeader(char *buffer, ssize_t nbytes) {
+void Client::WriteToHeader(char *buffer, ssize_t nbytes) {
 	_requestHeaderStream.write(buffer, nbytes);
 	_lenStream += nbytes;
 	if (_requestHeaderStream.fail()) {
@@ -66,34 +66,34 @@ void Client::writeToHeader(char *buffer, ssize_t nbytes) {
 	}
 }
 
-int Client::writeToBody(char *buffer, ssize_t nbytes) {
-	return _protocolHandler->writeToBody(_requestBodyStream, buffer, nbytes, _leftToRead);
+int Client::WriteToBody(char *buffer, ssize_t nbytes) {
+	return _protocolHandler->WriteToBody(_requestBodyStream, buffer, nbytes, _leftToRead);
 }
 
 // question to chat gpt : why the need for host in http request ? (body size websocket)
-int Client::writeToStream(char *buffer, ssize_t nbytes) {
+int Client::WriteToStream(char *buffer, ssize_t nbytes) {
 	if (_leftToRead)
-		return writeToBody(buffer, nbytes);
-	const size_t pos_end_header = _protocolHandler->getPositionEndHeader(buffer);
+		return WriteToBody(buffer, nbytes);
+	const size_t pos_end_header = _protocolHandler->GetPositionEndHeader(buffer);
 	if (pos_end_header == std::string::npos) {
-		writeToHeader(buffer, nbytes);
+		WriteToHeader(buffer, nbytes);
 		return (1);
 	}
-	writeToHeader(buffer, pos_end_header);
-	_leftToRead = _protocolHandler->parseRequest(_requestHeaderStream);
-	return writeToBody(buffer + pos_end_header, nbytes - pos_end_header);
+	WriteToHeader(buffer, pos_end_header);
+	_leftToRead = _protocolHandler->ParseRequest(_requestHeaderStream);
+	return WriteToBody(buffer + pos_end_header, nbytes - pos_end_header);
 }
 
-int Client::treatReceivedData(char *buffer, ssize_t nbytes) {
-	startTimer();
-	saveOverlap(buffer - OVERLAP, nbytes);
+int Client::TreatReceivedData(char *buffer, ssize_t nbytes) {
+	StartTimer();
+	SaveOverlap(buffer - OVERLAP, nbytes);
 	if (_lenStream == 0 && nbytes >= 2) { // socket frame or http ?  -> remove the nbytes 2
-		determineRequestType(buffer);
+		DetermineRequestType(buffer);
 	}
-	return (writeToStream(buffer, nbytes));
+	return (WriteToStream(buffer, nbytes));
 }
 
-void Client::saveOverlap(char *buffer, ssize_t nbytes) {
+void Client::SaveOverlap(char *buffer, ssize_t nbytes) {
 	if (nbytes >= OVERLAP)
 	{
 		if (_overlapBuffer[0])
@@ -110,8 +110,8 @@ void Client::saveOverlap(char *buffer, ssize_t nbytes) {
 	}
 }
 
-void Client::createResponse() {
-	_protocolHandler->createHttpResponse(_requestBodyStream);
+void Client::CreateResponse() {
+	_protocolHandler->CreateHttpResponse(_requestBodyStream);
 }
 
 Client::~Client() {

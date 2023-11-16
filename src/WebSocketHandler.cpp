@@ -26,6 +26,11 @@ WebSocketHandler::WebSocketHandler(char *header) {
     _rsv3 = header[0] >> 4 & 1;
 	_opcode = header[0] & 0xf;
 
+	if (_opcode == OPCODE_PING) {
+		header[0] |= OPCODE_PONG;
+		header[0] &= 0xfa;
+	}
+
 	_response_header_stream.write(header, 1);
 
 	std::cout << _fin << " ";
@@ -101,6 +106,8 @@ int WebSocketHandler::ParseRequest(std::stringstream &headerStream) {
 }
 
 void WebSocketHandler::CreateHttpResponse(std::stringstream &bodyStream) {
+
+
 	std::string request_body = bodyStream.str();
 
 	u_int64_t response_body_len = request_body.length();

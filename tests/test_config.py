@@ -21,17 +21,30 @@ def compare_string_to_file(string_to_compare, file_path):
 		print(f"An error occurred: {str(e)}")
 		return False
 
+
+def sendback(client, msg : bytes) :
+	client.send(msg)
+	response = client.recv()
+	assert(len(response) == len(msg))
+
 def test_websocket():
 	client = create_connection(WS_URL)
 	try:
-		message = "So, while both approaches can be used to modify a pointer, the choice between them depends on whether you want to change the value of the pointer itself (reference to a pointer) or change what the pointer points to (double pointer).In the reference to a pointer approach, the value of the original pointer is modified, so it now points to a different memory location. In the double pointer approach, you modify the target of the original pointer by indirectly referencing it through the double pointer."
-		client.send(message)
-		response = client.recv()
-		assert(response == message)
+		medium_msg = "So, while both approaches can be used to modify a pointer, the choice between them depends on whether you want to change the value of the pointer itself (reference to a pointer) or change what the pointer points to (double pointer).In the reference to a pointer approach, the value of the original pointer is modified, so it now points to a different memory location. In the double pointer approach, you modify the target of the original pointer by indirectly referencing it through the double pointer."
+		sendback(client, medium_msg)
+		small_msg = "hello world!"
+		sendback(client, small_msg)
+		file_path = script_dir + 'files/large_file.txt'
+		with open(file_path, 'rb') as file:
+			large_file_content = file.read()
+		sendback(client, large_file_content)
+
 	except Exception as e:
+		print(e)
 		assert(True == False)
 	finally:
 		client.close()
+
 
 
 # Send a GET request

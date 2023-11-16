@@ -37,6 +37,8 @@ private:
 	bool				_isHttpRequest;
 	bool				_readyToWrite;
 	ssize_t				_lenStream;
+
+
 	uint64_t			_leftToRead;
 	char				_overlapBuffer[4];
 
@@ -61,7 +63,6 @@ public:
 	void	createResponse();
 	int		treatReceivedData(char *buffer, ssize_t nbytes);
 	void	setReadyToWrite(bool ready);
-
 	void	saveOverlap(char *buffer, ssize_t nbytes);
 	void	resetRequestContext();
 	void	startTimer();

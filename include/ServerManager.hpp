@@ -36,7 +36,7 @@
 #define GREEN   "\033[32m"
 #define RED     "\033[31m"
 #define BLACK	"\033[1;30m"
-#define BUFFER_SIZE 4096
+#define BUFFER_SIZE 8192
 #define MAX_EVENTS 4096
 #define TIMEOUT_SECS 5
 #define WAIT_TIMEOUT_SECS 2

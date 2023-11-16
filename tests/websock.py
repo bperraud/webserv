@@ -1,44 +1,46 @@
 from websocket import create_connection
+import websocket
+import os
+import logging
 
-class WebSocketClient:
-	def __init__(self, url):
-		self.url = url
-		self.ws = None
+def sendback(client, msg : str) :
+	client.send(msg, websocket.ABNF.OPCODE_TEXT)
+	response = client.recv()
+	assert(msg == response)
 
-	def connect(self):
-		self.ws = create_connection(self.url)
-		print("Connected")
+WS_URL = "ws://localhost:8080/"
 
-	def send_message(self, message):
-		self.ws.send(message)
-		print(f"Sent: {message}")
+script_dir = os.path.dirname(os.path.abspath(__file__)) + "/"
 
-	def receive_message(self):
-		message = self.ws.recv()
-		print(len(message))
-		print(f"Received: {message}")
-		return message
+#file_path = 'your_file.txt'
+file_path = script_dir + 'files/large_file.txt'
 
-	def close(self):
-		if self.ws:
-			self.ws.close()
-			print("Connection closed")
+text_data = 'a' * 68980
+
+# Write the string to the file
+with open(file_path, 'w') as file:
+    file.write(text_data)
 
 def main():
-	WS_URL = "ws://localhost:8080/"
-
-	client = WebSocketClient(WS_URL)
-	data_bytes = bytes([0x01] * 287)
 
 	try:
-		client.connect()
-		client.send_message("So, while both approaches can be used to modify a pointer, the choice between them depends on whether you want to change the value of the pointer itself (reference to a pointer) or change what the pointer points to (double pointer).In the reference to a pointer approach, the value of the original pointer is modified, so it now points to a different memory location. In the double pointer approach, you modify the target of the original pointer by indirectly referencing it through the double pointer.")
-		response = client.receive_message()
-		print(response)
+		client = create_connection(WS_URL)
+		small_msg = "hello world!"
+		sendback(client, small_msg)
+		medium_msg = "So, while both approaches can be used to modify a pointer, the choice between them depends on whether you want to change the value of the pointer itself (reference to a pointer) or change what the pointer points to (double pointer).In the reference to a pointer approach, the value of the original pointer is modified, so it now points to a different memory location. In the double pointer approach, you modify the target of the original pointer by indirectly referencing it through the double pointer."
+		sendback(client, medium_msg)
+
+		with open(file_path, 'r') as file:
+			large_file_content = file.read()
+		sendback(client, large_file_content)
+
 	except Exception as e:
-		print(f"Error: {e}")
-	finally:
-		client.close()
+		# Log the error message to a file
+		logging.error(f"An error occurred: {repr(e)}")
+		print("error")
+		print(repr(e))
+
+	client.close()
 
 if __name__ == "__main__":
 	main()

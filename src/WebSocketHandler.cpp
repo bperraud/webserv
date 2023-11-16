@@ -15,9 +15,10 @@ WebSocketHandler::WebSocketHandler() {
 }
 
 WebSocketHandler::WebSocketHandler(char *header) {
-	std::bitset<8> fb(header[0]);
-	std::cout << fb << std::endl;
+	//std::bitset<8> fb(header[0]);
+	//std::cout << fb << std::endl;
 
+	_byte = 0;
 	_opcode = 0;
 	_fin = header[0] >> 7 & 1;
     _rsv1 = header[0] >> 6 & 1;
@@ -44,6 +45,8 @@ void WebSocketHandler::resetRequestContext() {
 	_response_header_stream.clear();
 }
 
+#include <byteswap.h>
+
 size_t WebSocketHandler::getPositionEndHeader(char *header) {
 	// if < 2 : return std:string::npos
 
@@ -55,11 +58,13 @@ size_t WebSocketHandler::getPositionEndHeader(char *header) {
 		payloadLenBytes = 2;
 	else if (payload == PAYLOAD_LENGTH_64)
 		payloadLenBytes = 8;
-
 	if (payloadLenBytes) {
 		memcpy(&_leftToRead, header + 2, payloadLenBytes);
 		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-		_leftToRead = ntohs(_leftToRead);
+		if (payload == PAYLOAD_LENGTH_64)
+			_leftToRead = be64toh(_leftToRead);
+		else
+			_leftToRead = ntohs(_leftToRead);
 		#endif
 	}
 
@@ -67,18 +72,20 @@ size_t WebSocketHandler::getPositionEndHeader(char *header) {
 	std::cout << "payloadLength : " << _leftToRead << std::endl;
 
 	std::memcpy(_maskingKey, header + INITIAL_PAYLOAD_LEN + payloadLenBytes, MASKING_KEY_LEN);
-
 	return pos_end_header;
 }
 
 int WebSocketHandler::writeToBody(std::stringstream &bodyStream, char *buffer, const ssize_t &nbytes, u_int64_t &leftToRead) {
-	for (int i = 0; i < _leftToRead; i++) {
-		const char unmaskedByte = buffer[i] ^ _maskingKey[i % 4];
+
+	bool first = true;
+	for (size_t i = _byte; i < _byte + nbytes; i++) {
+		const char unmaskedByte = buffer[i - _byte] ^ _maskingKey[i % 4];
+		//_response_body_stream.write(&unmaskedByte, sizeof(unmaskedByte));
 		bodyStream.write(&unmaskedByte, sizeof(unmaskedByte));
 		if (bodyStream.fail())
 			throw std::runtime_error("writing to request body stream");
 	}
-
+	_byte += nbytes;
 	leftToRead -= nbytes;
 	return leftToRead > 0;
 }
@@ -94,36 +101,36 @@ int WebSocketHandler::parseRequest(std::stringstream &headerStream) {
 void WebSocketHandler::createHttpResponse(std::stringstream &bodyStream) {
 	std::string request_body = bodyStream.str();
 
-	std::cout << request_body << std::endl;
-	std::cout << request_body.length() << std::endl;
+	u_int64_t response_body_len = request_body.length();
+
+	//std::cout << _response_body_stream.str() << std::endl;
+
+	_response_body_stream.write(request_body.c_str(), request_body.size());
 
 	u_int32_t payload_bytes;
-	u_int16_t request_body_len = request_body.length();
-
-	std::bitset<16> fb(request_body_len);
-
-	std::cout << fb << std::endl;
-
-	if (request_body_len <= 125)
-		payload_bytes = 1;
-	else if (request_body_len <= 65535) {
-		u_int8_t l = 126;
-		_response_header_stream.write(reinterpret_cast<const char*>(&l), 1);
+	u_int8_t l;
+	if (response_body_len <= 125) {
+		_response_header_stream.write(reinterpret_cast<const char*>(&response_body_len), 1);
+		return ;
+	}
+	else if (response_body_len <= 65535) {
+		l = 126;
 		payload_bytes = 2;
 	}
 	else {
-		u_int8_t l = 127;
-		_response_header_stream.write(reinterpret_cast<const char*>(&l), 1);
+		l = 127;
 		payload_bytes = 8;
 	}
 
 	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	request_body_len = htons(request_body_len);
+	if (response_body_len > 65535)
+		response_body_len = htobe64(response_body_len);
+	else
+		response_body_len = htons(response_body_len);
 	#endif
 
-
-	_response_header_stream.write(reinterpret_cast<const char*>(&request_body_len), payload_bytes);
-	_response_body_stream << request_body;
+	_response_header_stream.write(reinterpret_cast<const char*>(&l), 1);
+	_response_header_stream.write(reinterpret_cast<const char*>(&response_body_len), payload_bytes);
 }
 
 

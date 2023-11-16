@@ -61,7 +61,7 @@ private:
 
 	char		_maskingKey[4];
 
-
+	uint64_t	_byte;
 	uint64_t	_leftToRead;
 
 	static const std::map<int, std::string>	_OPCODE_MAP;

@@ -36,7 +36,9 @@ WebSocketHandler::WebSocketHandler(char *header) {
 
 }
 
-bool WebSocketHandler::IsKeepAlive() const { return true; }
+bool WebSocketHandler::IsKeepAlive() const {
+	return _opcode != OPCODE_CLOSE;
+}
 
 void WebSocketHandler::ResetRequestContext() {
 	_response_body_stream.str(std::string());

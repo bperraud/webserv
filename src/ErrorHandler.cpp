@@ -14,9 +14,9 @@ const std::map<int, std::string>ErrorHandler::ERROR_MAP = {
 	{408, "Request Timeout"},
 	{413, "Payload Too Large"},
 	{415, "Unsupported Media Type"},
-	{500, "Bad Request"},
-	{501, "Internal Server Error"},
-	{504, "Not Implemented"},
+	{500, "Internal Server Error"},
+	{501, "Not Implemented"},
+	{504, "Gateway Timeout"},
 	{505, "HTTP Version Not Supported"},
 };
 

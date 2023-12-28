@@ -55,7 +55,7 @@ void Client::DetermineRequestType(char * header) {
 		_protocolHandler = new HttpHandler(_serv_map);
 }
 
-void Client::WriteToHeader(char *buffer, ssize_t nbytes) {
+void Client::WriteToHeader(char *buffer, const ssize_t &nbytes) {
 	_requestHeaderStream.write(buffer, nbytes);
 	_lenStream += nbytes;
 	if (_requestHeaderStream.fail()) {
@@ -65,17 +65,20 @@ void Client::WriteToHeader(char *buffer, ssize_t nbytes) {
 	}
 }
 
-int Client::WriteToBody(char *buffer, ssize_t nbytes) {
+int Client::WriteToBody(char *buffer, const ssize_t &nbytes) {
 	//return _protocolHandler->WriteToBody(_requestBodyStream, buffer, nbytes, _leftToRead);
     uint64_t bytesRead = _protocolHandler->WriteToBody(_requestBodyStream, buffer, nbytes);
     if (!bytesRead)
         return 0;
+    //_leftToRead -= nbytes;
+    std::cout << "NBYTES : " << nbytes << std::endl;
+    std::cout << "BYTESREAD : " << bytesRead << std::endl;;
     _leftToRead -= nbytes;
     return _leftToRead > 0;
 }
 
 // question to chat gpt : why the need for host in http request ? (body size websocket)
-int Client::WriteToStream(char *buffer, ssize_t nbytes) {
+int Client::WriteToStream(char *buffer, const ssize_t &nbytes) {
 	if (_leftToRead)
 		return WriteToBody(buffer, nbytes);
 	const size_t pos_end_header = _protocolHandler->GetPositionEndHeader(buffer);
@@ -88,7 +91,7 @@ int Client::WriteToStream(char *buffer, ssize_t nbytes) {
 	return WriteToBody(buffer + pos_end_header, nbytes - pos_end_header);
 }
 
-int Client::TreatReceivedData(char *buffer, ssize_t nbytes) {
+int Client::TreatReceivedData(char *buffer, const ssize_t &nbytes) {
 	StartTimer();
 	SaveOverlap(buffer - OVERLAP, nbytes);
 	if (_lenStream == 0 && nbytes >= 2) {
@@ -97,7 +100,7 @@ int Client::TreatReceivedData(char *buffer, ssize_t nbytes) {
 	return (WriteToStream(buffer, nbytes));
 }
 
-void Client::SaveOverlap(char *buffer, ssize_t nbytes) {
+void Client::SaveOverlap(char *buffer, const ssize_t &nbytes) {
 	if (nbytes >= OVERLAP)
 	{
 		if (_overlapBuffer[0])

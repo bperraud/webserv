@@ -43,10 +43,10 @@ private:
 	char				_overlapBuffer[4];
 
 private :
-	void	WriteToHeader(char *buffer, ssize_t nbytes);
-	int		WriteToStream(char *buffer, ssize_t nbytes);
+	void	WriteToHeader(char *buffer, const ssize_t &nbytes);
+	int		WriteToStream(char *buffer, const ssize_t &nbytes);
 
-	int		WriteToBody(char *buffer, ssize_t nbytes);
+	int		WriteToBody(char *buffer, const ssize_t &nbytes);
 	void	DetermineRequestType(char *buffer);
 
 public:
@@ -61,9 +61,9 @@ public:
 	bool	IsReadyToWrite() const;
 
 	void	CreateResponse();
-	int		TreatReceivedData(char *buffer, ssize_t nbytes);
+	int		TreatReceivedData(char *buffer, const ssize_t &nbytes);
 	void	SetReadyToWrite(bool ready);
-	void	SaveOverlap(char *buffer, ssize_t nbytes);
+	void	SaveOverlap(char *buffer, const ssize_t &nbytes);
 	void	ResetRequestContext();
 	void	StartTimer();
 	void	StopTimer();

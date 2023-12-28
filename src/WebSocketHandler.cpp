@@ -50,13 +50,9 @@ size_t WebSocketHandler::GetPositionEndHeader(char *header) {
 	if (payloadBytes) {
 		memcpy(&_leftToRead, header + 2, payloadBytes);
 		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-		if (payload == PAYLOAD_LENGTH_64)
-			_leftToRead = be64toh(_leftToRead);
-		else
-			_leftToRead = ntohs(_leftToRead);
+		_leftToRead = payload == PAYLOAD_LENGTH_64 ? be64toh(_leftToRead) : ntohs(_leftToRead);
 		#endif
 	}
-
 	size_t pos_end_header = INITIAL_PAYLOAD_LEN + MASKING_KEY_LEN + payloadBytes;
 	std::memcpy(_maskingKey, header + INITIAL_PAYLOAD_LEN + payloadBytes, MASKING_KEY_LEN);
 	return pos_end_header;
@@ -83,13 +79,13 @@ int WebSocketHandler::ParseRequest(std::stringstream &headerStream) {
 
 void WebSocketHandler::CreateHttpResponse(std::stringstream &bodyStream) {
 	std::string request_body = bodyStream.str();
-	u_int64_t response_body_len = request_body.length();
+	u_int64_t body_len = request_body.length();
 
 	_response_body_stream.write(request_body.c_str(), request_body.size());
 	u_int32_t payload_bytes = 0;
-	u_int8_t l = response_body_len;
+	u_int8_t l = body_len;
 
-    if (response_body_len <= MEDIUM_THRESHOLD) {
+    if (body_len <= MEDIUM_THRESHOLD) {
 		l = 126;
 		payload_bytes = 2;
 	}
@@ -99,15 +95,12 @@ void WebSocketHandler::CreateHttpResponse(std::stringstream &bodyStream) {
 	}
 
 	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	if (response_body_len > MEDIUM_THRESHOLD)
-		response_body_len = htobe64(response_body_len);
-	else
-		response_body_len = htons(response_body_len);
+	body_len = body_len > MEDIUM_THRESHOLD ? htobe64(body_len) : htons(body_len);
 	#endif
 
 	_response_header_stream.write(reinterpret_cast<const char*>(&l), 1);
-    if (response_body_len > SMALL_THRESHOLD)
-	    _response_header_stream.write(reinterpret_cast<const char*>(&response_body_len), payload_bytes);
+    if (body_len > SMALL_THRESHOLD)
+	    _response_header_stream.write(reinterpret_cast<const char*>(&body_len), payload_bytes);
 }
 
 

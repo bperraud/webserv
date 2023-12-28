@@ -38,14 +38,11 @@ def test_websocket():
 		with open(file_path, 'rb') as file:
 			large_file_content = file.read()
 		sendback(client, large_file_content)
-
 	except Exception as e:
 		print(e)
 		assert(True == False)
 	finally:
 		client.close()
-
-
 
 # Send a GET request
 def test_get():

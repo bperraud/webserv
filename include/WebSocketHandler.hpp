@@ -14,7 +14,6 @@
 
 #include "bitset"
 
-
 #define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 #define OPCODE_CONT 0x0
@@ -48,6 +47,9 @@
 #define INITIAL_PAYLOAD_LEN 2
 #define PAYLOAD_LENGTH_16 126
 #define PAYLOAD_LENGTH_64 127
+
+#define SMALL_THRESHOLD 125
+#define MEDIUM_THRESHOLD 65535
 
 class WebSocketHandler : public ProtocolHandlerInterface {
 

@@ -76,12 +76,6 @@ bool HttpHandler::HasBodyExceeded() const {
 	return _bodySizeExceeded;
 }
 
-bool HttpHandler::IsBodyFinished(std::stringstream &bodyStream, const ssize_t &nbytes) {
-	if (_transferChunked)
-		return TransferChunked(bodyStream); // chunked
-    return nbytes;
-}
-
 bool HttpHandler::IsAllowedMethod(const std::string &method) const {
 	for (auto &allowed_method : _active_route->methods)
 		if (allowed_method == method) return true;
@@ -102,14 +96,15 @@ bool HttpHandler::InvalidRequestLine() const {
 
 // --------------------------------- METHODS --------------------------------- //
 
-
 int HttpHandler::WriteToBody(std::stringstream &bodyStream, char* buffer, const ssize_t &nbytes) {
 	if (BodyExceeded(bodyStream, nbytes))
-		return 0;
+		return -1;
 	bodyStream.write(buffer, nbytes);
 	if (bodyStream.fail())
 		throw std::runtime_error("writing to request body stream");
-	return IsBodyFinished(bodyStream, nbytes);
+    if (_transferChunked)
+		return TransferChunked(bodyStream); // chunked
+    return nbytes;
 }
 
 void HttpHandler::CreateStatusResponse(int code) {
@@ -148,8 +143,11 @@ bool HttpHandler::BodyExceeded(std::stringstream &bodyStream, const ssize_t &nby
 
 int HttpHandler::TransferChunked(std::stringstream &bodyStream) {
 	bool finished = bodyStream.str().find(EOF_CHUNKED) != std::string::npos;
-	if (finished) UnchunckMessage(bodyStream);
-	return !finished;
+	if (finished) {
+        UnchunckMessage(bodyStream);
+        return -1;
+    }
+	return 0;
 }
 
 int HttpHandler::ParseRequest(std::stringstream &headerStream)

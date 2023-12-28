@@ -66,14 +66,10 @@ void Client::WriteToHeader(char *buffer, const ssize_t &nbytes) {
 }
 
 int Client::WriteToBody(char *buffer, const ssize_t &nbytes) {
-	//return _protocolHandler->WriteToBody(_requestBodyStream, buffer, nbytes, _leftToRead);
     uint64_t bytesRead = _protocolHandler->WriteToBody(_requestBodyStream, buffer, nbytes);
-    if (!bytesRead)
+    if (bytesRead == -1)
         return 0;
-    //_leftToRead -= nbytes;
-    std::cout << "NBYTES : " << nbytes << std::endl;
-    std::cout << "BYTESREAD : " << bytesRead << std::endl;;
-    _leftToRead -= nbytes;
+    _leftToRead -= bytesRead;
     return _leftToRead > 0;
 }
 

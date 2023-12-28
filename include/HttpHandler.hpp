@@ -97,7 +97,6 @@ public:
 	size_t	GetPositionEndHeader(char *buffer) override;
 	bool	HasBodyExceeded() const;
 	bool	IsKeepAlive() const;
-	bool 	IsBodyFinished(std::stringstream &bodyStream, const ssize_t &nbytes);
 
 	int		WriteToBody(std::stringstream &bodyStream, char* buffer, const ssize_t &nbytes) override;
 	bool 	BodyExceeded(std::stringstream &bodyStream, const ssize_t &nbytes);

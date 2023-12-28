@@ -10,9 +10,7 @@ const std::map<int, std::string> WebSocketHandler::_OPCODE_MAP = {
     {OPCODE_PONG, "pong"}
 };
 
-WebSocketHandler::WebSocketHandler() {
-
-}
+WebSocketHandler::WebSocketHandler() {}
 
 WebSocketHandler::WebSocketHandler(char *header) {
 	_byte = 0;
@@ -27,7 +25,6 @@ WebSocketHandler::WebSocketHandler(char *header) {
 		header[0] |= OPCODE_PONG;
 		header[0] &= 0xfa;
 	}
-
 	_response_header_stream.write(header, 1);
 }
 
@@ -43,7 +40,6 @@ void WebSocketHandler::ResetRequestContext() {
 }
 
 size_t WebSocketHandler::GetPositionEndHeader(char *header) {
-	// if < 2 : return std:string::npos
 	u_int8_t payload = header[1] & 0x7f;
     uint8_t payloadBytes = 0;
 	_leftToRead = payload;
@@ -62,8 +58,6 @@ size_t WebSocketHandler::GetPositionEndHeader(char *header) {
 	}
 
 	size_t pos_end_header = INITIAL_PAYLOAD_LEN + MASKING_KEY_LEN + payloadBytes;
-	std::cout << "payloadLength : " << _leftToRead << std::endl;
-
 	std::memcpy(_maskingKey, header + INITIAL_PAYLOAD_LEN + payloadBytes, MASKING_KEY_LEN);
 	return pos_end_header;
 }

@@ -3,7 +3,7 @@ NAME = webserv
 SRC = $(wildcard src/*.cpp)
 
 #CXX = c++
-CXX = g++-13
+CXX = g++
 
 CXXFLAGS = -Iinclude -O3
 LDFLAGS = -lssl -lcrypto  # OpenSSL flags for linking

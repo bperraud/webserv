@@ -13,7 +13,6 @@ Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _requestHeade
 	_overlapBuffer(), _leftToRead(0) {
 	_overlapBuffer[0] = '\0';
 
-
 	std::size_t initialCapacity = _requestBodyStream.str().capacity();
 	std::cout << initialCapacity << std::endl;
 }
@@ -67,7 +66,12 @@ void Client::WriteToHeader(char *buffer, ssize_t nbytes) {
 }
 
 int Client::WriteToBody(char *buffer, ssize_t nbytes) {
-	return _protocolHandler->WriteToBody(_requestBodyStream, buffer, nbytes, _leftToRead);
+	//return _protocolHandler->WriteToBody(_requestBodyStream, buffer, nbytes, _leftToRead);
+    uint64_t bytesRead = _protocolHandler->WriteToBody(_requestBodyStream, buffer, nbytes);
+    if (!bytesRead)
+        return 0;
+    _leftToRead -= nbytes;
+    return _leftToRead > 0;
 }
 
 // question to chat gpt : why the need for host in http request ? (body size websocket)
@@ -87,7 +91,7 @@ int Client::WriteToStream(char *buffer, ssize_t nbytes) {
 int Client::TreatReceivedData(char *buffer, ssize_t nbytes) {
 	StartTimer();
 	SaveOverlap(buffer - OVERLAP, nbytes);
-	if (_lenStream == 0 && nbytes >= 2) { // socket frame or http ?  -> remove the nbytes 2
+	if (_lenStream == 0 && nbytes >= 2) {
 		DetermineRequestType(buffer);
 	}
 	return (WriteToStream(buffer, nbytes));

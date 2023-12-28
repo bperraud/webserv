@@ -11,8 +11,9 @@
 #include <openssl/evp.h>
 #include <openssl/buffer.h>
 #include <arpa/inet.h>
+#include <byteswap.h>
 
-#include "bitset"
+//#include "bitset"
 
 #define GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
@@ -47,7 +48,6 @@
 #define INITIAL_PAYLOAD_LEN 2
 #define PAYLOAD_LENGTH_16 126
 #define PAYLOAD_LENGTH_64 127
-
 #define SMALL_THRESHOLD 125
 #define MEDIUM_THRESHOLD 65535
 
@@ -76,7 +76,7 @@ public:
 	size_t	GetPositionEndHeader(char *header) override;
 
 	int 	WriteToBody(std::stringstream &bodyStream, char* buffer,
-						const ssize_t &nbytes, u_int64_t &leftToRead) override;
+						const ssize_t &nbytes) override;
 
 	bool	HasBodyExceeded() const;
 	bool	IsKeepAlive() const;

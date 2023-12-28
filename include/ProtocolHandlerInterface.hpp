@@ -22,7 +22,7 @@ public:
 
 	virtual size_t	GetPositionEndHeader(char *buffer) = 0;
 	virtual int 	WriteToBody(std::stringstream &bodyStream, char* buffer,
-						const ssize_t &nbytes, u_int64_t &leftToRead) = 0;
+						const ssize_t &nbytes) = 0;
 	virtual bool	HasBodyExceeded() const = 0;
 	virtual bool	IsKeepAlive() const = 0;
 	virtual void	CreateHttpResponse(std::stringstream &bodyStream) = 0;

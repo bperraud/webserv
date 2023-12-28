@@ -38,7 +38,7 @@
 #define BLACK	"\033[1;30m"
 #define BUFFER_SIZE 8192
 #define MAX_EVENTS 4096
-#define TIMEOUT_SECS 5
+#define TIMEOUT_SECS 2
 #define WAIT_TIMEOUT_SECS 2
 
 struct server : public server_config {

@@ -103,7 +103,4 @@ void WebSocketHandler::CreateHttpResponse(std::stringstream &bodyStream) {
 	    _response_header_stream.write(reinterpret_cast<const char*>(&body_len), payload_bytes);
 }
 
-
-void WebSocketHandler::WriteHeaderStream() {
-
-}
+void WebSocketHandler::WriteHeaderStream() {}

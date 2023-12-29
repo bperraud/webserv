@@ -45,7 +45,6 @@ private:
 private :
 	void	WriteToHeader(char *buffer, const ssize_t &nbytes);
 	int		WriteToStream(char *buffer, const ssize_t &nbytes);
-
 	int		WriteToBody(char *buffer, const ssize_t &nbytes);
 	void	DetermineRequestType(char *buffer);
 

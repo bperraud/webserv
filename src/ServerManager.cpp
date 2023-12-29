@@ -235,12 +235,18 @@ int	ServerManager::readFromClient(fd_client_pair client) {
 }
 
 void ServerManager::writeToClient(int client_fd, const std::string &str) {
-	const ssize_t nbytes = send(client_fd, str.c_str(), str.length(), 0);
-	if (nbytes == -1)
-		throw std::runtime_error("send()");
-	else if (static_cast<size_t>(nbytes) < str.length()) {
-		writeToClient(client_fd, str.substr(nbytes));
-	}
+    size_t n = str.length();
+    ssize_t nbytes = 0;
+    const char *ptr = str.c_str();
+    size_t chunkSize;
+    while (n) {
+        chunkSize = n > (size_t)BUFFER_SIZE ? BUFFER_SIZE : n;
+        nbytes = send(client_fd, ptr, chunkSize, 0);
+        if (nbytes == -1)
+		    throw std::runtime_error("send()");
+        n -= nbytes;
+        ptr += nbytes;
+    }
 }
 
 ServerManager::~ServerManager() {

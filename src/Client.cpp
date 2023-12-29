@@ -73,7 +73,6 @@ int Client::WriteToBody(char *buffer, const ssize_t &nbytes) {
     return _leftToRead > 0;
 }
 
-// question to chat gpt : why the need for host in http request ? (body size websocket)
 int Client::WriteToStream(char *buffer, const ssize_t &nbytes) {
 	if (_leftToRead)
 		return WriteToBody(buffer, nbytes);
@@ -90,9 +89,8 @@ int Client::WriteToStream(char *buffer, const ssize_t &nbytes) {
 int Client::TreatReceivedData(char *buffer, const ssize_t &nbytes) {
 	StartTimer();
 	SaveOverlap(buffer - OVERLAP, nbytes);
-	if (_lenStream == 0 && nbytes >= 2) {
+	if (_lenStream == 0 && nbytes >= 2)
 		DetermineRequestType(buffer);
-	}
 	return (WriteToStream(buffer, nbytes));
 }
 

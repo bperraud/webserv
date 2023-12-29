@@ -23,6 +23,7 @@
 #include <netinet/tcp.h> // TCP_NODELAY
 #include <csignal>
 #include <stack>
+#include <limits>
 
 #if (defined (LINUX) || defined (__linux__))
 #include <sys/epoll.h>  // epoll
@@ -36,7 +37,7 @@
 #define GREEN   "\033[32m"
 #define RED     "\033[31m"
 #define BLACK	"\033[1;30m"
-#define BUFFER_SIZE 8192
+#define BUFFER_SIZE 16384
 #define MAX_EVENTS 4096
 #define TIMEOUT_SECS 2
 #define WAIT_TIMEOUT_SECS 2

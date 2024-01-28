@@ -37,9 +37,6 @@ private:
 	ProtocolHandlerInterface	*_protocolHandler;
 
 
-
-    WebSocketHandler	*_websocket;
-
 	bool				_readyToWrite;
 	ssize_t				_lenStream;
 

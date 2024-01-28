@@ -96,14 +96,17 @@ bool HttpHandler::InvalidRequestLine() const {
 
 // --------------------------------- METHODS --------------------------------- //
 
-int HttpHandler::WriteToBody(std::stringstream &bodyStream, char* buffer, const ssize_t &nbytes) {
-	if (BodyExceeded(bodyStream, nbytes))
-		return -1;
-	bodyStream.write(buffer, nbytes);
-	if (bodyStream.fail())
-		throw std::runtime_error("writing to request body stream");
-    if (_transferChunked)
-		return TransferChunked(bodyStream); // chunked
+//int HttpHandler::WriteToBody(std::stringstream &bodyStream, char* buffer, const ssize_t &nbytes) {
+int HttpHandler::WriteToBody(char *_request_body_buffer, char* buffer, const ssize_t &nbytes) {
+	//if (BodyExceeded(bodyStream, nbytes))
+	//	return -1;
+	//bodyStream.write(buffer, nbytes);
+	//if (bodyStream.fail())
+	//	throw std::runtime_error("writing to request body stream");
+    std::memcpy(_request_body_buffer, buffer, nbytes);
+
+    //if (_transferChunked)
+	//	return TransferChunked(bodyStream); // chunked
     return nbytes;
 }
 

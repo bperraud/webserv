@@ -98,10 +98,9 @@ public:
 	bool	HasBodyExceeded() const;
 	bool	IsKeepAlive() const;
 
-	int		WriteToBody(std::stringstream &bodyStream, char* buffer, const ssize_t &nbytes) override;
+	int		WriteToBody(char *request_body, char* buffer, const ssize_t &nbytes) override;
 	bool 	BodyExceeded(std::stringstream &bodyStream, const ssize_t &nbytes);
 	int		TransferChunked(std::stringstream &bodyStream);
-	//void	CreateHttpResponse(std::stringstream &bodyStream);
 	void	CreateHttpResponse(char *buffer, uint64_t size);
 
 	void	ResetRequestContext();

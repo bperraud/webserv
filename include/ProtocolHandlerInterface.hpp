@@ -21,8 +21,9 @@ public:
 	std::string		GetResponseBody() const;
 
 	virtual size_t	GetPositionEndHeader(char *buffer) = 0;
-	virtual int 	WriteToBody(std::stringstream &bodyStream, char* buffer,
-						const ssize_t &nbytes) = 0;
+	virtual int 	WriteToBody(char * request_body, char* buffer, const ssize_t &nbytes) = 0;
+	///virtual int 	WriteToBody(std::stringstream &bodyStream, char* buffer,
+	//					const ssize_t &nbytes) = /					const ssize_t &nbytes) = 0;
 	virtual bool	HasBodyExceeded() const = 0;
 	virtual bool	IsKeepAlive() const = 0;
 	//virtual void	CreateHttpResponse(std::stringstream &bodyStream) = 0;

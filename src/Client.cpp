@@ -12,13 +12,6 @@ Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _requestHeade
 	_protocolHandler(nullptr), _readyToWrite(false), _lenStream(0), _hasBeenRead(0),
 	_overlapBuffer(), _leftToRead(0) {
 	_overlapBuffer[0] = '\0';
-
-
-
-    _websocket = NULL;
-
-	std::size_t initialCapacity = _requestBodyStream.str().capacity();
-	std::cout << initialCapacity << std::endl;
 }
 
 bool Client::HasBodyExceeded() const {
@@ -56,10 +49,8 @@ void Client::ResetRequestContext() {
 
 void Client::DetermineRequestType(char * header) {
 	const bool mask_bit = *(header + 1) >> 7;
-	if (mask_bit == 1) {
+	if (mask_bit == 1)
 		_protocolHandler = new WebSocketHandler(header);
-        _websocket = new WebSocketHandler(header);
-    }
 	else
 		_protocolHandler = new HttpHandler(_serv_map);
 }
@@ -75,14 +66,13 @@ void Client::WriteToHeader(char *buffer, const ssize_t &nbytes)
 }
 
 int Client::WriteToBody(char *buffer, const ssize_t &nbytes) {
-    uint64_t bytesRead = _protocolHandler->WriteToBody(_requestBodyStream, buffer, nbytes);
+    //uint64_t bytesRead = _protocolHandler->WriteToBody(_requestBodyStream, buffer, nbytes);
+    uint64_t bytesRead = _protocolHandler->WriteToBody(_request_body_buffer + _hasBeenRead, buffer, nbytes);
+
+    //std::memcpy(_request_body_buffer + _hasBeenRead, buffer, nbytes);
 
 
-    std::memcpy(_request_body_buffer + _hasBeenRead, buffer, nbytes);
     _hasBeenRead += nbytes;
-
-    std::cout << "_hasBeenRead : " << _hasBeenRead << std::endl;
-
 
     if (bytesRead == -1)
         return 0;
@@ -136,6 +126,9 @@ void Client::SaveOverlap(char *buffer, const ssize_t &nbytes) {
 
 void Client::CreateResponse() {
 	//_protocolHandler->CreateHttpResponse(_requestBodyStream);
+
+
+    std::cout << _requestBodyStream.str() << std::endl;
 
     _protocolHandler->CreateHttpResponse(_request_body_buffer, _hasBeenRead);
 

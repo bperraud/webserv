@@ -58,32 +58,15 @@ size_t WebSocketHandler::GetPositionEndHeader(char *header) {
 	return pos_end_header;
 }
 
-//int WebSocketHandler::WriteToBody(std::stringstream &bodyStream, char *buffer, const ssize_t &nbytes) {
-//	for (size_t i = _byte; i < _byte + nbytes; i++) {
-//		const char unmaskedByte = buffer[i - _byte] ^ _maskingKey[i % 4];
-//		bodyStream.write(&unmaskedByte, sizeof(unmaskedByte));
-//		if (bodyStream.fail())
-//			throw std::runtime_error("writing to request body stream");
-//	}
-//	_byte += nbytes;
-//    return nbytes;
-//}
-
-
 int WebSocketHandler::WriteToBody(char *_request_body_buffer, char *buffer, const ssize_t &nbytes) {
 	for (size_t i = _byte; i < _byte + nbytes; i++) {
 		const char unmaskedByte = buffer[i - _byte] ^ _maskingKey[i % 4];
-
         std::memcpy(_request_body_buffer, &unmaskedByte, sizeof(unmaskedByte));
         _request_body_buffer += sizeof(unmaskedByte);
-		//bodyStream.write(&unmaskedByte, sizeof(unmaskedByte));
-		//if (bodyStream.fail())
-		//	throw std::runtime_error("writing to request body stream");
 	}
 	_byte += nbytes;
     return nbytes;
 }
-
 
 bool WebSocketHandler::HasBodyExceeded() const {
 	return false;
@@ -94,50 +77,9 @@ int WebSocketHandler::ParseRequest(std::stringstream &headerStream) {
 }
 
 
-void WebSocketHandler::CreateHttpResponse(std::stringstream &bodyStream)
-{
-
-	std::string request_body = bodyStream.str();
-	uint64_t body_len = request_body.length();
-
-
-	_response_body_stream.write(request_body.c_str(), request_body.length());
-	uint32_t payload_bytes = 0;
-	uint8_t l = body_len;
-
-    if (body_len <= MEDIUM_THRESHOLD) {
-		l = 126;
-		payload_bytes = 2;
-	}
-	else {
-		l = 127;
-		payload_bytes = 8;
-	}
-
-	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	body_len = body_len > MEDIUM_THRESHOLD ? htobe64(body_len) : htons(body_len);
-	#endif
-
-	_response_header_stream.write(reinterpret_cast<const char*>(&l), 1);
-    if (body_len > SMALL_THRESHOLD)
-	    _response_header_stream.write(reinterpret_cast<const char*>(&body_len), payload_bytes);
-}
-
-//void WebSocketHandler::CreateHttpResponse(std::stringstream &bodyStream)
 void WebSocketHandler::CreateHttpResponse(char * request_body, uint64_t size)
 {
-
-	//std::string request_body = bodyStream.str();
-	//u_int64_t body_len = request_body.length();
-
     uint64_t body_len = size;
-
-
-    std::cout << "body_len : " << body_len << std::endl;
-
-    std::cout << std::string(request_body, size) << std::endl;
-
-
 	_response_body_stream.write(request_body, size);
 	uint32_t payload_bytes = 0;
 	uint8_t l = body_len;

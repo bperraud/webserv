@@ -14,7 +14,8 @@ Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _requestHeade
 	_overlapBuffer[0] = '\0';
 }
 
-bool Client::HasBodyExceeded() const {
+bool Client::HasBodyExceeded() const
+{
 	if (_protocolHandler)
 		return _protocolHandler->HasBodyExceeded();
 	return false;
@@ -30,7 +31,8 @@ void Client::StartTimer() { _timer.start(); }
 void Client::StopTimer() { _timer.stop(); }
 bool Client::HasTimeOut() { return _timer.hasTimeOut(); }
 
-void Client::ResetRequestContext() {
+void Client::ResetRequestContext()
+{
 	_lenStream = 0;
 	_leftToRead = 0;
     _hasBeenRead = 0;
@@ -47,7 +49,8 @@ void Client::ResetRequestContext() {
     free(_request_body_buffer);
 }
 
-void Client::DetermineRequestType(char * header) {
+void Client::DetermineRequestType(char * header)
+{
 	const bool mask_bit = *(header + 1) >> 7;
 	if (mask_bit == 1)
 		_protocolHandler = new WebSocketHandler(header);
@@ -65,12 +68,9 @@ void Client::WriteToHeader(char *buffer, const ssize_t &nbytes)
 	}
 }
 
-int Client::WriteToBody(char *buffer, const ssize_t &nbytes) {
-    //uint64_t bytesRead = _protocolHandler->WriteToBody(_requestBodyStream, buffer, nbytes);
+int Client::WriteToBody(char *buffer, const ssize_t &nbytes)
+{
     uint64_t bytesRead = _protocolHandler->WriteToBody(_request_body_buffer + _hasBeenRead, buffer, nbytes);
-
-    //std::memcpy(_request_body_buffer + _hasBeenRead, buffer, nbytes);
-
 
     _hasBeenRead += nbytes;
 
@@ -80,7 +80,8 @@ int Client::WriteToBody(char *buffer, const ssize_t &nbytes) {
     return _leftToRead > 0;
 }
 
-int Client::WriteToStream(char *buffer, const ssize_t &nbytes) {
+int Client::WriteToStream(char *buffer, const ssize_t &nbytes)
+{
 	if (_leftToRead)
 		return WriteToBody(buffer, nbytes);
 	const size_t pos_end_header = _protocolHandler->GetPositionEndHeader(buffer);
@@ -99,7 +100,8 @@ int Client::WriteToStream(char *buffer, const ssize_t &nbytes) {
     return 0;
 }
 
-int Client::TreatReceivedData(char *buffer, const ssize_t &nbytes) {
+int Client::TreatReceivedData(char *buffer, const ssize_t &nbytes)
+{
 	StartTimer();
 	SaveOverlap(buffer - OVERLAP, nbytes);
 	if (_lenStream == 0 && nbytes >= 2)
@@ -107,7 +109,8 @@ int Client::TreatReceivedData(char *buffer, const ssize_t &nbytes) {
 	return (WriteToStream(buffer, nbytes));
 }
 
-void Client::SaveOverlap(char *buffer, const ssize_t &nbytes) {
+void Client::SaveOverlap(char *buffer, const ssize_t &nbytes)
+{
 	if (nbytes >= OVERLAP)
 	{
 		if (_overlapBuffer[0])
@@ -124,19 +127,12 @@ void Client::SaveOverlap(char *buffer, const ssize_t &nbytes) {
 	}
 }
 
-void Client::CreateResponse() {
-	//_protocolHandler->CreateHttpResponse(_requestBodyStream);
-
-
-    std::cout << _requestBodyStream.str() << std::endl;
-
+void Client::CreateResponse()
+{
     _protocolHandler->CreateHttpResponse(_request_body_buffer, _hasBeenRead);
-
-
-    //if (_websocket)
-    //    _websocket->CreateHttpResponse(_requestBodyStream);
 }
 
-Client::~Client() {
+Client::~Client()
+{
 	delete _protocolHandler;
 }

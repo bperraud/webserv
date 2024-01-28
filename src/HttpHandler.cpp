@@ -96,7 +96,6 @@ bool HttpHandler::InvalidRequestLine() const {
 
 // --------------------------------- METHODS --------------------------------- //
 
-//int HttpHandler::WriteToBody(std::stringstream &bodyStream, char* buffer, const ssize_t &nbytes) {
 int HttpHandler::WriteToBody(char *_request_body_buffer, char* buffer, const ssize_t &nbytes) {
 	//if (BodyExceeded(bodyStream, nbytes))
 	//	return -1;

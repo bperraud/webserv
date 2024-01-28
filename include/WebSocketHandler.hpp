@@ -74,9 +74,6 @@ public:
 
 	size_t	GetPositionEndHeader(char *header) override;
 
-	//int 	WriteToBody(std::stringstream &bodyStream, char* buffer,
-	//					const ssize_t &nbytes) override;
-
     int 	WriteToBody(char * request_body, char* buffer, const ssize_t &nbytes);
 
 	bool	HasBodyExceeded() const;

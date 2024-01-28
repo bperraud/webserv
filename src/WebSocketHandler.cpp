@@ -40,7 +40,7 @@ void WebSocketHandler::ResetRequestContext() {
 }
 
 size_t WebSocketHandler::GetPositionEndHeader(char *header) {
-	u_int8_t payload = header[1] & 0x7f;
+	uint8_t payload = header[1] & 0x7f;
     uint8_t payloadBytes = 0;
 	_leftToRead = payload;
 	if (payload == PAYLOAD_LENGTH_16)
@@ -79,11 +79,11 @@ int WebSocketHandler::ParseRequest(std::stringstream &headerStream) {
 
 void WebSocketHandler::CreateHttpResponse(std::stringstream &bodyStream) {
 	std::string request_body = bodyStream.str();
-	u_int64_t body_len = request_body.length();
+	uint64_t body_len = request_body.length();
 
 	_response_body_stream.write(request_body.c_str(), request_body.size());
-	u_int32_t payload_bytes = 0;
-	u_int8_t l = body_len;
+	uint32_t payload_bytes = 0;
+	uint8_t l = body_len;
 
     if (body_len <= MEDIUM_THRESHOLD) {
 		l = 126;

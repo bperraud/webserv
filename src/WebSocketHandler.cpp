@@ -81,7 +81,7 @@ void WebSocketHandler::CreateHttpResponse(std::stringstream &bodyStream) {
 	std::string request_body = bodyStream.str();
 	uint64_t body_len = request_body.length();
 
-	_response_body_stream.write(request_body.c_str(), request_body.size());
+	_response_body_stream.write(request_body.c_str(), body_len);
 	uint32_t payload_bytes = 0;
 	uint8_t l = body_len;
 

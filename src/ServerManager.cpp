@@ -1,9 +1,11 @@
 #include "ServerManager.hpp"
 
-const int* ServerManager::hostLevel(int port)  {
+const int* ServerManager::hostLevel(int port)
+{
 	struct sockaddr_in addr;
     socklen_t addrlen = sizeof(addr);
-	for (auto &[fd, _port] : _list_server_map) {
+	for (auto &[fd, _port] : _list_server_map)
+    {
 		if (getsockname(fd, (struct sockaddr *)&addr, &addrlen) != 0)
 			throw std::runtime_error("getsockname error");
 		char address_str[INET_ADDRSTRLEN];
@@ -14,7 +16,8 @@ const int* ServerManager::hostLevel(int port)  {
 	return NULL;
 }
 
-ServerManager::ServerManager(const ServerConfig &config) {
+ServerManager::ServerManager(const ServerConfig &config)
+{
 	std::list<server_config> server_list = config.getServerList();
 	for (auto it = server_list.begin(); it != server_list.end(); ++it) {
 		server serv(*it);
@@ -42,11 +45,13 @@ ServerManager::ServerManager(const ServerConfig &config) {
 	epollInit();
 }
 
-void ServerManager::run() {
+void ServerManager::run()
+{
 	eventManager();
 }
 
-void	ServerManager::setupSocket(server &serv) {
+void	ServerManager::setupSocket(server &serv)
+{
 	struct sockaddr_in host_addr;
 	serv.listen_fd = socket(AF_INET, SOCK_STREAM, 0);
 	if (serv.listen_fd == 0)
@@ -72,13 +77,16 @@ void	ServerManager::setupSocket(server &serv) {
 	<< YELLOW << "[" << serv.host << ", " << serv.PORT << "] " <<  RESET << std::endl;
 }
 
-void ServerManager::setNonBlockingMode(int socket) {
+void ServerManager::setNonBlockingMode(int socket)
+{
 	if (fcntl(socket, F_SETFL, O_NONBLOCK) < 0)
 		throw std::runtime_error("failed to set socket to non-blocking mode");
 }
 
-void ServerManager::timeoutCheck() {
-	for (auto it = _client_map.begin(); it != _client_map.end(); ) {
+void ServerManager::timeoutCheck()
+{
+	for (auto it = _client_map.begin(); it != _client_map.end(); )
+    {
         auto currentIt = it++;
 		if (currentIt->second->HasTimeOut())
 		{
@@ -88,22 +96,25 @@ void ServerManager::timeoutCheck() {
     }
 }
 
-host_level2* ServerManager::isPartOfListenFd(int fd)  {
-	for (auto &[_fd, port] : _list_server_map) {
+host_level2* ServerManager::isPartOfListenFd(int fd)
+{
+	for (auto &[_fd, port] : _list_server_map)
+    {
 		if (fd == _fd)
 			return &(port);
 	}
 	return NULL;
 }
 
-void ServerManager::epollInit() {
+void ServerManager::epollInit()
+{
 	INIT_EPOLL;
-	for (auto &[fd, port] : _list_server_map) {
+	for (auto &[fd, port] : _list_server_map)
 		MOD_READ(fd);
-	}
 }
 
-void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
+void ServerManager::handleNewConnection(int socket, host_level2* host_map)
+{
 	struct sockaddr_in client_addr;
 	socklen_t client_addrlen = sizeof(client_addr);
 	int new_sockfd = accept(socket, (struct sockaddr *)&client_addr, &client_addrlen);
@@ -133,7 +144,8 @@ void ServerManager::handleNewConnection(int socket, host_level2* host_map) {
 }
 
 #if (defined (LINUX) || defined (__linux__))
-void ServerManager::eventManager() {
+void ServerManager::eventManager()
+{
 	struct epoll_event events[MAX_EVENTS];
 	while (1) {
 		int n_ready = epoll_wait(_epoll_fd, events, MAX_EVENTS, WAIT_TIMEOUT_SECS * 1000);
@@ -156,7 +168,8 @@ void ServerManager::eventManager() {
 	}
 }
 #else
-void ServerManager::eventManager() {
+void ServerManager::eventManager()
+{
 	struct kevent events[MAX_EVENTS];
 	while (1) {
 		struct timespec timeout;
@@ -183,15 +196,18 @@ void ServerManager::eventManager() {
 }
 #endif
 
-void ServerManager::handleReadEvent(fd_client_pair client)  {
-	if (!readFromClient(client)) {
+void ServerManager::handleReadEvent(fd_client_pair client)
+{
+	if (!readFromClient(client))
+    {
 		client.second->StopTimer();
 		client.second->CreateResponse();
 		client.second->SetReadyToWrite(true);
 	}
 }
 
-void ServerManager::handleWriteEvent(fd_client_pair client) {
+void ServerManager::handleWriteEvent(fd_client_pair client)
+{
 	if (client.second->IsReadyToWrite())
 	{
 		writeToClient(client.first, client.second->GetResponseHeader());
@@ -201,7 +217,8 @@ void ServerManager::handleWriteEvent(fd_client_pair client) {
 	}
 }
 
-void ServerManager::closeClientConnection(fd_client_pair client) {
+void ServerManager::closeClientConnection(fd_client_pair client)
+{
 	DEL_EVENT(client.first);
 	delete client.second;
 	_client_map.erase(client.first);
@@ -209,7 +226,8 @@ void ServerManager::closeClientConnection(fd_client_pair client) {
 	std::cout << "connection closed ->" << RED << " client " << client.first << RESET << std::endl;
 }
 
-void ServerManager::closeClientConnection(fd_client_pair client, map_iterator_type elem) {
+void ServerManager::closeClientConnection(fd_client_pair client, map_iterator_type elem)
+{
 	DEL_EVENT(client.first);
 	delete client.second;
 	_client_map.erase(elem);
@@ -217,29 +235,34 @@ void ServerManager::closeClientConnection(fd_client_pair client, map_iterator_ty
 	std::cout << "connection closed ->" << RED << " client " << client.first << RESET << std::endl;
 }
 
-void ServerManager::connectionCloseMode(fd_client_pair client) {
+void ServerManager::connectionCloseMode(fd_client_pair client)
+{
 	if (!client.second->IsKeepAlive())
 		closeClientConnection(client);
 }
 
-int	ServerManager::readFromClient(fd_client_pair client) {
+int	ServerManager::readFromClient(fd_client_pair client)
+{
 	char buffer[BUFFER_SIZE + OVERLAP];
 	const ssize_t nbytes = recv(client.first, buffer + OVERLAP, BUFFER_SIZE, 0);
 	if (client.second->HasBodyExceeded()) // ignore incoming data
 		return 1;
-	if (nbytes <= 0) {
+	if (nbytes <= 0)
+    {
 		closeClientConnection(client);
 		return 1;
 	}
 	return (client.second->TreatReceivedData(buffer + OVERLAP, nbytes));
 }
 
-void ServerManager::writeToClient(int client_fd, const std::string &str) {
+void ServerManager::writeToClient(int client_fd, const std::string &str)
+{
     size_t n = str.length();
     ssize_t nbytes = 0;
     const char *ptr = str.c_str();
     size_t chunkSize;
-    while (n) {
+    while (n)
+    {
         chunkSize = n > (size_t)BUFFER_SIZE ? BUFFER_SIZE : n;
         nbytes = send(client_fd, ptr, chunkSize, 0);
         if (nbytes == -1)

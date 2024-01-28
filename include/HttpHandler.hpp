@@ -28,7 +28,7 @@ struct server;
 
 typedef std::map<std::string, server>	server_name_level3;
 
-struct HttpMessage {
+struct HttpRequest {
     std::string method;
     std::string url;
     std::string version;
@@ -56,7 +56,7 @@ private:
 
 	std::string			_request_body;
 
-	HttpMessage			_request;
+	HttpRequest			_request;
 	HttpResponse		_response;
 
 	static const std::map<std::string, std::string>				_MIME_TYPES;
@@ -101,7 +101,8 @@ public:
 	int		WriteToBody(std::stringstream &bodyStream, char* buffer, const ssize_t &nbytes) override;
 	bool 	BodyExceeded(std::stringstream &bodyStream, const ssize_t &nbytes);
 	int		TransferChunked(std::stringstream &bodyStream);
-	void	CreateHttpResponse(std::stringstream &bodyStream);
+	//void	CreateHttpResponse(std::stringstream &bodyStream);
+	void	CreateHttpResponse(char *buffer, uint64_t size);
 
 	void	ResetRequestContext();
 	int		ParseRequest(std::stringstream &headerStream);

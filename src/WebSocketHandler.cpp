@@ -40,7 +40,7 @@ void WebSocketHandler::ResetRequestContext() {
 }
 
 size_t WebSocketHandler::GetPositionEndHeader(char *header) {
-	u_int8_t payload = header[1] & 0x7f;
+	uint8_t payload = header[1] & 0x7f;
     uint8_t payloadBytes = 0;
 	_leftToRead = payload;
 	if (payload == PAYLOAD_LENGTH_16)
@@ -77,13 +77,52 @@ int WebSocketHandler::ParseRequest(std::stringstream &headerStream) {
 	return _leftToRead;
 }
 
-void WebSocketHandler::CreateHttpResponse(std::stringstream &bodyStream) {
-	std::string request_body = bodyStream.str();
-	u_int64_t body_len = request_body.length();
 
-	_response_body_stream.write(request_body.c_str(), request_body.size());
-	u_int32_t payload_bytes = 0;
-	u_int8_t l = body_len;
+void WebSocketHandler::CreateHttpResponse(std::stringstream &bodyStream)
+{
+
+	std::string request_body = bodyStream.str();
+	uint64_t body_len = request_body.length();
+
+
+	_response_body_stream.write(request_body.c_str(), request_body.length());
+	uint32_t payload_bytes = 0;
+	uint8_t l = body_len;
+
+    if (body_len <= MEDIUM_THRESHOLD) {
+		l = 126;
+		payload_bytes = 2;
+	}
+	else {
+		l = 127;
+		payload_bytes = 8;
+	}
+
+	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+	body_len = body_len > MEDIUM_THRESHOLD ? htobe64(body_len) : htons(body_len);
+	#endif
+
+	_response_header_stream.write(reinterpret_cast<const char*>(&l), 1);
+    if (body_len > SMALL_THRESHOLD)
+	    _response_header_stream.write(reinterpret_cast<const char*>(&body_len), payload_bytes);
+}
+
+//void WebSocketHandler::CreateHttpResponse(std::stringstream &bodyStream)
+void WebSocketHandler::CreateHttpResponse(char * request_body, uint64_t size)
+{
+
+    std::cout << "len : " << size << std::endl;
+    //return ;
+
+
+	//std::string request_body = bodyStream.str();
+	//u_int64_t body_len = request_body.length();
+
+    uint64_t body_len = size;
+
+	_response_body_stream.write(request_body, size);
+	uint32_t payload_bytes = 0;
+	uint8_t l = body_len;
 
     if (body_len <= MEDIUM_THRESHOLD) {
 		l = 126;

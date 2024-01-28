@@ -27,19 +27,26 @@ class Client {
 private:
 	std::stringstream 	_requestHeaderStream;
 	std::stringstream   _requestBodyStream;
-
 	server_name_level3 *_serv_map;
+
+
+    char *              _request_body_buffer;
 
 	Timer				_timer;
 
 	ProtocolHandlerInterface	*_protocolHandler;
 
-	bool				_isHttpRequest;
+
+
+    WebSocketHandler	*_websocket;
+
 	bool				_readyToWrite;
 	ssize_t				_lenStream;
 
-
 	uint64_t			_leftToRead;
+
+    uint64_t            _hasBeenRead;
+
 	char				_overlapBuffer[4];
 
 private :

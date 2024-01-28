@@ -11,7 +11,7 @@
 #include <stdio.h>		// perror
 #include "fcntl.h" 		// open()
 
-struct HttpMessage;
+struct HttpRequest;
 
 struct minishell {
 	int		reader;
@@ -27,7 +27,7 @@ private:
 
 	CGIExecutor(const CGIExecutor &other);
 	CGIExecutor &operator=(const CGIExecutor &other) ;
-	void setupEnv(const HttpMessage &request, const std::string &url);
+	void setupEnv(const HttpRequest &request, const std::string &url);
 
 public:
 	CGIExecutor() = default;
@@ -37,17 +37,17 @@ public:
 		return s_cgi;
 	}
 
-	static int run (const HttpMessage &request, std::stringstream &response_stream, std::string *cookies, const std::string& path, const std::string &interpreter, const std::string &url) {
+	static int run (const HttpRequest &request, std::stringstream &response_stream, std::string *cookies, const std::string& path, const std::string &interpreter, const std::string &url) {
 		return CGIExecutor::getCgiInstance()._run(request, response_stream, cookies, path, interpreter, url);
 	}
 
 	std::string decodeUrl(const std::string& input);
 	void setEnv(char **env);
     // Execute the CGI script with the given environment variables and input data
-	int run_minishell(const HttpMessage &request, std::stringstream &response_stream, std::string *cookies);
+	int run_minishell(const HttpRequest &request, std::stringstream &response_stream, std::string *cookies);
 	int run_minishell_cmd(const std::string &input, std::stringstream &response_stream, std::string *cookies);
-    int execute(std::stringstream &response_stream, std::string *cookies, const std::string &path, const std::string &interpreter, const HttpMessage &request);
-	int _run(const HttpMessage &request, std::stringstream &response_stream, std::string *cookies, const std::string &path, const std::string &interpreter, const std::string &url);
+    int execute(std::stringstream &response_stream, std::string *cookies, const std::string &path, const std::string &interpreter, const HttpRequest &request);
+	int _run(const HttpRequest &request, std::stringstream &response_stream, std::string *cookies, const std::string &path, const std::string &interpreter, const std::string &url);
 	void parse_response(std::stringstream &response_stream, std::string *cookies, std::string output);
 };
 

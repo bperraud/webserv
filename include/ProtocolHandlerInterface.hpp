@@ -25,7 +25,10 @@ public:
 						const ssize_t &nbytes) = 0;
 	virtual bool	HasBodyExceeded() const = 0;
 	virtual bool	IsKeepAlive() const = 0;
-	virtual void	CreateHttpResponse(std::stringstream &bodyStream) = 0;
+	//virtual void	CreateHttpResponse(std::stringstream &bodyStream) = 0;
+
+    virtual void	CreateHttpResponse(char * buffer, uint64_t size) = 0;
+
 	virtual void	ResetRequestContext() = 0;
 	virtual int		ParseRequest(std::stringstream &headerStream) = 0;
 };

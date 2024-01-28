@@ -68,7 +68,6 @@ private:
 
 	static const std::map<int, std::string>	_OPCODE_MAP;
 
-
 public:
     WebSocketHandler();
 	WebSocketHandler(char *header);
@@ -82,6 +81,7 @@ public:
 	bool	IsKeepAlive() const;
 
 	void	CreateHttpResponse(std::stringstream &bodyStream);
+	void	CreateHttpResponse(char * buffer, uint64_t size);
 	void	ResetRequestContext();
 	int		ParseRequest(std::stringstream &_readStream);
 

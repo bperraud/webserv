@@ -44,6 +44,7 @@ def test_websocket():
 	finally:
 		client.close()
 
+
 # Send a GET request
 def test_get():
 	response = requests.get(URL)

@@ -30,7 +30,7 @@ std::string CGIExecutor::decodeUrl(const std::string& input) {
     return decoded.str();
 }
 
-void CGIExecutor::setupEnv(const HttpMessage &request, const std::string &url)
+void CGIExecutor::setupEnv(const HttpRequest &request, const std::string &url)
 {
 	std::string request_method = "REQUEST_METHOD=" + request.method;
 	putenv(const_cast<char *>(request_method.c_str()));
@@ -50,7 +50,7 @@ void CGIExecutor::setEnv(char **envp)
 	_env = envp;
 }
 
-int CGIExecutor::_run(const HttpMessage &request, std::stringstream &response_stream, std::string *cookies, const std::string &path, const std::string &interpreter, const std::string &url)
+int CGIExecutor::_run(const HttpRequest &request, std::stringstream &response_stream, std::string *cookies, const std::string &path, const std::string &interpreter, const std::string &url)
 {
 	setupEnv(request, url);
 	std::string script_name = request.url.substr(0, request.url.find("?"));
@@ -68,7 +68,7 @@ int CGIExecutor::_run(const HttpMessage &request, std::stringstream &response_st
 	return execute(response_stream, cookies, path, interpreter, request);
 }
 
-int CGIExecutor::run_minishell(const HttpMessage &request, std::stringstream &response_stream, std::string *cookies)
+int CGIExecutor::run_minishell(const HttpRequest &request, std::stringstream &response_stream, std::string *cookies)
 {
 	pid_t pid;
 
@@ -118,7 +118,7 @@ int CGIExecutor::run_minishell_cmd(const std::string &input, std::stringstream &
 }
 
 
-int CGIExecutor::execute(std::stringstream &response_stream, std::string *cookies, const std::string &path, const std::string &interpreter, const HttpMessage &request)
+int CGIExecutor::execute(std::stringstream &response_stream, std::string *cookies, const std::string &path, const std::string &interpreter, const HttpRequest &request)
 {
 	std::string res;
 	int pipe_fd[2];

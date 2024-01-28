@@ -275,9 +275,12 @@ void HttpHandler::Handshake(const std::string &webSocketKey) {
 	//should communicate max_body_size to websockethandler;
 }
 
-void HttpHandler::CreateHttpResponse(std::stringstream &bodyStream)
+//void HttpHandler::CreateHttpResponse(std::stringstream &bodyStream)
+void HttpHandler::CreateHttpResponse(char * request_body, uint64_t size)
 {
-	if (!_transferChunked) _request_body = bodyStream.str();
+	if (!_transferChunked)
+        _request_body = std::string(request_body, size);
+
 	_response.version = _request.version;
 	const std::string original_url = _request.url;
 	if (!_server)

@@ -74,13 +74,13 @@ public:
 
 	size_t	GetPositionEndHeader(char *header) override;
 
-    int 	WriteToBody(char * request_body, char* buffer, const ssize_t &nbytes);
+    int 	WriteToBody(char* request_body, const uint64_t &hasBeenRead, char* buffer, const ssize_t &nbytes);
 
 	bool	HasBodyExceeded() const;
 	bool	IsKeepAlive() const;
 
 	void	CreateHttpResponse(std::stringstream &bodyStream);
-	void	CreateHttpResponse(char * buffer, uint64_t size);
+	void	CreateHttpResponse(char *buffer, const uint64_t &size);
 	void	ResetRequestContext();
 	int		ParseRequest(std::stringstream &_readStream);
 

@@ -21,10 +21,10 @@ public:
 	std::string		GetResponseBody() const;
 
 	virtual size_t	GetPositionEndHeader(char *buffer) = 0;
-	virtual int 	WriteToBody(char * request_body, char* buffer, const ssize_t &nbytes) = 0;
+	virtual int 	WriteToBody(char * request_body, const uint64_t &hasBeenRead, char* buffer, const ssize_t &nbytes) = 0;
 	virtual bool	HasBodyExceeded() const = 0;
 	virtual bool	IsKeepAlive() const = 0;
-    virtual void	CreateHttpResponse(char * buffer, uint64_t size) = 0;
+    virtual void	CreateHttpResponse(char * buffer, const uint64_t &size) = 0;
 
 	virtual void	ResetRequestContext() = 0;
 	virtual int		ParseRequest(std::stringstream &headerStream) = 0;

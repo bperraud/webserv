@@ -64,16 +64,15 @@ void Client::WriteToHeader(char *buffer, const ssize_t &nbytes)
 	_lenStream += nbytes;
 	if (_requestHeaderStream.fail())
     {
-		throw std::runtime_error("writing to read stream");
+		//throw std::runtime_error("writing to read stream");
+        ;
 	}
 }
 
 int Client::WriteToBody(char *buffer, const ssize_t &nbytes)
 {
-    uint64_t bytesRead = _protocolHandler->WriteToBody(_request_body_buffer + _hasBeenRead, buffer, nbytes);
-
+    uint64_t bytesRead = _protocolHandler->WriteToBody(_request_body_buffer, _hasBeenRead, buffer, nbytes);
     _hasBeenRead += nbytes;
-
     if (bytesRead == -1)
         return 0;
     _leftToRead -= bytesRead;

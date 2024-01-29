@@ -58,7 +58,8 @@ size_t WebSocketHandler::GetPositionEndHeader(char *header) {
 	return pos_end_header;
 }
 
-int WebSocketHandler::WriteToBody(char *_request_body_buffer, char *buffer, const ssize_t &nbytes) {
+int WebSocketHandler::WriteToBody(char *_request_body_buffer, const uint64_t &hasBeenRead, char *buffer, const ssize_t &nbytes) {
+    _request_body_buffer += hasBeenRead;
 	for (size_t i = _byte; i < _byte + nbytes; i++) {
 		const char unmaskedByte = buffer[i - _byte] ^ _maskingKey[i % 4];
         std::memcpy(_request_body_buffer, &unmaskedByte, sizeof(unmaskedByte));
@@ -77,7 +78,7 @@ int WebSocketHandler::ParseRequest(std::stringstream &headerStream) {
 }
 
 
-void WebSocketHandler::CreateHttpResponse(char * request_body, uint64_t size)
+void WebSocketHandler::CreateHttpResponse(char * request_body, const uint64_t &size)
 {
     uint64_t body_len = size;
 	_response_body_stream.write(request_body, size);

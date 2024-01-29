@@ -96,16 +96,16 @@ bool HttpHandler::InvalidRequestLine() const {
 
 // --------------------------------- METHODS --------------------------------- //
 
-int HttpHandler::WriteToBody(char *_request_body_buffer, char* buffer, const ssize_t &nbytes) {
-	//if (BodyExceeded(bodyStream, nbytes))
-	//	return -1;
+int HttpHandler::WriteToBody(char *_request_body_buffer, const uint64_t &hasBeenRead, char* buffer, const ssize_t &nbytes) {
+	if (BodyExceeded(hasBeenRead, nbytes))
+		return -1;
 	//bodyStream.write(buffer, nbytes);
 	//if (bodyStream.fail())
 	//	throw std::runtime_error("writing to request body stream");
-    std::memcpy(_request_body_buffer, buffer, nbytes);
+    std::memcpy(_request_body_buffer + hasBeenRead, buffer, nbytes);
 
-    //if (_transferChunked)
-	//	return TransferChunked(bodyStream); // chunked
+    if (_transferChunked)
+		return TransferChunked(_request_body_buffer, hasBeenRead); // chunked
     return nbytes;
 }
 
@@ -135,18 +135,20 @@ void HttpHandler::ResetRequestContext() {
 	_active_route = &_default_route;
 }
 
-bool HttpHandler::BodyExceeded(std::stringstream &bodyStream, const ssize_t &nbytes) {
-	if (_server->max_body_size && static_cast<ssize_t>(bodyStream.tellp()) + nbytes > _server->max_body_size) {
+bool HttpHandler::BodyExceeded(const uint64_t &hasBeenRead, const ssize_t &nbytes) {
+	if (_server->max_body_size && (hasBeenRead + nbytes > _server->max_body_size)) {
 		_bodySizeExceeded = true;
 		return true;
 	}
 	return false;
 }
 
-int HttpHandler::TransferChunked(std::stringstream &bodyStream) {
-	bool finished = bodyStream.str().find(EOF_CHUNKED) != std::string::npos;
+int HttpHandler::TransferChunked(char *buffer, const uint64_t &size)
+{
+    std::string str = std::string(buffer, size);
+	bool finished = str.find(EOF_CHUNKED) != std::string::npos;
 	if (finished) {
-        UnchunckMessage(bodyStream);
+        //UnchunckMessage(bodyStream);
         return -1;
     }
 	return 0;
@@ -277,8 +279,7 @@ void HttpHandler::Handshake(const std::string &webSocketKey) {
 	//should communicate max_body_size to websockethandler;
 }
 
-//void HttpHandler::CreateHttpResponse(std::stringstream &bodyStream)
-void HttpHandler::CreateHttpResponse(char * request_body, uint64_t size)
+void HttpHandler::CreateHttpResponse(char * request_body, const uint64_t &size)
 {
 	if (!_transferChunked)
         _request_body = std::string(request_body, size);

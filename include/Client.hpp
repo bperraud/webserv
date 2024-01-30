@@ -30,6 +30,8 @@ private:
 	server_name_level3 *_serv_map;
 
 
+
+
     char *              _request_body_buffer;
 
 	Timer				_timer;
@@ -38,6 +40,7 @@ private:
 
 
 	bool				_readyToWrite;
+    bool                _hasBodyExceeded;
 	ssize_t				_lenStream;
 
 	uint64_t			_leftToRead;

@@ -99,9 +99,6 @@ bool HttpHandler::InvalidRequestLine() const {
 int HttpHandler::WriteToBody(char *_request_body_buffer, const uint64_t &hasBeenRead, char* buffer, const ssize_t &nbytes) {
 	if (BodyExceeded(hasBeenRead, nbytes))
 		return -1;
-	//bodyStream.write(buffer, nbytes);
-	//if (bodyStream.fail())
-	//	throw std::runtime_error("writing to request body stream");
     std::memcpy(_request_body_buffer + hasBeenRead, buffer, nbytes);
 
     if (_transferChunked)

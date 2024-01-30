@@ -9,13 +9,15 @@ bool Client::IsReadyToWrite() const { return _readyToWrite; }
 
 Client::Client(int timeoutSeconds, server_name_level3 *serv_map) : _requestHeaderStream(std::ios::in | std::ios::out),
 	_requestBodyStream(std::ios::in | std::ios::out), _serv_map(serv_map), _timer(timeoutSeconds),
-	_protocolHandler(nullptr), _readyToWrite(false), _lenStream(0), _hasBeenRead(0),
+	_protocolHandler(nullptr), _readyToWrite(false), _hasBodyExceeded(false), _lenStream(0), _hasBeenRead(0),
 	_overlapBuffer(), _leftToRead(0) {
 	_overlapBuffer[0] = '\0';
 }
 
 bool Client::HasBodyExceeded() const
 {
+    if (_hasBodyExceeded)
+        return true;
 	if (_protocolHandler)
 		return _protocolHandler->HasBodyExceeded();
 	return false;
@@ -36,6 +38,7 @@ void Client::ResetRequestContext()
 	_lenStream = 0;
 	_leftToRead = 0;
     _hasBeenRead = 0;
+    _hasBodyExceeded = false;
 	bzero(_overlapBuffer, OVERLAP);
 	_protocolHandler->ResetRequestContext();
 	_readyToWrite = false;
@@ -94,6 +97,8 @@ int Client::WriteToStream(char *buffer, const ssize_t &nbytes)
         WriteToHeader(buffer, pos_end_header);
         _leftToRead = _protocolHandler->ParseRequest(_requestHeaderStream);
         _request_body_buffer = new char[_leftToRead];
+        if (!_request_body_buffer)
+            _hasBodyExceeded = true;
 	    return WriteToBody(buffer + pos_end_header, nbytes - pos_end_header);
     }
     return 0;

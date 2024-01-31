@@ -19,7 +19,6 @@
 #include "HttpHandler.hpp"
 #include "ProtocolHandlerInterface.hpp"
 
-
 struct server;
 
 class Client {
@@ -29,22 +28,16 @@ private:
 	std::stringstream   _requestBodyStream;
 	server_name_level3 *_serv_map;
 
-
-
-
     char *              _request_body_buffer;
 
 	Timer				_timer;
-
 	ProtocolHandlerInterface	*_protocolHandler;
-
 
 	bool				_readyToWrite;
     bool                _hasBodyExceeded;
 	ssize_t				_lenStream;
 
 	uint64_t			_leftToRead;
-
     uint64_t            _hasBeenRead;
 
 	char				_overlapBuffer[4];

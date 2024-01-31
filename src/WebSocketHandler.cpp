@@ -77,7 +77,6 @@ int WebSocketHandler::ParseRequest(std::stringstream &headerStream) {
 	return _leftToRead;
 }
 
-
 void WebSocketHandler::CreateHttpResponse(char * request_body, const uint64_t &size)
 {
     uint64_t body_len = size;

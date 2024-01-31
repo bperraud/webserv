@@ -64,7 +64,8 @@ HttpHandler::~HttpHandler() {
 
 bool HttpHandler::IsKeepAlive() const { return _keepAlive; }
 
-std::string HttpHandler::GetContentType(const std::string &path) const {
+std::string HttpHandler::GetContentType(const std::string &path) const
+{
 	std::string::size_type dot_pos = path.find_last_of('.');
 	if (dot_pos == std::string::npos) // no extension, assume directory
 		return _active_route->autoindex ?  "text/html" : "text/plain";
@@ -72,17 +73,20 @@ std::string HttpHandler::GetContentType(const std::string &path) const {
 	return it == _MIME_TYPES.end() ? "" : it->second;
 }
 
-bool HttpHandler::HasBodyExceeded() const {
+bool HttpHandler::HasBodyExceeded() const
+{
 	return _bodySizeExceeded;
 }
 
-bool HttpHandler::IsAllowedMethod(const std::string &method) const {
+bool HttpHandler::IsAllowedMethod(const std::string &method) const
+{
 	for (auto &allowed_method : _active_route->methods)
 		if (allowed_method == method) return true;
 	return false;
 }
 
-std::string HttpHandler::GetHeaderValue(const std::string &header) const {
+std::string HttpHandler::GetHeaderValue(const std::string &header) const
+{
 	std::map<std::string, std::string>::const_iterator it = _request.map_headers.find(header);
 	if (it != _request.map_headers.end()) {
 		return it->second;
@@ -90,23 +94,26 @@ std::string HttpHandler::GetHeaderValue(const std::string &header) const {
 	return "";
 }
 
-bool HttpHandler::InvalidRequestLine() const {
+bool HttpHandler::InvalidRequestLine() const
+{
 	return (_request.method.empty() || _request.url.empty() || _request.version.empty());
 }
 
 // --------------------------------- METHODS --------------------------------- //
 
-int HttpHandler::WriteToBody(char *_request_body_buffer, const uint64_t &hasBeenRead, char* buffer, const ssize_t &nbytes) {
+int HttpHandler::WriteToBody(char *_request_body_buffer, const uint64_t &hasBeenRead, char* buffer, const ssize_t &nbytes)
+{
 	if (BodyExceeded(hasBeenRead, nbytes))
 		return -1;
     std::memcpy(_request_body_buffer + hasBeenRead, buffer, nbytes);
 
     if (_transferChunked)
-		return TransferChunked(_request_body_buffer, hasBeenRead); // chunked
+		return TransferChunked(_request_body_buffer, hasBeenRead + nbytes); // chunked
     return nbytes;
 }
 
-void HttpHandler::CreateStatusResponse(int code) {
+void HttpHandler::CreateStatusResponse(int code)
+{
 	_response.status_code = std::to_string(code);
 	try {
 		_response.statusPhrase = _SUCCESS_STATUS.at(code);
@@ -116,11 +123,13 @@ void HttpHandler::CreateStatusResponse(int code) {
 	}
 }
 
-size_t HttpHandler::GetPositionEndHeader(char *buffer) {
+size_t HttpHandler::GetPositionEndHeader(char *buffer)
+{
 	return ((std::string)(buffer - 4)).find(CRLF);  // ameliorable
 }
 
-void HttpHandler::ResetRequestContext() {
+void HttpHandler::ResetRequestContext()
+{
 	_request.method = "";
 	_request.url = "";
 	_request.version = "";
@@ -132,8 +141,10 @@ void HttpHandler::ResetRequestContext() {
 	_active_route = &_default_route;
 }
 
-bool HttpHandler::BodyExceeded(const uint64_t &hasBeenRead, const ssize_t &nbytes) {
-	if (_server->max_body_size && (hasBeenRead + nbytes > _server->max_body_size)) {
+bool HttpHandler::BodyExceeded(const uint64_t &hasBeenRead, const ssize_t &nbytes)
+{
+	if (_server->max_body_size && (hasBeenRead + nbytes > _server->max_body_size))
+    {
 		_bodySizeExceeded = true;
 		return true;
 	}
@@ -143,9 +154,12 @@ bool HttpHandler::BodyExceeded(const uint64_t &hasBeenRead, const ssize_t &nbyte
 int HttpHandler::TransferChunked(char *buffer, const uint64_t &size)
 {
     std::string str = std::string(buffer, size);
+    std::cout << "chunked ! " << std::endl;
 	bool finished = str.find(EOF_CHUNKED) != std::string::npos;
 	if (finished) {
-        //UnchunckMessage(bodyStream);
+
+        std::cout << "finished" << std::endl;
+        UnchunckMessage(str);
         return -1;
     }
 	return 0;
@@ -195,8 +209,9 @@ void HttpHandler::SetupRoute(const std::string &url)
 	_request.url = _active_route->root + _request.url;
 }
 
-void HttpHandler::UnchunckMessage(std::stringstream &bodyStream)
+void HttpHandler::UnchunckMessage(const std::string &str)
 {
+    std::stringstream bodyStream(str);
 	std::stringstream requestBodyStream(std::ios::in | std::ios::out);
 	int chunk_size;
 	while (bodyStream >> chunk_size) {
@@ -210,6 +225,8 @@ void HttpHandler::UnchunckMessage(std::stringstream &bodyStream)
 		requestBodyStream.write(chunk.data(), chunk_size);
 	}
 	_request_body = requestBodyStream.str();
+
+    std::cout << _request_body << std::endl;
 }
 
 void HttpHandler::HandleCGI(const std::string &original_url)

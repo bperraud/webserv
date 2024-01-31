@@ -74,7 +74,7 @@ private:
 	void	CreateStatusResponse(int code);
 	void	UploadFile(const std::string& contentType, size_t pos_boundary);
 	void 	Redirection();
-	void	UnchunckMessage(std::stringstream &bodyStream);
+	void	UnchunckMessage(const std::string &str);
 
 	std::string		GetHeaderValue(const std::string &header) const;
 	std::string		GetContentType(const std::string& path) const;
